@@ -9,7 +9,7 @@
   // "forwardPorts": [],
 
   // Use 'postCreateCommand' to run commands after the container is created.
-  "postCreateCommand": "pip install -r requirements.txt"
+  "postCreateCommand": "python3 -m venv .venv\nsource .venv/bin/activate\npip install -r requirements.txt"
 
   // Configure tool-specific properties.
   // "customizations": {},

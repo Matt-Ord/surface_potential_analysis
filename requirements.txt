@@ -1,2 +1,5 @@
 black
 mypy
+numpy
+matplotlib
+flake8

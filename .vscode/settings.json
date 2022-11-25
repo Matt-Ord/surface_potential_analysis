@@ -1,0 +1,18 @@
+{
+  "python.analysis.typeCheckingMode": "basic",
+  "python.linting.mypyEnabled": true,
+  "python.linting.flake8Enabled": true,
+  "python.formatting.provider": "black",
+  "cSpell.words": [
+    "imshow",
+    "matplotlib",
+    "pyplot",
+    "savefig",
+    "sharey",
+    "suptitle",
+    "vmax",
+    "vmin",
+    "xlabel",
+    "ylabel"
+  ]
+}

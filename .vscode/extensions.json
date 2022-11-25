@@ -1,6 +1,7 @@
 {
-    "recommendations": [
-        "donjayamanne.python-extension-pack",
-        "esbenp.prettier-vscode"
-    ]
+  "recommendations": [
+    "donjayamanne.python-extension-pack",
+    "esbenp.prettier-vscode",
+    "streetsidesoftware.code-spell-checker"
+  ]
 }
