@@ -3,3 +3,4 @@ mypy
 numpy
 matplotlib
 flake8
+scipy

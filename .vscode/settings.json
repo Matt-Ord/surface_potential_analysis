@@ -3,16 +3,27 @@
   "python.linting.mypyEnabled": true,
   "python.linting.flake8Enabled": true,
   "python.formatting.provider": "black",
+  "isort.check": true,
+  "editor.formatOnSave": true,
   "cSpell.words": [
+    "dtype",
     "imshow",
+    "linspace",
     "matplotlib",
+    "meshgrid",
+    "ncols",
+    "nrows",
     "pyplot",
     "savefig",
+    "scipy",
     "sharey",
     "suptitle",
     "vmax",
     "vmin",
     "xlabel",
     "ylabel"
+  ],
+  "python.linting.flake8Args": [
+    "--ignore=E501"
   ]
 }
