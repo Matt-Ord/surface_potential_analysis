@@ -3,16 +3,24 @@
   "python.linting.mypyEnabled": true,
   "python.linting.flake8Enabled": true,
   "python.formatting.provider": "black",
+  "isort.args": ["--profile", "black"],
   "isort.check": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": true,
+    "source.fixAll": true
+  },
   "editor.formatOnSave": true,
   "cSpell.words": [
     "dtype",
+    "hbar",
+    "ifft",
     "imshow",
     "linspace",
     "matplotlib",
     "meshgrid",
     "ncols",
     "nrows",
+    "prefactor",
     "pyplot",
     "savefig",
     "scipy",
@@ -20,10 +28,16 @@
     "suptitle",
     "vmax",
     "vmin",
+    "wavefunction",
+    "Wavevector",
     "xlabel",
     "ylabel"
   ],
-  "python.linting.flake8Args": [
-    "--ignore=E501"
-  ]
+  "python.linting.flake8Args": ["--ignore=E501,W503"],
+  "python.testing.unittestArgs": ["-v", "-s", "./src", "-p", "*test.py"],
+  "python.testing.pytestEnabled": false,
+  "python.testing.unittestEnabled": true,
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
 }
