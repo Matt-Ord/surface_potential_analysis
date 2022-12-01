@@ -1,22 +1,13 @@
 import math
 from functools import cached_property
-from typing import Any, Tuple
+from typing import Any, Tuple, TypedDict
 
 import numpy as np
-import numpy.fft as fft
 import scipy.special
 from numpy.typing import NDArray
 from scipy.constants import hbar
 
-from energy_data import EnergyData
-
-
-def transform_potential(potential: NDArray[Any]):
-    return fft.fft2(potential, axes=(0, 1))
-
-
-def get_off_diagonal_energy(potential: NDArray[Any]):
-    pass
+from energy_data import EnergyInterpolation
 
 
 def calculate_sho_wavefunction(z_points, sho_omega, mass, n):
@@ -33,66 +24,89 @@ def check_hermite_normalization(z_points, sho_omega, mass, n):
     pass
 
 
-def is_valid_data(data: EnergyData):
-    shape = np.array(data["points"]).shape
-    x_points = len(data["x_points"])
-    y_points = len(data["y_points"])
-    z_points = len(data["z_points"])
-    return (
-        len(shape) == 3
-        and shape[0] == x_points
-        and shape[1] == y_points
-        and shape[2] == z_points
-    )
+class SurfaceHamiltonianConfig(TypedDict):
+    sho_omega: float
+    """Angular frequency (in rad s-1) of the sho we will fit using"""
+    mass: float
+    """Mass in Kg"""
+    z_offset: float
+    """z position of the nz=0 position in the sho well"""
 
 
 class SurfaceHamiltonian:
-    """Mass in Kg"""
 
-    data: EnergyData
+    _potential: EnergyInterpolation
+
+    _config: SurfaceHamiltonianConfig
 
     _resolution: Tuple[int, int, int]
 
     _hamiltonian: NDArray[Any]
 
-    def __init__(self, resolution: Tuple[int, int, int], data: EnergyData) -> None:
-        if not is_valid_data(data):
-            raise AssertionError("Data has incorrect dimensions")
-        self.data = data
+    def __init__(
+        self,
+        resolution: Tuple[int, int, int],
+        potential: EnergyInterpolation,
+        config: SurfaceHamiltonianConfig,
+    ) -> None:
+
+        self._potential = potential
+        self._config = config
         self._resolution = resolution
         self._hamiltonian = np.diag(self._calculate_diagonal_energy())
 
     @property
     def points(self):
-        return np.array(self.data["points"])
+        return np.array(self._potential["points"])
 
     @property
     def x_points(self):
-        return np.array(self.data["x_points"])
+        """
+        Calculate the lattice coordinates in the x direction
+
+        Note: We don't store the 'nth' pixel
+        """
+        return np.linspace(0, self.delta_x, self.points.shape[0], endpoint=False)
 
     @property
     def y_points(self):
-        return np.array(self.data["y_points"])
+        """
+        Calculate the lattice coordinates in the y direction
+
+        Note: We don't store the 'nth' pixel
+        """
+        return np.linspace(0, self.delta_y, self.points.shape[1], endpoint=False)
 
     @property
     def z_points(self):
-        return np.array(self.data["z_points"])
+        nz = self.points.shape[2]
+        z_start = self._config["z_offset"]
+        z_end = self._config["z_offset"] + (nz - 1) * self._potential["dz"]
+        return np.linspace(z_start, z_end, nz)
 
     @property
     def mass(self):
-        return self.data["mass"]
+        return self._config["mass"]
 
     @property
     def sho_omega(self):
-        return self.data["sho_omega"]
+        return self._config["sho_omega"]
+
+    @cached_property
+    def delta_x(self):
+        return self._potential["delta_x"]
 
     @cached_property
     def dkx(self):
-        return 2 * np.pi / (self.x_points[-1] - self.x_points[0])
+        return 2 * np.pi / self.delta_x
+
+    @cached_property
+    def delta_y(self):
+        return self._potential["delta_y"]
 
     @cached_property
     def dky(self):
-        return 2 * np.pi / (self.y_points[-1] - self.y_points[0])
+        return 2 * np.pi / (self.delta_y)
 
     @cached_property
     def dz(self):
@@ -125,7 +139,10 @@ class SurfaceHamiltonian:
 
     def get_ft_potential(self) -> NDArray:
         subtracted_potential = self.get_sho_subtracted_points()
-        return np.fft.ifft2(subtracted_potential, axes=(0, 1))
+        fft_potential = np.fft.ifft2(subtracted_potential, axes=(0, 1))
+        if not np.all(np.isreal(np.real_if_close(fft_potential))):
+            raise AssertionError("FFT was not real!")
+        return np.real_if_close(fft_potential)
 
     def get_off_diagonal_energies(self) -> NDArray:
         energies = np.zeros(
@@ -167,12 +184,11 @@ class SurfaceHamiltonian:
 
 
 if __name__ == "__main__":
-    data: EnergyData = {
-        "mass": 1,
+    data: EnergyInterpolation = {
         "points": [[[0, 0], [0, 0]], [[0, 0], [0, 0]]],
-        "sho_omega": 1 / hbar,
-        "x_points": [0, 2 * np.pi * hbar],
-        "y_points": [0, 2 * np.pi * hbar],
-        "z_points": [0, 1],
+        "delta_x": 2 * np.pi * hbar,
+        "delta_y": 2 * np.pi * hbar,
+        "dz": 1,
     }
-    hamiltonian = SurfaceHamiltonian((2, 2, 2), data)
+    config: SurfaceHamiltonianConfig = {"mass": 1, "sho_omega": 1 / hbar, "z_offset": 0}
+    hamiltonian = SurfaceHamiltonian((2, 2, 2), data, config)
