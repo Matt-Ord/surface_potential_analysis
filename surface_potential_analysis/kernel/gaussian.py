@@ -163,6 +163,43 @@ def _get_temperature_corrected_operators(
 
 def get_temperature_corrected_noise_operators(
     hamiltonian: SingleBasisOperator[_B1],
+    operators: SingleBasisNoiseOperatorList[
+        _B0,
+        _B1,
+    ],
+    temperature: float,
+) -> SingleBasisNoiseOperatorList[
+    _B0,
+    _B1,
+]:
+    """
+    Get the noise operators, applying the caldeira-legget like temperature correction.
+
+    Parameters
+    ----------
+    hamiltonian : SingleBasisOperator[_B1]
+    operators : SingleBasisDiagonalNoiseOperatorList[ _B0, _B1, ]
+    temperature : float
+
+    Returns
+    -------
+    SingleBasisNoiseOperatorList[ _B0, _B1]
+    """
+    corrected_operators = _get_temperature_corrected_operators(
+        hamiltonian,
+        operators,
+        temperature,
+    )
+
+    return {
+        "basis": corrected_operators["basis"],
+        "data": corrected_operators["data"],
+        "eigenvalue": operators["eigenvalue"],
+    }
+
+
+def get_temperature_corrected_diagonal_noise_operators(
+    hamiltonian: SingleBasisOperator[_B1],
     operators: SingleBasisDiagonalNoiseOperatorList[
         _B0,
         _B1,
@@ -186,17 +223,15 @@ def get_temperature_corrected_noise_operators(
     SingleBasisNoiseOperatorList[ _B0, _B1]
     """
     operators_full = as_operator_list(operators)
-    corrected_operators = _get_temperature_corrected_operators(
+    return get_temperature_corrected_noise_operators(
         hamiltonian,
-        operators_full,
+        {
+            "basis": operators_full["basis"],
+            "data": operators_full["data"],
+            "eigenvalue": operators["eigenvalue"],
+        },
         temperature,
     )
-
-    return {
-        "basis": corrected_operators["basis"],
-        "data": corrected_operators["data"],
-        "eigenvalue": operators["eigenvalue"],
-    }
 
 
 def get_effective_gaussian_noise_operators(
@@ -237,7 +272,7 @@ def get_effective_gaussian_noise_operators(
         operators["basis"][1],
     )
 
-    return get_temperature_corrected_noise_operators(
+    return get_temperature_corrected_diagonal_noise_operators(
         hamiltonian_converted,
         operators,
         temperature,

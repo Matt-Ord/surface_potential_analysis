@@ -18,6 +18,7 @@ from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
 )
 from surface_potential_analysis.basis.util import BasisUtil
+from surface_potential_analysis.operator.conversion import convert_operator_to_basis
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_basis,
     stacked_basis_as_fundamental_momentum_basis,
@@ -525,8 +526,8 @@ def get_wannier_states(
     )
     data = np.zeros(
         (
-            operator["basis"][1][0].n,  # Wannier idx
             operator["basis"][0].n,  # Translation
+            operator["basis"][1][0].n,  # Wannier idx
             *converted_fundamental["basis"][1].shape,  # Wavefunction
         ),
         dtype=np.complex128,
@@ -535,13 +536,13 @@ def get_wannier_states(
     # for each translation of the wannier functions
     for idx in range(operator["basis"][0].n):
         offset = util.get_stacked_index(idx)
-        shift = tuple(n * o for (n, o) in zip(wavefunctions["basis"][1].shape, offset))
+        shift = tuple(-n * o for (n, o) in zip(wavefunctions["basis"][1].shape, offset))
 
         tanslated = np.roll(
             converted_stacked, shift, axis=tuple(1 + x for x in range(util.ndim))
         )
 
-        data[:, idx, :] = tanslated
+        data[idx, :, :] = tanslated
 
     return {
         "basis": TupleBasis(
@@ -615,7 +616,6 @@ def get_full_wannier_hamiltonian(
     """
     basis = get_wannier_basis(wavefunctions, operator)
     hamiltonian = get_wannier_hamiltonian(wavefunctions, operator)
-
     hamiltonian_2d = np.einsum(
         "ik,ij->ijk",
         hamiltonian["data"].reshape(hamiltonian["basis"][0].n, -1),
@@ -623,10 +623,13 @@ def get_full_wannier_hamiltonian(
     )
 
     hamiltonian_stacked = hamiltonian_2d.reshape(
-        *hamiltonian["basis"][0].shape, *hamiltonian["basis"][0].shape, -1
+        *hamiltonian["basis"][0].shape,
+        *hamiltonian["basis"][0].shape,
+        -1,
     )
     # TODO: is this correct...
-    transformed = np.fft.fftn(
+    # I think because H is real symmetric, this ultimately doesn't matter
+    data_stacked = np.fft.fftn(
         np.fft.ifftn(
             hamiltonian_stacked,
             axes=tuple(range(hamiltonian["basis"][0].ndim)),
@@ -637,5 +640,21 @@ def get_full_wannier_hamiltonian(
         ),
         norm="ortho",
     )
-
-    return {"basis": TupleBasis(basis, basis), "data": transformed.ravel()}
+    # Re order to match the correct basis
+    data = np.einsum(
+        "ijkl->ikjl",
+        data_stacked.reshape(
+            hamiltonian["basis"][0].n,
+            hamiltonian["basis"][0].n,
+            *hamiltonian["basis"][1].shape,
+        ),
+    )
+    return {
+        "basis": TupleBasis(basis, basis),
+        "data": data.ravel(),
+    }
+    # TODO: We can probably just fourier transform the wannier hamiltonian.  # noqa: FIX002
+    # ie hamiltonian = get_wannier_hamiltonian(wavefunctions, operator)
+    # This will be faster and have less artifacts
+    hamiltonian = get_full_bloch_hamiltonian(wavefunctions)
+    return convert_operator_to_basis(hamiltonian, StackedBasis(basis, basis))

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from itertools import starmap
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -219,9 +220,12 @@ def get_wavepacket_sample_fractions(
         / np.array(util.fundamental_shape, dtype=np.int_)[:, np.newaxis]
     )
     fundamental_basis = stacked_basis_as_fundamental_basis(list_basis)
-    return convert_vector(fundamental_fractions, fundamental_basis, list_basis).astype(
-        np.float64
-    )
+    with warnings.catch_warnings(
+        category=np.exceptions.ComplexWarning, action="ignore"
+    ):
+        return convert_vector(
+            fundamental_fractions, fundamental_basis, list_basis
+        ).astype(np.float64)
 
 
 def get_wavepacket_sample_frequencies(
