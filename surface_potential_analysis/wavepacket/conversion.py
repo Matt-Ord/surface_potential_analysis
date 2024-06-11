@@ -9,7 +9,7 @@ from surface_potential_analysis.basis.basis_like import (
     BasisWithLengthLike,
     convert_vector,
 )
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
+from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.stacked_basis.build import (
     fundamental_stacked_basis_from_shape,
 )
@@ -24,17 +24,17 @@ if TYPE_CHECKING:
         FundamentalTransformedPositionBasis,
     )
     from surface_potential_analysis.basis.stacked_basis import (
-        StackedBasisLike,
+        TupleBasisLike,
     )
     from surface_potential_analysis.wavepacket.wavepacket import (
         BlochWavefunctionList,
     )
 
-    _B0Inv = TypeVar("_B0Inv", bound=StackedBasisLike[*tuple[Any, ...]])
-    _B1Inv = TypeVar("_B1Inv", bound=StackedBasisLike[*tuple[Any, ...]])
+    _B0Inv = TypeVar("_B0Inv", bound=TupleBasisLike[*tuple[Any, ...]])
+    _B1Inv = TypeVar("_B1Inv", bound=TupleBasisLike[*tuple[Any, ...]])
 
-    _B2Inv = TypeVar("_B2Inv", bound=StackedBasisLike[*tuple[Any, ...]])
-    _B3Inv = TypeVar("_B3Inv", bound=StackedBasisLike[*tuple[Any, ...]])
+    _B2Inv = TypeVar("_B2Inv", bound=TupleBasisLike[*tuple[Any, ...]])
+    _B3Inv = TypeVar("_B3Inv", bound=TupleBasisLike[*tuple[Any, ...]])
 
     _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
 
@@ -106,13 +106,13 @@ def convert_wavepacket_to_basis(
         axis=0,
     )
     vectors = convert_vector(vectors, wavepacket["basis"][1], basis, axis=1)
-    return {"basis": StackedBasis(list_basis, basis), "data": vectors.reshape(-1)}
+    return {"basis": TupleBasis(list_basis, basis), "data": vectors.reshape(-1)}
 
 
 def convert_wavepacket_to_position_basis(
-    wavepacket: BlochWavefunctionList[_B0Inv, StackedBasisLike[*tuple[_BL0, ...]]],
+    wavepacket: BlochWavefunctionList[_B0Inv, TupleBasisLike[*tuple[_BL0, ...]]],
 ) -> BlochWavefunctionList[
-    _B0Inv, StackedBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
+    _B0Inv, TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
 ]:
     """
     Convert a wavepacket to the fundamental position basis.
@@ -123,7 +123,7 @@ def convert_wavepacket_to_position_basis(
 
     Returns
     -------
-    Wavepacket[_NS0Inv, _NS1Inv, StackedBasisLike[tuple[PositionBasis[int], PositionBasis[int], PositionBasis[int]]]
+    Wavepacket[_NS0Inv, _NS1Inv, TupleBasisLike[tuple[PositionBasis[int], PositionBasis[int], PositionBasis[int]]]
     """
     stacked_basis_as_fundamental_position_basis(wavepacket["basis"][1])
     return convert_wavepacket_to_basis(
@@ -139,7 +139,7 @@ def convert_wavepacket_to_fundamental_momentum_basis(
     list_basis: _B1Inv,
 ) -> BlochWavefunctionList[
     _B1Inv,
-    StackedBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
+    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
 ]:
     ...
 
@@ -151,15 +151,15 @@ def convert_wavepacket_to_fundamental_momentum_basis(
     list_basis: None = None,
 ) -> BlochWavefunctionList[
     _B0Inv,
-    StackedBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
+    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
 ]:
     ...
 
 
 def convert_wavepacket_to_fundamental_momentum_basis(
-    wavepacket: BlochWavefunctionList[_B0Inv, StackedBasisLike[*tuple[_BL0, ...]]],
+    wavepacket: BlochWavefunctionList[_B0Inv, TupleBasisLike[*tuple[_BL0, ...]]],
     *,
-    list_basis: StackedBasisLike[*tuple[Any, ...]] | None = None,
+    list_basis: TupleBasisLike[*tuple[Any, ...]] | None = None,
 ) -> Any:
     """
     Convert a wavepacket to the fundamental position basis.
@@ -170,7 +170,7 @@ def convert_wavepacket_to_fundamental_momentum_basis(
 
     Returns
     -------
-    Wavepacket[_NS0Inv, _NS1Inv, StackedBasisLike[tuple[PositionBasis[int], PositionBasis[int], PositionBasis[int]]]
+    Wavepacket[_NS0Inv, _NS1Inv, TupleBasisLike[tuple[PositionBasis[int], PositionBasis[int], PositionBasis[int]]]
     """
     return convert_wavepacket_to_basis(
         wavepacket,
@@ -205,7 +205,7 @@ def convert_wavepacket_to_shape(
         [s.step * s1 for (s, s1) in zip(slices, shape, strict=True)],
     )
     return {
-        "basis": StackedBasis(
+        "basis": TupleBasis(
             fundamental_stacked_basis_from_shape(shape), wavepacket["basis"][1]
         ),
         "data": wavepacket["data"]

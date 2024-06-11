@@ -3,11 +3,23 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
+import scipy
+import scipy.signal
 from matplotlib.animation import ArtistAnimation
 
-from surface_potential_analysis.basis.time_basis_like import BasisWithTimeLike
+from surface_potential_analysis.basis.stacked_basis import (
+    TupleBasis,
+    TupleBasisLike,
+)
+from surface_potential_analysis.basis.time_basis_like import (
+    BasisWithTimeLike,
+    EvenlySpacedTimeBasis,
+)
 from surface_potential_analysis.basis.util import (
     BasisUtil,
+)
+from surface_potential_analysis.operator.conversion import (
+    convert_diagonal_operator_to_basis,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_momentum_basis,
@@ -24,6 +36,7 @@ from surface_potential_analysis.state_vector.conversion import (
 )
 from surface_potential_analysis.state_vector.eigenstate_calculation import (
     calculate_eigenvectors_hermitian,
+    calculate_expectation_list,
 )
 from surface_potential_analysis.state_vector.state_vector_list import (
     as_state_vector_list,
@@ -51,7 +64,6 @@ if TYPE_CHECKING:
     from matplotlib.lines import Line2D
 
     from surface_potential_analysis.basis.basis import BasisLike, FundamentalBasis
-    from surface_potential_analysis.basis.stacked_basis import StackedBasisLike
     from surface_potential_analysis.operator.operator import (
         Operator,
         SingleBasisOperator,
@@ -71,7 +83,7 @@ if TYPE_CHECKING:
 
 # ruff: noqa: PLR0913
 def plot_state_1d_k(
-    state: StateVector[StackedBasisLike[*tuple[Any, ...]]],
+    state: StateVector[TupleBasisLike[*tuple[Any, ...]]],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -116,7 +128,7 @@ def plot_state_1d_k(
 
 
 def plot_state_1d_x(
-    state: StateVector[StackedBasisLike[*tuple[Any, ...]]],
+    state: StateVector[TupleBasisLike[*tuple[Any, ...]]],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -162,7 +174,7 @@ def plot_state_1d_x(
 
 
 def animate_state_over_list_1d_x(
-    states: StateVectorList[BasisLike[Any, Any], StackedBasisLike[*tuple[Any, ...]]],
+    states: StateVectorList[BasisLike[Any, Any], TupleBasisLike[*tuple[Any, ...]]],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -175,7 +187,7 @@ def animate_state_over_list_1d_x(
 
     Parameters
     ----------
-    states : StateVectorList[BasisLike[Any, Any], StackedBasisLike[*tuple[Any, ...]]]
+    states : StateVectorList[BasisLike[Any, Any], TupleBasisLike[*tuple[Any, ...]]]
     idx : SingleStackedIndexLike, optional
         index in the perpendicular directions, by default (0,0)
     axis : int, optional
@@ -209,7 +221,7 @@ def animate_state_over_list_1d_x(
 
 
 def animate_state_over_list_1d_k(
-    states: StateVectorList[BasisLike[Any, Any], StackedBasisLike[*tuple[Any, ...]]],
+    states: StateVectorList[BasisLike[Any, Any], TupleBasisLike[*tuple[Any, ...]]],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -222,7 +234,7 @@ def animate_state_over_list_1d_k(
 
     Parameters
     ----------
-    states : StateVectorList[BasisLike[Any, Any], StackedBasisLike[*tuple[Any, ...]]]
+    states : StateVectorList[BasisLike[Any, Any], TupleBasisLike[*tuple[Any, ...]]]
     idx : SingleStackedIndexLike, optional
         index in the perpendicular directions, by default (0,0)
     axis : int, optional
@@ -256,7 +268,7 @@ def animate_state_over_list_1d_k(
 
 
 def plot_state_2d_k(
-    state: StateVector[StackedBasisLike[*tuple[Any, ...]]],
+    state: StateVector[TupleBasisLike[*tuple[Any, ...]]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -299,8 +311,8 @@ def plot_state_2d_k(
 
 
 def plot_state_difference_2d_k(
-    state_0: StateVector[StackedBasisLike[*tuple[Any, ...]]],
-    state_1: StateVector[StackedBasisLike[*tuple[Any, ...]]],
+    state_0: StateVector[TupleBasisLike[*tuple[Any, ...]]],
+    state_1: StateVector[TupleBasisLike[*tuple[Any, ...]]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -343,7 +355,7 @@ def plot_state_difference_2d_k(
 
 
 def plot_state_2d_x(
-    state: StateVector[StackedBasisLike[*tuple[Any, ...]]],
+    state: StateVector[TupleBasisLike[*tuple[Any, ...]]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -386,8 +398,8 @@ def plot_state_2d_x(
 
 
 def plot_state_difference_1d_k(
-    state_0: StateVector[StackedBasisLike[*tuple[Any, ...]]],
-    state_1: StateVector[StackedBasisLike[*tuple[Any, ...]]],
+    state_0: StateVector[TupleBasisLike[*tuple[Any, ...]]],
+    state_1: StateVector[TupleBasisLike[*tuple[Any, ...]]],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -430,8 +442,8 @@ def plot_state_difference_1d_k(
 
 
 def plot_state_difference_2d_x(
-    state_0: StateVector[StackedBasisLike[*tuple[Any, ...]]],
-    state_1: StateVector[StackedBasisLike[*tuple[Any, ...]]],
+    state_0: StateVector[TupleBasisLike[*tuple[Any, ...]]],
+    state_1: StateVector[TupleBasisLike[*tuple[Any, ...]]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -474,7 +486,7 @@ def plot_state_difference_2d_x(
 
 
 def animate_state_3d_x(
-    state: StateVector[StackedBasisLike[*tuple[Any, ...]]],
+    state: StateVector[TupleBasisLike[*tuple[Any, ...]]],
     axes: tuple[int, int, int] = (0, 1, 2),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -519,7 +531,7 @@ def animate_state_3d_x(
 
 
 def plot_state_along_path(
-    state: StateVector[StackedBasisLike[*tuple[Any, ...]]],
+    state: StateVector[TupleBasisLike[*tuple[Any, ...]]],
     path: np.ndarray[tuple[int, int], np.dtype[np.int_]],
     *,
     wrap_distances: bool = False,
@@ -731,49 +743,93 @@ def plot_average_band_occupation(
     ax.set_yscale(scale)
     ax.set_xlabel("Occupation")
     ax.set_xlabel("Energy /J")
-    ax.set_title("Plot of Average Occupation against Energy")
+    # ax.set_title("Plot of Average Occupation against Energy")
     return fig, ax, line
 
 
-def _get_max_occupation_x(
-    states: StateVectorList[
-        _B0Inv,
-        StackedBasisLike[*tuple[Any, ...]],
-    ],
-) -> ValueList[_B0Inv]:
-    states_x = convert_state_vector_list_to_basis(
-        states,
-        stacked_basis_as_fundamental_position_basis(states["basis"][1]),
+_SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any]])
+
+
+def _get_periodic_x_operator(basis: _SB0, axis: int) -> SingleBasisOperator[_SB0]:
+    """
+    Generate operator for e^(2pi*x / delta_x).
+
+    Parameters
+    ----------
+    basis : _SB0
+
+    Returns
+    -------
+    SingleBasisOperator[_SB0]
+    """
+    basis_x = stacked_basis_as_fundamental_position_basis(basis)
+    util = BasisUtil(basis_x)
+    phi = 2 * np.pi * util.stacked_nx_points[axis] / util.shape[axis]
+    return convert_diagonal_operator_to_basis(
+        {"basis": TupleBasis(basis_x, basis_x), "data": np.exp(1j * phi)},
+        TupleBasis(basis, basis),
     )
 
-    return {
-        "basis": states_x["basis"][0],
-        "data": np.argmax(
-            np.abs(states_x["data"].reshape(states_x["basis"].shape)),
-            axis=1,
-        ),
-    }
+
+def _get_periodic_x(
+    states: StateVectorList[
+        _B0Inv,
+        TupleBasisLike[*tuple[Any, ...]],
+    ],
+    axis: int,
+) -> ValueList[_B0Inv]:
+    """
+    Calculate expectation of e^(2pi*x / delta_x).
+
+    Parameters
+    ----------
+    basis : _SB0
+
+    Returns
+    -------
+    SingleBasisOperator[_SB0]
+    """
+    operator = _get_periodic_x_operator(states["basis"][1], axis)
+
+    return calculate_expectation_list(operator, states)
 
 
 _BT0 = TypeVar("_BT0", bound=BasisWithTimeLike[Any, Any])
 
 
-def plot_max_occupation_1d_x(
+def _get_restored_x(
     states: StateVectorList[
-        StackedBasisLike[Any, _BT0],
-        StackedBasisLike[*tuple[Any, ...]],
+        TupleBasisLike[Any, _BT0],
+        TupleBasisLike[*tuple[Any, ...]],
+    ],
+    axis: int,
+) -> ValueList[TupleBasisLike[Any, _BT0]]:
+    periodic_x = _get_periodic_x(states, axis)
+    unravelled = np.unwrap(
+        np.angle(periodic_x["data"].reshape(states["basis"][0].shape)), axis=1
+    )
+
+    return {
+        "basis": periodic_x["basis"],
+        "data": (unravelled * states["basis"][1][axis].delta_x / (2 * np.pi)).ravel(),
+    }
+
+
+def plot_periodic_averaged_occupation_1d_x(
+    states: StateVectorList[
+        TupleBasisLike[Any, _BT0],
+        TupleBasisLike[*tuple[Any, ...]],
     ],
     axes: tuple[int] = (0,),
     *,
     ax: Axes | None = None,
-    unravel: bool = False,
 ) -> tuple[Figure, Axes]:
     """
     Plot the max occupation against time in 1d for each trajectory against time.
 
     Parameters
     ----------
-    states : StateVectorList[ StackedBasisLike[Any, _BT0], StackedBasisLike[_
+    states : StateVectorList[ TupleBasisLike[Any, _BT0], TupleBasisLike[_
     axes : tuple[int], optional
         direction to plot along, by default (0,)
     ax : Axes | None, optional
@@ -786,23 +842,161 @@ def plot_max_occupation_1d_x(
     tuple[Figure, Axes]
     """
     fig, ax = get_figure(ax)
-    basis_x = stacked_basis_as_fundamental_position_basis(states["basis"][1])
-    occupation_x = _get_max_occupation_x(states)
 
+    occupation_x = _get_restored_x(states, axes[0])
+
+    for x_points in occupation_x["data"].reshape(occupation_x["basis"].shape):
+        ax.plot(occupation_x["basis"][1].times, x_points)
+
+    ax.set_xlabel("Times /s")
+    ax.set_ylabel("Distance /m")
+    return fig, ax
+
+
+def _get_x_operator(basis: _SB0, axis: int) -> SingleBasisOperator[_SB0]:
+    """
+    Generate operator for e^(2pi*x / delta_x).
+
+    Parameters
+    ----------
+    basis : _SB0
+
+    Returns
+    -------
+    SingleBasisOperator[_SB0]
+    """
+    basis_x = stacked_basis_as_fundamental_position_basis(basis)
     util = BasisUtil(basis_x)
-    for max_idx in occupation_x["data"].reshape(occupation_x["basis"].shape):
-        stacked_idx = np.array(util.get_stacked_index(max_idx))[axes[0]].astype(
-            np.float64
-        )
-        if unravel:
-            stacked_idx = np.unwrap(
-                stacked_idx,
-                period=float(states["basis"][1][axes[0]].fundamental_n),
-            )
+    return convert_diagonal_operator_to_basis(
+        {
+            "basis": TupleBasis(basis_x, basis_x),
+            "data": util.delta_x_stacked[axis]
+            * util.stacked_nx_points[axis]
+            / util.shape[axis],
+        },
+        TupleBasis(basis, basis),
+    )
 
-        max_x = stacked_idx * util.dx_stacked[axes[0]]
-        ax.plot(occupation_x["basis"][1].times, max_x)
 
+def _get_average_x(
+    states: StateVectorList[
+        _B0Inv,
+        TupleBasisLike[*tuple[Any, ...]],
+    ],
+    axis: int,
+) -> ValueList[_B0Inv]:
+    """
+    Calculate expectation of e^(2pi*x / delta_x).
+
+    Parameters
+    ----------
+    basis : _SB0
+
+    Returns
+    -------
+    SingleBasisOperator[_SB0]
+    """
+    operator = _get_x_operator(states["basis"][1], axis)
+
+    return calculate_expectation_list(operator, states)
+
+
+def plot_averaged_occupation_1d_x(
+    states: StateVectorList[
+        TupleBasisLike[Any, _BT0],
+        TupleBasisLike[*tuple[Any, ...]],
+    ],
+    axes: tuple[int] = (0,),
+    *,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes]:
+    """
+    Plot the max occupation against time in 1d for each trajectory against time.
+
+    Parameters
+    ----------
+    states : StateVectorList[ TupleBasisLike[Any, _BT0], TupleBasisLike[_
+    axes : tuple[int], optional
+        direction to plot along, by default (0,)
+    ax : Axes | None, optional
+        plot axis, by default None
+    unravel : bool, optional
+        should the trajectories be unravelled, by default False
+
+    Returns
+    -------
+    tuple[Figure, Axes]
+    """
+    fig, ax = get_figure(ax)
+
+    occupation_x = _get_average_x(states, axes[0])
+
+    for x_points in occupation_x["data"].reshape(occupation_x["basis"].shape):
+        ax.plot(occupation_x["basis"][1].times, x_points)
+
+    ax.set_xlabel("Times /s")
+    ax.set_ylabel("Distance /m")
+    return fig, ax
+
+
+def _get_average_displacements(
+    positions: ValueList[TupleBasisLike[_B0Inv, EvenlySpacedTimeBasis[Any, Any, Any]]],
+) -> ValueList[TupleBasisLike[_B0Inv, EvenlySpacedTimeBasis[Any, Any, Any]]]:
+    basis = positions["basis"]
+    stacked = positions["data"].reshape(basis.shape)
+    squared_positions = np.square(stacked)
+    total = np.cumsum(squared_positions + squared_positions[:, ::-1], axis=1)[:, ::-1]
+    x_fft = np.fft.fftn(squared_positions, s=(2 * basis.shape[1],), axes=(1,))
+    x_conj_fft = np.conjugate(x_fft)
+    np.fft.ifftn(x_fft * x_conj_fft, axes=(1,))
+
+    convolution = np.apply_along_axis(
+        lambda m: scipy.signal.correlate(m, m, mode="full")[basis.shape[1] - 1 :],
+        axis=1,
+        arr=stacked,
+    )
+    # np.testing.assert_array_almost_equal(correlation, convolution)
+    # TODO: average...
+    squared_diff = (total - 2 * convolution) / (1 + np.arange(basis[1].n))[::-1]
+    out_basis = EvenlySpacedTimeBasis(basis[1].n, 1, 0, basis[1].dt * (basis[1].n))
+    return {"basis": TupleBasis(basis[0], out_basis), "data": squared_diff.ravel()}
+
+
+def plot_average_displacement_1d_x(
+    states: StateVectorList[
+        TupleBasisLike[Any, _BT0],
+        TupleBasisLike[*tuple[Any, ...]],
+    ],
+    axes: tuple[int] = (0,),
+    *,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes]:
+    fig, ax = get_figure(ax)
+
+    restored_x = _get_restored_x(states, axes[0])
+    displacements = _get_average_displacements(restored_x)
+
+    # !ax.errorbar(
+    # !    displacements["basis"][1].times,
+    # !    y=np.average(
+    # !        np.abs(displacements["data"].reshape(displacements["basis"].shape)), axis=0
+    # !    ),
+    # !    yerr=np.std(
+    # !        np.abs(displacements["data"].reshape(displacements["basis"].shape)), axis=0
+    # !    )
+    # !    / np.sqrt(displacements["basis"].shape[0]),
+    # !)
+    ax.plot(
+        displacements["basis"][1].times,
+        np.average(
+            np.abs(displacements["data"].reshape(displacements["basis"].shape)), axis=0
+        ),
+    )
+    # for i in range(displacements["basis"].shape[0]):
+    #     ax.plot(
+    #         displacements["basis"][1].times,
+    #         np.abs(displacements["data"].reshape(displacements["basis"].shape))[i],
+    #     )
     ax.set_xlabel("Times /s")
     ax.set_ylabel("Distance /m")
     return fig, ax

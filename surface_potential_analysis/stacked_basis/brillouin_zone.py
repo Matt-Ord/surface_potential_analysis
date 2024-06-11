@@ -20,7 +20,7 @@ from surface_potential_analysis.stacked_basis.build import (
 
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis import FundamentalPositionBasis
-    from surface_potential_analysis.basis.stacked_basis import StackedBasisLike
+    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.types import (
         ArrayStackedIndexLike,
         ArrayStackedIndexLike3d,
@@ -87,8 +87,8 @@ def fold_point_in_bragg_plane(
 
 
 def get_bragg_point_basis(
-    basis: StackedBasisLike[*tuple[Any, ...]], *, n_bands: int = 1
-) -> StackedBasisLike[*tuple[FundamentalPositionBasis[int, int], ...]]:
+    basis: TupleBasisLike[*tuple[Any, ...]], *, n_bands: int = 1
+) -> TupleBasisLike[*tuple[FundamentalPositionBasis[int, int], ...]]:
     """
     Get the basis for the bragg points, where the k_points are the bragg points of the given basis.
 
@@ -101,7 +101,7 @@ def get_bragg_point_basis(
 
     Returns
     -------
-    FundamentalPositionStackedBasisLike[tuple[int, int, int]
+    FundamentalPositionTupleBasisLike[tuple[int, int, int]
     """
     width = 2 * n_bands + 1
     util = BasisUtil(basis)
@@ -114,7 +114,7 @@ def get_bragg_point_basis(
 
 
 def get_all_brag_point_index(
-    basis: StackedBasisLike[*tuple[Any, ...]], n_bands: int = 1
+    basis: TupleBasisLike[*tuple[Any, ...]], n_bands: int = 1
 ) -> ArrayStackedIndexLike[tuple[int]]:
     """
     Given a basis in 3D, get the stacked index of the brag points in the first n_bands.
@@ -139,7 +139,7 @@ def get_all_brag_point_index(
 
 
 def get_all_brag_point(
-    basis: StackedBasisLike[*tuple[Any, ...]], *, n_bands: int = 1
+    basis: TupleBasisLike[*tuple[Any, ...]], *, n_bands: int = 1
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     """
     Given a basis in 3D, get the coordinates of the brag points in the first n_bands.
@@ -201,7 +201,7 @@ def get_bragg_plane_distance(
     )
 
 
-def _get_decrement_tolerance(basis: StackedBasisLike[*tuple[Any, ...]]) -> float:
+def _get_decrement_tolerance(basis: TupleBasisLike[*tuple[Any, ...]]) -> float:
     r_tol = 1e-5
     util = BasisUtil(basis)
     return np.min(np.linalg.norm(util.dk_stacked, axis=1)) * r_tol
@@ -209,20 +209,20 @@ def _get_decrement_tolerance(basis: StackedBasisLike[*tuple[Any, ...]]) -> float
 
 @overload
 def decrement_brillouin_zone_3d(
-    basis: StackedBasisLike[Any, Any, Any], coordinate: ArrayStackedIndexLike3d[_S0Inv]
+    basis: TupleBasisLike[Any, Any, Any], coordinate: ArrayStackedIndexLike3d[_S0Inv]
 ) -> ArrayStackedIndexLike3d[_S0Inv]:
     ...
 
 
 @overload
 def decrement_brillouin_zone_3d(
-    basis: StackedBasisLike[Any, Any, Any], coordinate: SingleStackedIndexLike3d
+    basis: TupleBasisLike[Any, Any, Any], coordinate: SingleStackedIndexLike3d
 ) -> SingleStackedIndexLike3d:
     ...
 
 
 def decrement_brillouin_zone_3d(
-    basis: StackedBasisLike[Any, Any, Any], coordinate: StackedIndexLike3d
+    basis: TupleBasisLike[Any, Any, Any], coordinate: StackedIndexLike3d
 ) -> StackedIndexLike3d:
     """
     Given a basis, and a set of coordinates, decrement the brillouin zone of each coordinate.
@@ -275,20 +275,20 @@ def decrement_brillouin_zone_3d(
 
 @overload
 def decrement_brillouin_zone(
-    basis: StackedBasisLike[*tuple[Any, ...]], coordinate: ArrayStackedIndexLike[_S0Inv]
+    basis: TupleBasisLike[*tuple[Any, ...]], coordinate: ArrayStackedIndexLike[_S0Inv]
 ) -> ArrayStackedIndexLike[_S0Inv]:
     ...
 
 
 @overload
 def decrement_brillouin_zone(
-    basis: StackedBasisLike[*tuple[Any, ...]], coordinate: SingleStackedIndexLike
+    basis: TupleBasisLike[*tuple[Any, ...]], coordinate: SingleStackedIndexLike
 ) -> SingleStackedIndexLike:
     ...
 
 
 def decrement_brillouin_zone(
-    basis: StackedBasisLike[*tuple[Any, ...]], coordinate: StackedIndexLike
+    basis: TupleBasisLike[*tuple[Any, ...]], coordinate: StackedIndexLike
 ) -> StackedIndexLike:
     """
     Given a basis, and a set of coordinates, decrement the brillouin zone of each coordinate.

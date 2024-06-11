@@ -8,8 +8,8 @@ from surface_potential_analysis.basis.basis_like import (
     BasisLike,
 )
 from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasis,
-    StackedBasisLike,
+    TupleBasis,
+    TupleBasisLike,
 )
 from surface_potential_analysis.basis.util import (
     BasisUtil,
@@ -31,14 +31,14 @@ _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
 _B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
 _B1_co = TypeVar("_B1_co", bound=BasisLike[Any, Any], covariant=True)
 
-_SB0Inv = TypeVar("_SB0Inv", bound=StackedBasisLike[*tuple[Any, ...]])
-_SB1Inv = TypeVar("_SB1Inv", bound=StackedBasisLike[*tuple[Any, ...]])
+_SB0Inv = TypeVar("_SB0Inv", bound=TupleBasisLike[*tuple[Any, ...]])
+_SB1Inv = TypeVar("_SB1Inv", bound=TupleBasisLike[*tuple[Any, ...]])
 
 
 class Operator(TypedDict, Generic[_B0_co, _B1_co]):
     """Represents an operator in the given basis."""
 
-    basis: StackedBasisLike[_B0_co, _B1_co]
+    basis: TupleBasisLike[_B0_co, _B1_co]
     # We need higher kinded types, and const generics to do this properly
     data: np.ndarray[tuple[int], np.dtype[np.complex128]]
 
@@ -50,7 +50,7 @@ SingleBasisOperator = Operator[_B0, _B0]
 class DiagonalOperator(TypedDict, Generic[_B0_co, _B1_co]):
     """Represents an operator in the given basis."""
 
-    basis: StackedBasisLike[_B0_co, _B1_co]
+    basis: TupleBasisLike[_B0_co, _B1_co]
     """Basis of the lhs (first index in array)"""
     data: np.ndarray[tuple[int], np.dtype[np.complex128]]
 
@@ -112,7 +112,7 @@ def sum_diagonal_operator_over_axes(
         b for (i, b) in enumerate(operator["basis"][0]) if i not in axes
     )
     return {
-        "basis": StackedBasis(StackedBasis(*traced_basis), StackedBasis(*traced_basis)),
+        "basis": TupleBasis(TupleBasis(*traced_basis), TupleBasis(*traced_basis)),
         "data": np.sum(
             operator["data"].reshape(operator["basis"][0].shape), axis=axes
         ).reshape(-1),
@@ -142,11 +142,11 @@ def get_eigenvalue(
 
 
 def average_eigenvalues(
-    eigenvalues: SingleBasisDiagonalOperator[StackedBasisLike[*tuple[Any, ...]]],
+    eigenvalues: SingleBasisDiagonalOperator[TupleBasisLike[*tuple[Any, ...]]],
     axis: tuple[int, ...] | None = None,
     *,
     weights: np.ndarray[tuple[int], np.dtype[np.float64]] | None = None,
-) -> SingleBasisDiagonalOperator[StackedBasis[*tuple[Any, ...]]]:
+) -> SingleBasisDiagonalOperator[TupleBasis[*tuple[Any, ...]]]:
     """
     Average eigenvalues over the given axis.
 
@@ -165,7 +165,7 @@ def average_eigenvalues(
     axis = tuple(range(eigenvalues["basis"].ndim)) if axis is None else axis
     basis = tuple(b for (i, b) in enumerate(eigenvalues["basis"][0]) if i not in axis)
     return {
-        "basis": StackedBasis(StackedBasis(*basis), StackedBasis(*basis)),
+        "basis": TupleBasis(TupleBasis(*basis), TupleBasis(*basis)),
         "data": np.average(
             eigenvalues["data"].reshape(*eigenvalues["basis"][0].shape),
             axis=tuple(ax for ax in axis),
@@ -179,7 +179,7 @@ def average_eigenvalues_list(
     axis: tuple[int, ...] | None = None,
     *,
     weights: np.ndarray[tuple[int], np.dtype[np.float64]] | None = None,
-) -> SingleBasisDiagonalOperatorList[_B0, StackedBasis[*tuple[Any, ...]]]:
+) -> SingleBasisDiagonalOperatorList[_B0, TupleBasis[*tuple[Any, ...]]]:
     """
     Average eigenvalues over the given axis.
 
@@ -200,9 +200,9 @@ def average_eigenvalues_list(
         b for (i, b) in enumerate(eigenvalues["basis"][1][0]) if i not in axis
     )
     return {
-        "basis": StackedBasis(
+        "basis": TupleBasis(
             eigenvalues["basis"][0],
-            StackedBasis(StackedBasis(*basis), StackedBasis(*basis)),
+            TupleBasis(TupleBasis(*basis), TupleBasis(*basis)),
         ),
         "data": np.average(
             eigenvalues["data"].reshape(
@@ -238,7 +238,7 @@ def matmul_operator(
         rhs["data"].reshape(rhs["basis"].shape),
         axes=(1, 0),
     )
-    return {"basis": StackedBasis(lhs["basis"][0], rhs["basis"][1]), "data": data}
+    return {"basis": TupleBasis(lhs["basis"][0], rhs["basis"][1]), "data": data}
 
 
 def add_operator(a: Operator[_B0, _B1], b: Operator[_B0, _B1]) -> Operator[_B0, _B1]:

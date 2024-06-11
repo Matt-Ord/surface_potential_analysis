@@ -12,6 +12,7 @@ from surface_potential_analysis.basis.basis_like import (
 from surface_potential_analysis.basis.conversion import basis_as_fundamental_basis
 from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisLike,
+    TupleBasisLike,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_position_basis,
@@ -37,7 +38,7 @@ _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
 _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
 _BL1 = TypeVar("_BL1", bound=BasisWithLengthLike[Any, Any, Any])
 
-_SBL1 = TypeVar("_SBL1", bound=StackedBasisLike[*tuple[Any, ...]])
+_SBL1 = TypeVar("_SBL1", bound=TupleBasisLike[*tuple[Any, ...]])
 
 
 class ExplicitBasis(BasisLike[Any, Any], Generic[_B0, _B1]):
@@ -215,6 +216,7 @@ class ExplicitBasisWithLength(
 
 class ExplicitStackedBasisWithLength(
     ExplicitBasis[_B0, _SBL1],
+    StackedBasisLike[Any, Any, Any],
     Generic[_B0, _SBL1],
 ):
     """An basis with vectors given as explicit states."""
@@ -226,15 +228,11 @@ class ExplicitStackedBasisWithLength(
         super().__init__(vectors)
 
     @property
-    def shape(
-        self: ExplicitBasis[_B0, StackedBasisLike[*tuple[_B0, ...]]],
-    ) -> tuple[int, ...]:
+    def shape(self) -> tuple[int, ...]:
         return self.vectors["basis"][1].shape
 
     @property
-    def fundamental_shape(
-        self: ExplicitBasis[_B0, StackedBasisLike[*tuple[_B0, ...]]],
-    ) -> tuple[int, ...]:
+    def fundamental_shape(self) -> tuple[int, ...]:
         return self.vectors["basis"][1].fundamental_shape
 
     @classmethod
@@ -253,13 +251,13 @@ class ExplicitStackedBasisWithLength(
 
 
 def explicit_stacked_basis_as_fundamental(
-    basis: ExplicitStackedBasisWithLength[Any, StackedBasisLike[*tuple[Any, ...]]],
-) -> StackedBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]:
+    basis: ExplicitStackedBasisWithLength[Any, TupleBasisLike[*tuple[Any, ...]]],
+) -> TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]:
     """
     Get the fundamental basis for a given explicit stacked basis.
 
     Returns
     -------
-    StackedBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
+    TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
     """
     return stacked_basis_as_fundamental_position_basis(basis.vectors["basis"][1])

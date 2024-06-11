@@ -8,7 +8,7 @@ from surface_potential_analysis.basis.basis import FundamentalBasis
 from surface_potential_analysis.basis.basis_like import (
     BasisLike,
 )
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
+from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.types import (
     SingleFlatIndexLike,
 )
@@ -17,7 +17,7 @@ from surface_potential_analysis.util.util import get_data_in_axes
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from surface_potential_analysis.basis.stacked_basis import StackedBasisLike
+    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.operator.operator import Operator
     from surface_potential_analysis.state_vector.state_vector import (
         StateDualVector,
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
     _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
 
-    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[*tuple[Any, ...]])
+    _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
 
 _B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
 _B1_co = TypeVar("_B1_co", bound=BasisLike[Any, Any], covariant=True)
@@ -44,7 +44,7 @@ class StateVectorList(TypedDict, Generic[_B0_co, _B1_co]):
     The first axis represents the basis of the list, and the second the basis of the states
     """
 
-    basis: StackedBasisLike[_B0_co, _B1_co]
+    basis: TupleBasisLike[_B0_co, _B1_co]
     data: np.ndarray[tuple[int], np.dtype[np.complex128]]
     """A list of state vectors"""
 
@@ -144,7 +144,7 @@ def as_state_vector_list(
 ) -> StateVectorList[FundamentalBasis[int], _B1]:
     states = list(states)
     return {
-        "basis": StackedBasis(FundamentalBasis(len(states)), states[0]["basis"]),
+        "basis": TupleBasis(FundamentalBasis(len(states)), states[0]["basis"]),
         "data": np.array([w["data"] for w in states]).reshape(-1),
     }
 
@@ -169,7 +169,7 @@ def calculate_inner_products(
     np.complex_
     """
     return {
-        "basis": StackedBasis(state_0["basis"][0], state_1["basis"][0]),
+        "basis": TupleBasis(state_0["basis"][0], state_1["basis"][0]),
         "data": np.tensordot(
             np.conj(state_0["data"]).reshape(state_0["basis"].shape),
             state_1["data"].reshape(state_1["basis"].shape),
@@ -196,11 +196,11 @@ def average_state_vector(
     ProbabilityVectorList[_B0Inv, _L0Inv]
     """
     axis = tuple(range(probabilities["basis"][0].ndim)) if axis is None else axis
-    basis = StackedBasis(
+    basis = TupleBasis(
         *tuple(b for (i, b) in enumerate(probabilities["basis"][0]) if i not in axis)
     )
     return {
-        "basis": StackedBasis(basis, probabilities["basis"][1]),
+        "basis": TupleBasis(basis, probabilities["basis"][1]),
         "data": np.average(
             probabilities["data"].reshape(*probabilities["basis"][0].shape, -1),
             axis=tuple(ax for ax in axis),
@@ -226,7 +226,7 @@ def get_basis_states(
     """
     data = np.eye(basis.n, basis.n).astype(np.complex128)
     return {
-        "basis": StackedBasis(FundamentalBasis(basis.n), basis),
+        "basis": TupleBasis(FundamentalBasis(basis.n), basis),
         "data": data.reshape(-1),
     }
 
@@ -249,8 +249,8 @@ def get_state_along_axis(
     ProbabilityVector[_B0Inv]
     """
     ndim = states["basis"][0].ndim
-    idx = tuple(0 for _ in range(ndim - 2)) if idx is None else idx
-    final_basis = StackedBasis(
+    idx = tuple(0 for _ in range(ndim - len(axes))) if idx is None else idx
+    final_basis = TupleBasis(
         *tuple(b for (i, b) in enumerate(states["basis"][0]) if i in axes)
     )
 
@@ -260,6 +260,6 @@ def get_state_along_axis(
         idx,
     ).reshape(-1)
     return {
-        "basis": StackedBasis(final_basis, states["basis"][1]),
+        "basis": TupleBasis(final_basis, states["basis"][1]),
         "data": vector,
     }

@@ -30,7 +30,7 @@ if TYPE_CHECKING:
         BasisWithLengthLike,
     )
     from surface_potential_analysis.basis.stacked_basis import (
-        StackedBasisLike,
+        TupleBasisLike,
     )
     from surface_potential_analysis.types import (
         ArrayStackedIndexLike,
@@ -51,7 +51,7 @@ if TYPE_CHECKING:
 
 def project_k_points_along_axes(
     points: np.ndarray[tuple[_NDInv, Unpack[_TS]], np.dtype[np.float64]],
-    basis: StackedBasisLike[Unpack[tuple[_BL0Inv, ...]]],
+    basis: TupleBasisLike[Unpack[tuple[_BL0Inv, ...]]],
     axes: tuple[int, ...],
 ) -> np.ndarray[tuple[int, Unpack[_TS]], np.dtype[np.float64]]:
     """
@@ -81,7 +81,7 @@ def project_k_points_along_axes(
 
 
 def get_fundamental_stacked_k_points_projected_along_axes(
-    basis: StackedBasisLike[Unpack[tuple[_BL0Inv, ...]]],
+    basis: TupleBasisLike[Unpack[tuple[_BL0Inv, ...]]],
     axes: tuple[int, ...],
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     """
@@ -102,7 +102,7 @@ def get_fundamental_stacked_k_points_projected_along_axes(
 
 
 def get_k_coordinates_in_axes(
-    basis: StackedBasisLike[Unpack[tuple[_BL0Inv, ...]]],
+    basis: TupleBasisLike[Unpack[tuple[_BL0Inv, ...]]],
     axes: tuple[int, ...],
     idx: SingleStackedIndexLike | None,
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
@@ -129,7 +129,7 @@ def get_k_coordinates_in_axes(
 
 def project_x_points_along_axes(
     points: np.ndarray[tuple[_NDInv, Unpack[_TS]], np.dtype[np.float64]],
-    basis: StackedBasisLike[Unpack[tuple[_BL0Inv, ...]]],
+    basis: TupleBasisLike[Unpack[tuple[_BL0Inv, ...]]],
     axes: tuple[int, ...],
 ) -> np.ndarray[tuple[int, Unpack[_TS]], np.dtype[np.float64]]:
     """
@@ -159,7 +159,7 @@ def project_x_points_along_axes(
 
 
 def get_fundamental_stacked_x_points_projected_along_axes(
-    basis: StackedBasisLike[Unpack[tuple[_BL0Inv, ...]]],
+    basis: TupleBasisLike[Unpack[tuple[_BL0Inv, ...]]],
     axes: tuple[int, ...],
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     """
@@ -180,7 +180,7 @@ def get_fundamental_stacked_x_points_projected_along_axes(
 
 
 def get_x_coordinates_in_axes(
-    basis: StackedBasisLike[Unpack[tuple[_BL0Inv, ...]]],
+    basis: TupleBasisLike[Unpack[tuple[_BL0Inv, ...]]],
     axes: tuple[int, ...],
     idx: SingleStackedIndexLike | None,
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
@@ -247,7 +247,7 @@ def _wrap_index(distance: Any, length: Any, origin: Any = 0) -> Any:
 
 @overload
 def wrap_index_around_origin(
-    basis: StackedBasisLike[*tuple[_B0Inv, ...]],
+    basis: TupleBasisLike[*tuple[_B0Inv, ...]],
     idx: SingleStackedIndexLike,
     origin: SingleIndexLike | None = None,
     axes: tuple[int, ...] | None = None,
@@ -257,7 +257,7 @@ def wrap_index_around_origin(
 
 @overload
 def wrap_index_around_origin(
-    basis: StackedBasisLike[*tuple[_B0Inv, ...]],
+    basis: TupleBasisLike[*tuple[_B0Inv, ...]],
     idx: ArrayStackedIndexLike[_S0Inv],
     origin: SingleIndexLike | None = None,
     axes: tuple[int, ...] | None = None,
@@ -266,7 +266,7 @@ def wrap_index_around_origin(
 
 
 def wrap_index_around_origin(
-    basis: StackedBasisLike[*tuple[_B0Inv, ...]],
+    basis: TupleBasisLike[*tuple[_B0Inv, ...]],
     idx: StackedIndexLike,
     origin: SingleIndexLike | None = None,
     axes: tuple[int, ...] | None = None,
@@ -297,7 +297,7 @@ def wrap_index_around_origin(
 
 
 def wrap_x_point_around_origin(
-    basis: StackedBasisLike[Unpack[tuple[_BL0Inv, ...]]],
+    basis: TupleBasisLike[Unpack[tuple[_BL0Inv, ...]]],
     points: np.ndarray[tuple[_NDInv, Unpack[_TS]], np.dtype[np.float64]],
     origin: np.ndarray[tuple[_NDInv], np.dtype[np.float64]] | None = None,
 ) -> np.ndarray[tuple[_NDInv, Unpack[_TS]], np.dtype[np.float64]]:
@@ -340,7 +340,7 @@ _S2d0Inv = TypeVar("_S2d0Inv", bound=tuple[int, int])
 
 
 def calculate_distances_along_path(
-    basis: StackedBasisLike[Unpack[tuple[_BL0Inv, ...]]],
+    basis: TupleBasisLike[Unpack[tuple[_BL0Inv, ...]]],
     path: np.ndarray[_S2d0Inv, np.dtype[np.int_]],
     *,
     wrap_distances: bool = False,
@@ -373,7 +373,7 @@ def calculate_distances_along_path(
 
 
 def calculate_cumulative_x_distances_along_path(
-    basis: StackedBasisLike[Unpack[tuple[_BL0Inv, ...]]],
+    basis: TupleBasisLike[Unpack[tuple[_BL0Inv, ...]]],
     path: np.ndarray[_S2d0Inv, np.dtype[np.int_]],
     *,
     wrap_distances: bool = False,
@@ -408,7 +408,7 @@ def calculate_cumulative_x_distances_along_path(
 
 
 def calculate_cumulative_k_distances_along_path(
-    basis: StackedBasisLike[Unpack[tuple[_BL0Inv, ...]]],
+    basis: TupleBasisLike[Unpack[tuple[_BL0Inv, ...]]],
     path: np.ndarray[_S2d0Inv, np.dtype[np.int_]],
     *,
     wrap_distances: bool = False,
@@ -477,7 +477,7 @@ def get_x01_mirrored_index(idx: StackedIndexLike) -> StackedIndexLike:
 
 
 def get_single_point_basis(
-    basis: StackedBasisLike[Unpack[tuple[_BL0Inv, ...]]],
+    basis: TupleBasisLike[Unpack[tuple[_BL0Inv, ...]]],
 ) -> tuple[FundamentalPositionBasis[Literal[1], Any], ...]:
     """
     Get the basis with a single point in position space.
@@ -498,7 +498,7 @@ def get_single_point_basis(
 
 
 def get_max_idx(
-    basis: StackedBasisLike[*tuple[Any, ...]],
+    basis: TupleBasisLike[*tuple[Any, ...]],
     data: np.ndarray[tuple[Any], np.dtype[np.complex128]],
     axes: tuple[int, ...],
 ) -> SingleStackedIndexLike:
@@ -507,7 +507,7 @@ def get_max_idx(
 
     Parameters
     ----------
-    basis : StackedBasisLike
+    basis : TupleBasisLike
     data : np.ndarray[tuple[int], np.dtype[np.complex_]]
     axes : tuple[int, ...]
 

@@ -14,8 +14,8 @@ from surface_potential_analysis.basis.explicit_basis import (
     ExplicitBasisWithLength,
 )
 from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasis,
-    StackedBasisLike,
+    TupleBasis,
+    TupleBasisLike,
 )
 from surface_potential_analysis.hamiltonian_builder.momentum_basis import (
     total_surface_hamiltonian,
@@ -41,7 +41,7 @@ _L1_co = TypeVar("_L1_co", covariant=True, bound=int)
 class PotentialBasisConfig(TypedDict, Generic[_B1d0Inv, _L1_co]):
     """Configures the generation of an explicit basis from a given potential."""
 
-    potential: Potential[StackedBasisLike[_B1d0Inv]]
+    potential: Potential[TupleBasisLike[_B1d0Inv]]
     mass: float
     n: _L1_co
 
@@ -53,7 +53,7 @@ def get_potential_basis_config_eigenstates(
     config: PotentialBasisConfig[_B1d0Inv, _N0Inv],
     *,
     bloch_fraction: float | None = None,
-) -> EigenstateList[FundamentalBasis[_N0Inv], StackedBasisLike[_B1d0Inv]]:
+) -> EigenstateList[FundamentalBasis[_N0Inv], TupleBasisLike[_B1d0Inv]]:
     """
     Get the eigenstates of the potential, as used in the final basis.
 
@@ -63,7 +63,7 @@ def get_potential_basis_config_eigenstates(
 
     Returns
     -------
-    EigenstateList[PositionStackedBasisLike[tuple[_L0Inv, Literal[1], Literal[1]]]
+    EigenstateList[PositionTupleBasisLike[tuple[_L0Inv, Literal[1], Literal[1]]]
     """
     bloch_fraction = 0 if bloch_fraction is None else bloch_fraction
     hamiltonian = total_surface_hamiltonian(
@@ -79,7 +79,7 @@ def get_potential_basis_config_basis(
     config: PotentialBasisConfig[_B1d0Inv, _N0Inv],
 ) -> ExplicitBasisWithLength[
     FundamentalBasis[_N0Inv],
-    StackedBasisLike[_B1d0Inv],
+    TupleBasisLike[_B1d0Inv],
 ]:
     """
     Get the explicit basis for the potential basis config.
@@ -97,8 +97,8 @@ def get_potential_basis_config_basis(
 
 
 def select_minimum_potential_3d(
-    potential: Potential[StackedBasisLike[Any, Any, _B3d0]],
-) -> Potential[StackedBasisLike[FundamentalPositionBasis1d[Any]]]:
+    potential: Potential[TupleBasisLike[Any, Any, _B3d0]],
+) -> Potential[TupleBasisLike[FundamentalPositionBasis1d[Any]]]:
     """
     Given a 3D potential in the standard configuration select the minimum potential.
 
@@ -113,7 +113,7 @@ def select_minimum_potential_3d(
     shape = potential["basis"].shape
     arg_min = np.unravel_index(np.argmin(potential["data"]), shape)
     return {
-        "basis": StackedBasis(
+        "basis": TupleBasis(
             FundamentalPositionBasis(
                 np.array([potential["basis"][2].delta_x[2]]), shape[2]
             ),

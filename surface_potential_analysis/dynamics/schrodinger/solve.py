@@ -9,7 +9,7 @@ import scipy.sparse
 from scipy.constants import hbar
 
 from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasis,
+    TupleBasis,
 )
 from surface_potential_analysis.state_vector.eigenstate_calculation import (
     calculate_eigenvectors_hermitian,
@@ -54,7 +54,7 @@ def get_state_vector_decomposition(
         A list of coefficients for each vector such that a[i] eigenstates["data"][i,:] = vector[:]
     """
     return {
-        "basis": StackedBasis(eigenstates["basis"][0], eigenstates["basis"][0]),
+        "basis": TupleBasis(eigenstates["basis"][0], eigenstates["basis"][0]),
         "data": np.tensordot(
             np.conj(eigenstates["data"]).reshape(eigenstates["basis"].shape),
             initial_state["data"],
@@ -113,7 +113,7 @@ def solve_schrodinger_equation_decomposition(
     vectors = np.tensordot(
         constants, eigenstates["data"].reshape(eigenstates["basis"].shape), axes=(1, 0)
     )
-    return {"basis": StackedBasis(times, eigenstates["basis"][1]), "data": vectors}
+    return {"basis": TupleBasis(times, eigenstates["basis"][1]), "data": vectors}
 
 
 def solve_schrodinger_equation_diagonal(
@@ -138,7 +138,7 @@ def solve_schrodinger_equation_diagonal(
     data = initial_state["data"][np.newaxis, :] * np.exp(
         -1j * (hamiltonian["data"][np.newaxis, :]) * times.times[:, np.newaxis] / hbar
     )
-    return {"basis": StackedBasis(times, hamiltonian["basis"][0]), "data": data}
+    return {"basis": TupleBasis(times, hamiltonian["basis"][0]), "data": data}
 
 
 def solve_schrodinger_equation(
@@ -162,7 +162,7 @@ def solve_schrodinger_equation(
         },
     )
     return {
-        "basis": StackedBasis(StackedBasis(times), hamiltonian["basis"][0]),
+        "basis": TupleBasis(TupleBasis(times), hamiltonian["basis"][0]),
         "data": np.array(
             np.asarray([state.full().reshape(-1) for state in result.states]),
             dtype=np.complex128,

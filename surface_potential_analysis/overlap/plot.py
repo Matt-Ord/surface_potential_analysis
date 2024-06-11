@@ -31,7 +31,7 @@ if TYPE_CHECKING:
         FundamentalTransformedPositionBasis,
     )
     from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
-    from surface_potential_analysis.basis.stacked_basis import StackedBasisLike
+    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.types import (
         SingleStackedIndexLike,
     )
@@ -45,7 +45,7 @@ if TYPE_CHECKING:
 
     _B0 = TypeVar("_B0", bound=BasisWithLengthLike[Any, Any, Literal[3]])
     FundamentalMomentumOverlap = SingleOverlap[
-        StackedBasisLike[
+        TupleBasisLike[
             FundamentalTransformedPositionBasis[_L0Inv, Literal[3]],
             FundamentalTransformedPositionBasis[_L1Inv, Literal[3]],
             FundamentalTransformedPositionBasis[_L2Inv, Literal[3]],
@@ -57,7 +57,7 @@ if TYPE_CHECKING:
 
 
 def plot_overlap_2d_x(
-    overlap: SingleOverlap[StackedBasisLike[*tuple[_B0, ...]]],
+    overlap: SingleOverlap[TupleBasisLike[*tuple[_B0, ...]]],
     axes: tuple[int, int],
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -99,7 +99,7 @@ def plot_overlap_2d_x(
 
 
 def plot_overlap_2d_k(
-    overlap: SingleOverlap[StackedBasisLike[*tuple[_B0, ...]]],
+    overlap: SingleOverlap[TupleBasisLike[*tuple[_B0, ...]]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -141,7 +141,7 @@ def plot_overlap_2d_k(
 
 
 def plot_overlap_along_path_k(
-    overlap: SingleOverlap[StackedBasisLike[*tuple[_B0, ...]]],
+    overlap: SingleOverlap[TupleBasisLike[*tuple[_B0, ...]]],
     path: np.ndarray[tuple[Literal[3], int], np.dtype[np.int_]],
     *,
     wrap_distances: bool = False,
@@ -183,7 +183,7 @@ def plot_overlap_along_path_k(
 
 
 def plot_overlap_along_k_diagonal(
-    overlap: SingleOverlap[StackedBasisLike[*tuple[_B0, ...]]],
+    overlap: SingleOverlap[TupleBasisLike[*tuple[_B0, ...]]],
     k2_ind: int = 0,
     *,
     measure: Measure = "abs",
@@ -215,7 +215,7 @@ def plot_overlap_along_k_diagonal(
 
 
 def plot_overlap_along_k0(
-    overlap: SingleOverlap[StackedBasisLike[*tuple[_B0, ...]]],
+    overlap: SingleOverlap[TupleBasisLike[*tuple[_B0, ...]]],
     k1_ind: int = 0,
     k2_ind: int = 0,
     *,

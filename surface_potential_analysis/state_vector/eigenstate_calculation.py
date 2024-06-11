@@ -12,8 +12,8 @@ from surface_potential_analysis.basis.explicit_basis import (
     ExplicitStackedBasisWithLength,
 )
 from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasis,
-    StackedBasisLike,
+    TupleBasis,
+    TupleBasisLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.util.decorators import timed
@@ -25,6 +25,10 @@ if TYPE_CHECKING:
     )
     from surface_potential_analysis.state_vector.eigenstate_collection import (
         EigenstateList,
+        ValueList,
+    )
+    from surface_potential_analysis.state_vector.state_vector_list import (
+        StateVectorList,
     )
     from surface_potential_analysis.types import IntLike_co
 
@@ -48,7 +52,7 @@ def calculate_eigenvectors_hermitian(
         subset_by_index=subset_by_index,
     )
     return {
-        "basis": StackedBasis(
+        "basis": TupleBasis(
             FundamentalBasis(np.size(eigenvalues)), hamiltonian["basis"][0]
         ),
         "data": np.transpose(vectors).reshape(-1),
@@ -64,7 +68,7 @@ def calculate_eigenvectors(
         hamiltonian["data"].reshape(hamiltonian["basis"].shape),
     )
     return {
-        "basis": StackedBasis(
+        "basis": TupleBasis(
             FundamentalBasis(eigenvalues.size), hamiltonian["basis"][0]
         ),
         "data": np.transpose(vectors).reshape(-1),
@@ -95,6 +99,32 @@ def calculate_expectation(
             eigenstate["data"],
         ]
     )
+
+
+def calculate_expectation_list(
+    hamiltonian: SingleBasisOperator[_B0Inv],
+    states: StateVectorList[_B1Inv, _B0Inv],
+) -> ValueList[_B1Inv]:
+    """
+    Calculate the energy of the given eigenvector.
+
+    Parameters
+    ----------
+    hamiltonian : Hamiltonian[_B3d0Inv]
+    eigenstate : Eigenstate[_B3d0Inv]
+
+    Returns
+    -------
+    complex
+        The energy of the Eigenvector given Hamiltonian
+    """
+    data = np.einsum(
+        "ij,jk,ik->i",
+        np.conj(states["data"].reshape(states["basis"].shape)),
+        hamiltonian["data"].reshape(hamiltonian["basis"].shape),
+        states["data"].reshape(states["basis"].shape),
+    )
+    return {"basis": states["basis"][0], "data": data}
 
 
 def calculate_operator_inner_product(
@@ -146,7 +176,7 @@ def get_eigenstate_basis_from_hamiltonian(
 
 
 _SB0 = TypeVar(
-    "_SB0", bound=StackedBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]]
+    "_SB0", bound=TupleBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]]
 )
 
 

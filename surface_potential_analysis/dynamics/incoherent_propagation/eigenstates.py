@@ -6,7 +6,7 @@ import numpy as np
 import scipy.linalg
 
 from surface_potential_analysis.basis.basis import FundamentalBasis
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
+from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.basis.time_basis_like import (
     ExplicitTimeBasis,
 )
@@ -52,7 +52,7 @@ def calculate_tunnelling_eigenstates(
         matrix["data"].reshape(matrix["basis"].shape)
     )
     return {
-        "basis": StackedBasis(FundamentalBasis(eigenvalues.size), matrix["basis"][0]),
+        "basis": TupleBasis(FundamentalBasis(eigenvalues.size), matrix["basis"][0]),
         "eigenvalue": eigenvalues - np.max(eigenvalues),
         "data": vectors.T,
     }
@@ -112,7 +112,7 @@ def get_equilibrium_state(
     # and could contain negative or imaginary 'probabilities'
     vector = coefficients[state_idx] * eigenstates["data"][state_idx]
     return {
-        "basis": StackedBasis(eigenstates["basis"][1], eigenstates["basis"][1]),
+        "basis": TupleBasis(eigenstates["basis"][1], eigenstates["basis"][1]),
         "data": vector,
     }
 
@@ -165,9 +165,9 @@ def get_tunnelling_simulation_state(
     )
     vectors = np.tensordot(constants, eigenstates["data"], axes=(1, 0))
     return {
-        "basis": StackedBasis(
+        "basis": TupleBasis(
             ExplicitTimeBasis(times),
-            StackedBasis(eigenstates["basis"][1], eigenstates["basis"][1]),
+            TupleBasis(eigenstates["basis"][1], eigenstates["basis"][1]),
         ),
         "data": vectors,
     }

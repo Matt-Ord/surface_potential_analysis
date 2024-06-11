@@ -12,8 +12,8 @@ from surface_potential_analysis.basis.basis import (
     FundamentalTransformedPositionBasis3d,
 )
 from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasis,
-    StackedBasisLike,
+    TupleBasis,
+    TupleBasisLike,
 )
 
 if TYPE_CHECKING:
@@ -31,9 +31,9 @@ _L2 = TypeVar("_L2", bound=int)
 
 
 def position_basis_3d_from_parent(
-    parent: StackedBasisLike[_BL0, _BL1, _BL2],
+    parent: TupleBasisLike[_BL0, _BL1, _BL2],
     resolution: tuple[_L0, _L1, _L2],
-) -> StackedBasisLike[
+) -> TupleBasisLike[
     FundamentalPositionBasis[_L0, Literal[3]],
     FundamentalPositionBasis[_L1, Literal[3]],
     FundamentalPositionBasis[_L2, Literal[3]],
@@ -48,10 +48,10 @@ def position_basis_3d_from_parent(
 
     Returns
     -------
-    FundamentalPositionStackedBasisLike[tuple[_NF0Inv, _NF1Inv, _NF2Inv]
+    FundamentalPositionTupleBasisLike[tuple[_NF0Inv, _NF1Inv, _NF2Inv]
         _description_
     """
-    return StackedBasis(
+    return TupleBasis(
         FundamentalPositionBasis(parent[0].delta_x, resolution[0]),
         FundamentalPositionBasis(parent[1].delta_x, resolution[1]),
         FundamentalPositionBasis(parent[2].delta_x, resolution[2]),
@@ -61,21 +61,21 @@ def position_basis_3d_from_parent(
 @overload
 def fundamental_stacked_basis_from_shape(
     shape: tuple[_L0],
-) -> StackedBasisLike[FundamentalBasis[_L0]]:
+) -> TupleBasisLike[FundamentalBasis[_L0]]:
     ...
 
 
 @overload
 def fundamental_stacked_basis_from_shape(
     shape: tuple[_L0, _L1],
-) -> StackedBasisLike[FundamentalBasis[_L0], FundamentalBasis[_L1]]:
+) -> TupleBasisLike[FundamentalBasis[_L0], FundamentalBasis[_L1]]:
     ...
 
 
 @overload
 def fundamental_stacked_basis_from_shape(
     shape: tuple[_L0, _L1, _L2],
-) -> StackedBasisLike[
+) -> TupleBasisLike[
     FundamentalBasis[_L0], FundamentalBasis[_L1], FundamentalBasis[_L2]
 ]:
     ...
@@ -84,13 +84,13 @@ def fundamental_stacked_basis_from_shape(
 @overload
 def fundamental_stacked_basis_from_shape(
     shape: tuple[int, ...],
-) -> StackedBasisLike[*tuple[FundamentalBasis[Any], ...]]:
+) -> TupleBasisLike[*tuple[FundamentalBasis[Any], ...]]:
     ...
 
 
 def fundamental_stacked_basis_from_shape(
     shape: tuple[Any, ...] | tuple[Any, Any, Any] | tuple[Any, Any] | tuple[Any],
-) -> StackedBasisLike[*tuple[FundamentalBasis[Any], ...]]:
+) -> TupleBasisLike[*tuple[FundamentalBasis[Any], ...]]:
     """
     Given a resolution and a set of directions construct a FundamentalPositionBasisConfig.
 
@@ -103,15 +103,15 @@ def fundamental_stacked_basis_from_shape(
 
     Returns
     -------
-    FundamentalPositionStackedBasisLike[tuple[_NF0Inv, _NF1Inv, _NF2Inv]
+    FundamentalPositionTupleBasisLike[tuple[_NF0Inv, _NF1Inv, _NF2Inv]
     """
-    return StackedBasis(*tuple(FundamentalBasis(n) for n in shape))
+    return TupleBasis(*tuple(FundamentalBasis(n) for n in shape))
 
 
 def position_basis_from_shape(
     shape: tuple[int, ...],
     delta_x: np.ndarray[_S1Inv, np.dtype[np.float64]] | None = None,
-) -> StackedBasisLike[*tuple[FundamentalPositionBasis[int, int], ...]]:
+) -> TupleBasisLike[*tuple[FundamentalPositionBasis[int, int], ...]]:
     """
     Given a resolution and a set of directions construct a FundamentalPositionBasisConfig.
 
@@ -124,10 +124,10 @@ def position_basis_from_shape(
 
     Returns
     -------
-    FundamentalPositionStackedBasisLike[tuple[_NF0Inv, _NF1Inv, _NF2Inv]
+    FundamentalPositionTupleBasisLike[tuple[_NF0Inv, _NF1Inv, _NF2Inv]
     """
     delta_x = np.eye(len(shape)) if delta_x is None else delta_x
-    return StackedBasis(
+    return TupleBasis(
         *tuple(starmap(FundamentalPositionBasis, zip(delta_x, shape, strict=True)))
     )
 
@@ -136,7 +136,7 @@ def position_basis_3d_from_shape(
     shape: tuple[_L0, _L1, _L2],
     delta_x: np.ndarray[tuple[Literal[3], Literal[3]], np.dtype[np.float64]]
     | None = None,
-) -> StackedBasisLike[
+) -> TupleBasisLike[
     FundamentalPositionBasis[_L0, Literal[3]],
     FundamentalPositionBasis[_L1, Literal[3]],
     FundamentalPositionBasis[_L2, Literal[3]],
@@ -165,7 +165,7 @@ def momentum_basis_3d_from_resolution(
         np.ndarray[tuple[Literal[3]], np.dtype[np.float64]],
     ]
     | None = None,
-) -> StackedBasis[
+) -> TupleBasis[
     FundamentalTransformedPositionBasis3d[_L0],
     FundamentalTransformedPositionBasis3d[_L1],
     FundamentalTransformedPositionBasis3d[_L2],
@@ -182,14 +182,14 @@ def momentum_basis_3d_from_resolution(
 
     Returns
     -------
-    FundamentalMomentumStackedBasisLike[tuple[_NF0Inv, _NF1Inv, _NF2Inv]
+    FundamentalMomentumTupleBasisLike[tuple[_NF0Inv, _NF1Inv, _NF2Inv]
     """
     delta_x = (
         (np.array([1, 0, 0]), np.array([0, 1, 0]), np.array([0, 0, 1]))
         if delta_x is None
         else delta_x
     )
-    return StackedBasis(
+    return TupleBasis(
         FundamentalTransformedPositionBasis(delta_x[0], resolution[0]),
         FundamentalTransformedPositionBasis(delta_x[1], resolution[1]),
         FundamentalTransformedPositionBasis(delta_x[2], resolution[2]),

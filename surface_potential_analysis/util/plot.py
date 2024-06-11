@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from matplotlib.image import AxesImage
     from matplotlib.lines import Line2D
 
-    from surface_potential_analysis.basis.stacked_basis import StackedBasisLike
+    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.types import SingleStackedIndexLike
 
 
@@ -119,7 +119,7 @@ def _set_ymargin(ax: Axes, bottom: float = 0.0, top: float = 0.3) -> None:
 
 
 def plot_data_1d_k(
-    basis: StackedBasisLike[*tuple[Any, ...]],
+    basis: TupleBasisLike[*tuple[Any, ...]],
     data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -133,7 +133,7 @@ def plot_data_1d_k(
 
     Parameters
     ----------
-    basis : StackedBasisLike
+    basis : TupleBasisLike
     data : np.ndarray[tuple[_L0Inv], np.dtype[np.complex_]]
     axes : tuple[int, int], optional
         axes to plot in, by default (0, 1)
@@ -171,7 +171,7 @@ def plot_data_1d_k(
 
 
 def plot_data_1d_x(
-    basis: StackedBasisLike[*tuple[Any, ...]],
+    basis: TupleBasisLike[*tuple[Any, ...]],
     data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -185,7 +185,7 @@ def plot_data_1d_x(
 
     Parameters
     ----------
-    basis : StackedBasisLike
+    basis : TupleBasisLike
     data : np.ndarray[tuple[_L0Inv], np.dtype[np.complex_]]
     axes : tuple[int, int], optional
         axes to plot in, by default (0, 1)
@@ -220,7 +220,7 @@ def plot_data_1d_x(
 
 
 def plot_data_2d_k(
-    basis: StackedBasisLike[*tuple[Any, ...]],
+    basis: TupleBasisLike[*tuple[Any, ...]],
     data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
@@ -234,7 +234,7 @@ def plot_data_2d_k(
 
     Parameters
     ----------
-    basis : StackedBasisLike
+    basis : TupleBasisLike
     data : np.ndarray[tuple[_L0Inv], np.dtype[np.complex_]]
     axes : tuple[int, int], optional
         axes to plot in, by default (0, 1)
@@ -283,7 +283,7 @@ def plot_data_2d_k(
 
 
 def plot_data_2d_x(
-    basis: StackedBasisLike[*tuple[Any, ...]],
+    basis: TupleBasisLike[*tuple[Any, ...]],
     data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
@@ -297,7 +297,7 @@ def plot_data_2d_x(
 
     Parameters
     ----------
-    basis : StackedBasisLike
+    basis : TupleBasisLike
         basis to interpret the data in
     data : np.ndarray[tuple[_L0Inv], np.dtype[np.complex_]]
         plot data
@@ -396,7 +396,7 @@ _L0Inv = TypeVar("_L0Inv", bound=int)
 
 
 def animate_data_through_surface_x(
-    basis: StackedBasisLike[*tuple[Any, ...]],
+    basis: TupleBasisLike[*tuple[Any, ...]],
     data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
     axes: tuple[int, int, int] = (0, 1, 2),
     idx: SingleStackedIndexLike | None = None,
@@ -411,7 +411,7 @@ def animate_data_through_surface_x(
 
     Parameters
     ----------
-    basis : StackedBasisLike
+    basis : TupleBasisLike
     data : np.ndarray[tuple[_L0Inv], np.dtype[np.complex_]]
     axes : tuple[int, int, int], optional
         plot axes (z, y, z), by default (0, 1, 2)
@@ -457,7 +457,7 @@ def animate_data_through_surface_x(
 
 
 def animate_data_through_list_1d_x(
-    basis: StackedBasisLike[*tuple[Any, ...]],
+    basis: TupleBasisLike[*tuple[Any, ...]],
     data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -471,7 +471,7 @@ def animate_data_through_list_1d_x(
 
     Parameters
     ----------
-    basis : StackedBasisLike
+    basis : TupleBasisLike
     data : np.ndarray[tuple[_L0Inv], np.dtype[np.complex_]]
     axes : tuple[int, int, int], optional
         plot axes (z, y, z), by default (0, 1, 2)
@@ -504,7 +504,7 @@ def animate_data_through_list_1d_x(
 
 
 def animate_data_through_list_1d_k(
-    basis: StackedBasisLike[*tuple[Any, ...]],
+    basis: TupleBasisLike[*tuple[Any, ...]],
     data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -518,7 +518,7 @@ def animate_data_through_list_1d_k(
 
     Parameters
     ----------
-    basis : StackedBasisLike
+    basis : TupleBasisLike
     data : np.ndarray[tuple[_L0Inv], np.dtype[np.complex_]]
     axes : tuple[int, int, int], optional
         plot axes (z, y, z), by default (0, 1, 2)

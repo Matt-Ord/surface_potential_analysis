@@ -6,7 +6,7 @@ import numpy as np
 from scipy.constants import Boltzmann, hbar
 
 from surface_potential_analysis.basis.basis_like import BasisLike
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
+from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.kernel.kernel import (
     SingleBasisDiagonalNoiseKernel,
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
         FundamentalPositionBasis,
     )
     from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
-    from surface_potential_analysis.basis.stacked_basis import StackedBasisLike
+    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.operator.operator import SingleBasisOperator
     from surface_potential_analysis.operator.operator_list import (
         SingleBasisOperatorList,
@@ -49,7 +49,7 @@ _B0 = TypeVar(
 
 
 def _get_displacements(
-    basis: StackedBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]],
+    basis: TupleBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]],
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     util = BasisUtil(basis)
     step = tuple(
@@ -68,18 +68,18 @@ def _get_displacements(
 
 
 def get_gaussian_noise_kernel(
-    basis: StackedBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]],
+    basis: TupleBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]],
     a: float,
     lambda_: float,
 ) -> SingleBasisDiagonalNoiseKernel[
-    StackedBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
 ]:
     """
     Get the noise kernel for a gaussian correllated surface.
 
     Parameters
     ----------
-    basis : StackedBasisLike[BasisWithLengthLike[Any, Any, Literal[1]]]
+    basis : TupleBasisLike[BasisWithLengthLike[Any, Any, Literal[1]]]
         _description_
     eta : float
         _description_
@@ -90,7 +90,7 @@ def get_gaussian_noise_kernel(
 
     Returns
     -------
-    SingleBasisDiagonalNoiseKernel[ StackedBasisLike[FundamentalPositionBasis[Any, Literal[1]]] ]
+    SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]] ]
         _description_
     """
     displacements = _get_displacements(basis)
@@ -100,22 +100,22 @@ def get_gaussian_noise_kernel(
 
     basis_x = stacked_basis_as_fundamental_position_basis(basis)
     return {
-        "basis": StackedBasis(
-            StackedBasis(basis_x, basis_x),
-            StackedBasis(basis_x, basis_x),
+        "basis": TupleBasis(
+            TupleBasis(basis_x, basis_x),
+            TupleBasis(basis_x, basis_x),
         ),
         "data": correlation.ravel(),
     }
 
 
 def get_effective_gaussian_noise_kernel(
-    basis: StackedBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]],
+    basis: TupleBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]],
     eta: float,
     temperature: float,
     *,
     lambda_factor: float = 2 * np.sqrt(2),
 ) -> SingleBasisDiagonalNoiseKernel[
-    StackedBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
 ]:
     """
     Get the noise kernel for a gaussian correllated surface, given the Caldeira leggett parameters.
@@ -125,7 +125,7 @@ def get_effective_gaussian_noise_kernel(
 
     Parameters
     ----------
-    basis : StackedBasisLike[BasisWithLengthLike[Any, Any, Literal[1]]]
+    basis : TupleBasisLike[BasisWithLengthLike[Any, Any, Literal[1]]]
     eta : float
     temperature : float
     lambda_factor : float, optional
@@ -133,7 +133,7 @@ def get_effective_gaussian_noise_kernel(
 
     Returns
     -------
-    SingleBasisDiagonalNoiseKernel[ StackedBasisLike[FundamentalPositionBasis[Any, Literal[1]]] ]
+    SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]] ]
     """
     smallest_max_displacement = (
         np.min(np.linalg.norm(BasisUtil(basis).delta_x_stacked, axis=1)) / 2
@@ -201,13 +201,13 @@ def get_temperature_corrected_noise_operators(
 
 def get_effective_gaussian_noise_operators(
     hamiltonian: SingleBasisOperator[
-        StackedBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]]
+        TupleBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]]
     ],
     eta: float,
     temperature: float,
 ) -> SingleBasisNoiseOperatorList[
     FundamentalBasis[int],
-    StackedBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
 ]:
     """Get the noise operators for a gausssian kernel in the given basis.
 

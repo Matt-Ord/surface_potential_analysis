@@ -7,8 +7,8 @@ import numpy as np
 from surface_potential_analysis.basis.basis import FundamentalBasis
 from surface_potential_analysis.basis.basis_like import AxisVector2d, BasisLike
 from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasis,
-    StackedBasisLike,
+    TupleBasis,
+    TupleBasisLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.wavepacket.localization._tight_binding import (
@@ -70,7 +70,7 @@ class TunnellingSimulationBandsBasis(FundamentalBasis[_L0_co]):
 
 _AX2Inv = TypeVar("_AX2Inv", bound=TunnellingSimulationBandsBasis[Any])
 
-TunnellingSimulationBasis = StackedBasisLike[_AX0Inv, _AX1Inv, _AX2Inv]
+TunnellingSimulationBasis = TupleBasisLike[_AX0Inv, _AX1Inv, _AX2Inv]
 """
 Basis used to represent the tunnelling simulation state
 
@@ -88,7 +88,7 @@ def get_basis_from_shape(
     shape: tuple[_L0Inv, _L1Inv],
     n_bands: _L2Inv,
     bands_basis: TunnellingSimulationBandsBasis[_L3Inv],
-) -> StackedBasisLike[
+) -> TupleBasisLike[
     FundamentalBasis[_L0Inv],
     FundamentalBasis[_L1Inv],
     TunnellingSimulationBandsBasis[_L2Inv],
@@ -105,7 +105,7 @@ def get_basis_from_shape(
     -------
     tuple[FundamentalBasis[_L0Inv], FundamentalBasis[_L1Inv], TunnellingSimulationBandsBasis[_L2Inv]]
     """
-    return StackedBasis(
+    return TupleBasis(
         FundamentalBasis(shape[0]),
         FundamentalBasis(shape[1]),
         TunnellingSimulationBandsBasis(

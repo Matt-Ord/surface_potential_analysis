@@ -10,7 +10,7 @@ from surface_potential_analysis.basis.basis import (
 )
 from surface_potential_analysis.basis.stacked_basis import (
     StackedBasis,
-    StackedBasisLike,
+    TupleBasisLike,
 )
 from surface_potential_analysis.state_vector.eigenstate_calculation import (
     calculate_expectation,
@@ -39,7 +39,7 @@ class HamiltonianEigenstates(unittest.TestCase):
             ),
         )
         energies = rng.random((basis).n)
-        hamiltonian: SingleBasisOperator[StackedBasisLike[Any, Any, Any]] = {
+        hamiltonian: SingleBasisOperator[TupleBasisLike[Any, Any, Any]] = {
             "basis": StackedBasis(basis, basis),
             "data": np.diag(energies),
         }

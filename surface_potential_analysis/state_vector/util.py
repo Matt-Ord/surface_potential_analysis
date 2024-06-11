@@ -11,7 +11,7 @@ from surface_potential_analysis.basis.basis import (
     TransformedPositionBasis,
 )
 from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasis,
+    TupleBasis,
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.probability_vector.probability_vector import (
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
         BasisWithLengthLike,
     )
     from surface_potential_analysis.basis.stacked_basis import (
-        StackedBasisLike,
+        TupleBasisLike,
     )
     from surface_potential_analysis.state_vector.state_vector import StateVector
     from surface_potential_analysis.state_vector.state_vector_list import (
@@ -52,8 +52,8 @@ if TYPE_CHECKING:
 
     _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
     _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
-    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[*tuple[Any, ...]])
-    _SBL0 = TypeVar("_SBL0", bound=StackedBasisLike[*tuple[Any, ...]])
+    _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
+    _SBL0 = TypeVar("_SBL0", bound=TupleBasisLike[*tuple[Any, ...]])
     _L0Inv = TypeVar("_L0Inv", bound=int)
 
 
@@ -67,19 +67,19 @@ def get_single_point_state_vector_excact(
 
 def get_single_point_state_vectors(
     basis: BlochWavefunctionListBasis[
-        StackedBasisLike[*tuple[_B0, ...]], StackedBasisLike[*tuple[_BL0, ...]]
+        TupleBasisLike[*tuple[_B0, ...]], TupleBasisLike[*tuple[_BL0, ...]]
     ],
     n_bands: _L0Inv,
 ) -> StateVectorList[
     FundamentalBasis[_L0Inv],
-    StackedBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
 ]:
     converted = stacked_basis_as_fundamental_position_basis(get_unfurled_basis(basis))
     data = np.zeros((n_bands, converted.n), dtype=np.complex128)
     for i, n in enumerate(np.linspace(0, basis[1].n, n_bands, endpoint=False)):
         data[i, n] = 1
     return {
-        "basis": StackedBasis(FundamentalBasis(n_bands), converted),
+        "basis": TupleBasis(FundamentalBasis(n_bands), converted),
         "data": data.reshape(-1),
     }
 
@@ -88,8 +88,8 @@ def get_most_localized_free_state_vectors(
     basis: BlochWavefunctionListBasis[_SB0, _SBL0],
     shape: tuple[IntLike_co, ...],
 ) -> StateVectorList[
-    StackedBasisLike[*tuple[FundamentalBasis[int], ...]],
-    StackedBasisLike[*tuple[TransformedPositionBasis[Any, Any, Any], ...]],
+    TupleBasisLike[*tuple[FundamentalBasis[int], ...]],
+    TupleBasisLike[*tuple[TransformedPositionBasis[Any, Any, Any], ...]],
 ]:
     """
     Get the most localized free states on the surface.
@@ -105,7 +105,7 @@ def get_most_localized_free_state_vectors(
     """
     n_bands = np.prod(np.asarray(shape))
     # TODO: properly deal with uneven sampled basis
-    sample_basis = StackedBasis(
+    sample_basis = TupleBasis(
         *tuple(
             TransformedPositionBasis(
                 b0.fundamental_n * b1.delta_x,
@@ -118,7 +118,7 @@ def get_most_localized_free_state_vectors(
             for (b0, b1, s) in zip(basis[0], basis[1], shape, strict=True)
         )
     )
-    bands_basis = StackedBasis(*tuple(FundamentalBasis(int(n)) for n in shape))
+    bands_basis = TupleBasis(*tuple(FundamentalBasis(int(n)) for n in shape))
     bands_util = BasisUtil(bands_basis)
     sample_fractions = BasisUtil(sample_basis).stacked_nx_points
     sample_fractions = tuple(
@@ -135,7 +135,7 @@ def get_most_localized_free_state_vectors(
         )
     )
     data /= np.sqrt(np.sum(np.abs(data) ** 2, axis=1))[:, np.newaxis]
-    return {"basis": StackedBasis(bands_basis, sample_basis), "data": data.reshape(-1)}
+    return {"basis": TupleBasis(bands_basis, sample_basis), "data": data.reshape(-1)}
 
 
 def get_most_localized_state_vectors_from_probability(
@@ -143,7 +143,7 @@ def get_most_localized_state_vectors_from_probability(
     fractions: tuple[np.ndarray[tuple[int], np.dtype[np.float64]], ...],
 ) -> StateVectorList[
     FundamentalBasis[int],
-    StackedBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
+    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
 ]:
     """
     Get the most localized free states on the surface.
@@ -178,6 +178,6 @@ def get_most_localized_state_vectors_from_probability(
     data *= np.sqrt(averaged["data"])
     data /= np.sqrt(np.sum(np.abs(data) ** 2, axis=1))[:, np.newaxis]
     return {
-        "basis": StackedBasis(FundamentalBasis(n_bands), sample_basis),
+        "basis": TupleBasis(FundamentalBasis(n_bands), sample_basis),
         "data": data.reshape(-1),
     }

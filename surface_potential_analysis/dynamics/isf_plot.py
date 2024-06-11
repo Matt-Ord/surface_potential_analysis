@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from matplotlib.lines import Line2D
 
     from surface_potential_analysis.basis.basis_like import BasisLike
-    from surface_potential_analysis.basis.stacked_basis import StackedBasisLike
+    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.basis.time_basis_like import BasisWithTimeLike
     from surface_potential_analysis.operator.operator import (
         SingleBasisDiagonalOperator,
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     _N0Inv = TypeVar("_N0Inv", bound=int)
     _B0StackedInv = TypeVar(
         "_B0StackedInv",
-        bound=StackedBasisLike[BasisLike[Any, Any], BasisWithTimeLike[Any, Any]],
+        bound=TupleBasisLike[BasisLike[Any, Any], BasisWithTimeLike[Any, Any]],
     )
 
 

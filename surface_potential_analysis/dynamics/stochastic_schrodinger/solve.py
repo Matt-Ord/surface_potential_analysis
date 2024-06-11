@@ -10,8 +10,8 @@ from scipy.constants import hbar
 
 from surface_potential_analysis.basis.basis import FundamentalBasis
 from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasis,
-    StackedBasisLike,
+    TupleBasis,
+    TupleBasisLike,
 )
 from surface_potential_analysis.basis.time_basis_like import EvenlySpacedTimeBasis
 from surface_potential_analysis.basis.util import BasisUtil
@@ -184,7 +184,7 @@ def get_collapse_operators_from_function(
     ],
 ) -> list[
     SingleBasisOperator[
-        StackedBasisLike[
+        TupleBasisLike[
             FundamentalBasis[_L0Inv],
             FundamentalBasis[_L1Inv],
             TunnellingSimulationBandsBasis[_L2Inv],
@@ -206,7 +206,7 @@ def get_collapse_operators_from_function(
     """
     operators: list[
         SingleBasisOperator[
-            StackedBasisLike[
+            TupleBasisLike[
                 FundamentalBasis[_L0Inv],
                 FundamentalBasis[_L1Inv],
                 TunnellingSimulationBandsBasis[_L2Inv],
@@ -232,7 +232,7 @@ def get_collapse_operators_from_function(
                 )
                 # TODO: use a single point basis, and a normal np.array...
                 operators.append(
-                    {"basis": StackedBasis(basis, basis), "data": data.reshape(-1)}
+                    {"basis": TupleBasis(basis, basis), "data": data.reshape(-1)}
                 )
     return operators
 
@@ -245,7 +245,7 @@ def solve_stochastic_schrodinger_equation(
     collapse_operators: list[SingleBasisOperator[_B1Inv]] | None = None,
     *,
     n_trajectories: _L1Inv,
-) -> StateVectorList[StackedBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]:
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]:
     ...
 
 
@@ -257,7 +257,7 @@ def solve_stochastic_schrodinger_equation(
     collapse_operators: list[SingleBasisOperator[_B1Inv]] | None = None,
     *,
     n_trajectories: Literal[1] = 1,
-) -> StateVectorList[StackedBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]:
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]:
     ...
 
 
@@ -269,8 +269,8 @@ def solve_stochastic_schrodinger_equation(  # type: ignore bad overload
     *,
     n_trajectories: _L1Inv | Literal[1] = 1,
 ) -> (
-    StateVectorList[StackedBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]
-    | StateVectorList[StackedBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]
+    StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]
+    | StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]
 ):
     """
     Given an initial state, use the stochastic schrodinger equation to solve the dynamics of the system.
@@ -316,8 +316,8 @@ def solve_stochastic_schrodinger_equation(  # type: ignore bad overload
         ntraj=n_trajectories,  # cspell:disable-line
     )
     return {
-        "basis": StackedBasis(
-            StackedBasis(FundamentalBasis(n_trajectories), times),
+        "basis": TupleBasis(
+            TupleBasis(FundamentalBasis(n_trajectories), times),
             hamiltonian["basis"][0],
         ),
         "data": np.array(
@@ -338,7 +338,7 @@ def solve_stochastic_schrodinger_equation_rust(
     collapse_operators: list[SingleBasisOperator[_B1Inv]] | None = None,
     *,
     n_trajectories: _L1Inv,
-) -> StateVectorList[StackedBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]:
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]:
     ...
 
 
@@ -350,7 +350,7 @@ def solve_stochastic_schrodinger_equation_rust(
     collapse_operators: list[SingleBasisOperator[_B1Inv]] | None = None,
     *,
     n_trajectories: Literal[1] = 1,
-) -> StateVectorList[StackedBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]:
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]:
     ...
 
 
@@ -362,8 +362,8 @@ def solve_stochastic_schrodinger_equation_rust(  # type: ignore bad overload
     *,
     n_trajectories: _L1Inv | Literal[1] = 1,
 ) -> (
-    StateVectorList[StackedBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]
-    | StateVectorList[StackedBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]
+    StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]
+    | StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]
 ):
     """
     Given an initial state, use the stochastic schrodinger equation to solve the dynamics of the system.
@@ -401,8 +401,8 @@ def solve_stochastic_schrodinger_equation_rust(  # type: ignore bad overload
     )
 
     return {
-        "basis": StackedBasis(
-            StackedBasis(FundamentalBasis(n_trajectories), times),
+        "basis": TupleBasis(
+            TupleBasis(FundamentalBasis(n_trajectories), times),
             hamiltonian["basis"][0],
         ),
         "data": np.array(data).ravel(),
@@ -453,7 +453,7 @@ def solve_stochastic_schrodinger_equation_rust_banded(
     n_trajectories: _L1Inv,
     r_threshold: float = 1e-8,
     method: SSEMethod = "euler",
-) -> StateVectorList[StackedBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]:
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]:
     ...
 
 
@@ -467,7 +467,7 @@ def solve_stochastic_schrodinger_equation_rust_banded(
     n_trajectories: Literal[1] = 1,
     r_threshold: float = 1e-8,
     method: SSEMethod = "euler",
-) -> StateVectorList[StackedBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]:
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]:
     ...
 
 
@@ -481,8 +481,8 @@ def solve_stochastic_schrodinger_equation_rust_banded(  # type: ignore bad overl
     r_threshold: float = 1e-8,
     method: SSEMethod = "Euler",
 ) -> (
-    StateVectorList[StackedBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]
-    | StateVectorList[StackedBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]
+    StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]
+    | StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]
 ):
     """
     Given an initial state, use the stochastic schrodinger equation to solve the dynamics of the system.
@@ -542,8 +542,8 @@ def solve_stochastic_schrodinger_equation_rust_banded(  # type: ignore bad overl
     )
 
     return {
-        "basis": StackedBasis(
-            StackedBasis(FundamentalBasis(n_trajectories), times),
+        "basis": TupleBasis(
+            TupleBasis(FundamentalBasis(n_trajectories), times),
             hamiltonian["basis"][0],
         ),
         "data": np.array(data).ravel(),
@@ -594,7 +594,7 @@ def solve_stochastic_schrodinger_equation_localized(
     collapse_operators: list[SingleBasisOperator[_B1Inv]] | None = None,
     *,
     n_trajectories: _L1Inv,
-) -> StateVectorList[StackedBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]:
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]:
     ...
 
 
@@ -606,7 +606,7 @@ def solve_stochastic_schrodinger_equation_localized(
     collapse_operators: list[SingleBasisOperator[_B1Inv]] | None = None,
     *,
     n_trajectories: Literal[1] = 1,
-) -> StateVectorList[StackedBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]:
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]:
     ...
 
 
@@ -619,15 +619,15 @@ def solve_stochastic_schrodinger_equation_localized(  # type: ignore bad overloa
     n_trajectories: _L1Inv | Literal[1] = 1,
     n_realizations: int = 2,
 ) -> (
-    StateVectorList[StackedBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]
-    | StateVectorList[StackedBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]
+    StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]
+    | StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]
 ):
     """
     Find the quantum trajectores, using the localized stochastic schrodinger approach.
 
     Returns
     -------
-    StateVectorList[StackedBasisLike[FundamentalBasis[int], _AX0Inv], _B1Inv]
+    StateVectorList[TupleBasisLike[FundamentalBasis[int], _AX0Inv], _B1Inv]
     """
     data = np.zeros((n_trajectories, times.n, initial_state["basis"].n), dtype=complex)
 
@@ -649,8 +649,8 @@ def solve_stochastic_schrodinger_equation_localized(  # type: ignore bad overloa
             data[trajectory, t] = state["data"]
 
     return {
-        "basis": StackedBasis(
-            StackedBasis(FundamentalBasis(n_trajectories), times),
+        "basis": TupleBasis(
+            TupleBasis(FundamentalBasis(n_trajectories), times),
             hamiltonian["basis"][0],
         ),
         "data": data.reshape(-1),

@@ -7,8 +7,8 @@ import numpy as np
 from surface_potential_analysis.basis.basis import FundamentalBasis
 from surface_potential_analysis.basis.basis_like import BasisLike, BasisWithLengthLike
 from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasis,
-    StackedBasisLike,
+    TupleBasis,
+    TupleBasisLike,
 )
 from surface_potential_analysis.operator.conversion import sample_operator_list
 from surface_potential_analysis.operator.operator import DiagonalOperator, Operator
@@ -42,8 +42,8 @@ class NoiseKernel(TypedDict, Generic[_B0_co, _B1_co, _B2_co, _B3_co]):
     a set of noise operators which are all markovian)
     """
 
-    basis: StackedBasisLike[
-        StackedBasisLike[_B0_co, _B1_co], StackedBasisLike[_B2_co, _B3_co]
+    basis: TupleBasisLike[
+        TupleBasisLike[_B0_co, _B1_co], TupleBasisLike[_B2_co, _B3_co]
     ]
     """The basis of the underlying noise operator"""
     data: np.ndarray[tuple[int], np.dtype[np.complex128]]
@@ -70,8 +70,8 @@ class DiagonalNoiseKernel(TypedDict, Generic[_B0_co, _B1_co, _B2_co, _B3_co]):
 
     """
 
-    basis: StackedBasisLike[
-        StackedBasisLike[_B0_co, _B1_co], StackedBasisLike[_B2_co, _B3_co]
+    basis: TupleBasisLike[
+        TupleBasisLike[_B0_co, _B1_co], TupleBasisLike[_B2_co, _B3_co]
     ]
     """The basis of the underlying noise operator"""
     data: np.ndarray[tuple[int], np.dtype[np.complex128]]
@@ -210,9 +210,7 @@ def get_single_factorized_noise_operators(
     # When we diagonalize we have \hat{Z}'_\beta = U^\dagger_{\beta, \alpha} \hat{Z}_\alpha
     # np.conj(res.eigenvectors) is U^\dagger_{\beta, \alpha}
     return {
-        "basis": StackedBasis(
-            FundamentalBasis(kernel["basis"][0].n), kernel["basis"][0]
-        ),
+        "basis": TupleBasis(FundamentalBasis(kernel["basis"][0].n), kernel["basis"][0]),
         "data": np.conj(np.transpose(res.eigenvectors)).reshape(-1),
         "eigenvalue": res.eigenvalues,
     }
@@ -232,7 +230,7 @@ def get_noise_kernel(
         operators_data,
     )
     return {
-        "basis": StackedBasis(operators["basis"][1], operators["basis"][1]),
+        "basis": TupleBasis(operators["basis"][1], operators["basis"][1]),
         "data": data.reshape(-1),
     }
 
@@ -281,7 +279,7 @@ def get_single_factorized_noise_operators_diagonal(
     # When we diagonalize we have \hat{Z}'_\beta = U^\dagger_{\beta, \alpha} \hat{Z}_\alpha
     # np.conj(res.eigenvectors) is U^\dagger_{\beta, \alpha}
     return {
-        "basis": StackedBasis(
+        "basis": TupleBasis(
             FundamentalBasis(kernel["basis"][0][0].n), kernel["basis"][0]
         ),
         "data": np.conj(np.transpose(res.eigenvectors)).reshape(-1),
@@ -300,7 +298,7 @@ def get_diagonal_noise_kernel(
         operators_data,
     )
     return {
-        "basis": StackedBasis(operators["basis"][1], operators["basis"][1]),
+        "basis": TupleBasis(operators["basis"][1], operators["basis"][1]),
         "data": data.reshape(-1),
     }
 
@@ -314,7 +312,7 @@ def truncate_diagonal_noise_kernel(
     args = arg_sort[-n::] if isinstance(n, int) else arg_sort[::-1][n]
     return get_diagonal_noise_kernel(
         {
-            "basis": StackedBasis(FundamentalBasis(args.size), operators["basis"][1]),
+            "basis": TupleBasis(FundamentalBasis(args.size), operators["basis"][1]),
             "data": operators["data"]
             .reshape(operators["basis"][0].n, -1)[args]
             .ravel(),
@@ -332,7 +330,7 @@ def truncate_noise_kernel(
     args = arg_sort[-n::]
     return get_noise_kernel(
         {
-            "basis": StackedBasis(FundamentalBasis(n), operators["basis"][1]),
+            "basis": TupleBasis(FundamentalBasis(n), operators["basis"][1]),
             "data": operators["data"]
             .reshape(operators["basis"][0].n, -1)[args]
             .ravel(),
@@ -343,7 +341,7 @@ def truncate_noise_kernel(
 
 def get_noise_operators_sampled(
     operators: SingleBasisNoiseOperatorList[
-        _B0, StackedBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]]
+        _B0, TupleBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]]
     ],
     *,
     n: int | None = None,

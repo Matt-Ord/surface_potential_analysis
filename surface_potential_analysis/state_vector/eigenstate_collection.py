@@ -11,8 +11,8 @@ from surface_potential_analysis.basis.block_fraction_basis import (
     ExplicitBlockFractionBasis,
 )
 from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasis,
-    StackedBasisLike,
+    TupleBasis,
+    TupleBasisLike,
 )
 from surface_potential_analysis.state_vector.state_vector import StateVector
 from surface_potential_analysis.state_vector.state_vector_list import StateVectorList
@@ -61,7 +61,7 @@ class EigenstateList(
     eigenvalue: np.ndarray[tuple[int], np.dtype[np.complex128]]
 
 
-_SB0 = TypeVar("_SB0", bound=StackedBasisLike[*tuple[Any, ...]])
+_SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
 _BF0 = TypeVar("_BF0", bound=BasisWithBlockFractionLike[Any, Any])
 EigenstateColllection = EigenstateList[_SB0, _B0]
 
@@ -75,7 +75,7 @@ def calculate_eigenstate_collection(
     *,
     subset_by_index: tuple[int, int] | None = None,
 ) -> EigenstateColllection[
-    StackedBasisLike[ExplicitBlockFractionBasis[_L0], FundamentalBasis[int]], _B0
+    TupleBasisLike[ExplicitBlockFractionBasis[_L0], FundamentalBasis[int]], _B0
 ]:
     """
     Calculate an eigenstate collection with the given bloch phases.
@@ -113,8 +113,8 @@ def calculate_eigenstate_collection(
         eigenvalues[idx] = eigenstates["eigenvalue"]
 
     return {
-        "basis": StackedBasis(
-            StackedBasis(
+        "basis": TupleBasis(
+            TupleBasis(
                 ExplicitBlockFractionBasis[_L0](bloch_fractions),
                 FundamentalBasis(n_states),
             ),
@@ -127,7 +127,7 @@ def calculate_eigenstate_collection(
 
 def select_eigenstate(
     collection: EigenstateColllection[
-        StackedBasisLike[_BF0, _B0],
+        TupleBasisLike[_BF0, _B0],
         _B0_co,
     ],
     bloch_idx: int,
@@ -172,6 +172,6 @@ def get_eigenvalues_list(
     EigenvalueList[_B0]
     """
     return {
-        "basis": StackedBasis(states["basis"][0], states["basis"][0]),
+        "basis": TupleBasis(states["basis"][0], states["basis"][0]),
         "data": states["eigenvalue"],
     }

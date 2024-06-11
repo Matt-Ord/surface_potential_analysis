@@ -6,7 +6,7 @@ import numpy as np
 from sse_solver_py import solve_sse_euler_bra_ket
 
 from surface_potential_analysis.basis.basis import FundamentalBasis
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
+from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.state_vector.state_vector_list import (
     get_basis_states,
     get_state_dual_vector,
@@ -16,7 +16,7 @@ from surface_potential_analysis.state_vector.state_vector_list import (
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis_like import BasisLike
     from surface_potential_analysis.basis.explicit_basis import ExplicitBasis
-    from surface_potential_analysis.basis.stacked_basis import StackedBasisLike
+    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.basis.time_basis_like import EvenlySpacedTimeBasis
     from surface_potential_analysis.kernel.kernel import (
         SingleBasisDiagonalNoiseOperator,
@@ -45,7 +45,7 @@ def solve_stochastic_schrodinger_equation(
     | None = None,
     *,
     n_trajectories: _L1Inv,
-) -> StateVectorList[StackedBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]:
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]:
     ...
 
 
@@ -58,7 +58,7 @@ def solve_stochastic_schrodinger_equation(
     | None = None,
     *,
     n_trajectories: Literal[1] = 1,
-) -> StateVectorList[StackedBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]:
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]:
     ...
 
 
@@ -70,7 +70,7 @@ def solve_stochastic_schrodinger_equation(  # type: ignore bad overload
     | None = None,
     *,
     n_trajectories: int = 1,
-) -> StateVectorList[StackedBasisLike[FundamentalBasis[Any], _AX0Inv], _B1Inv]:
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[Any], _AX0Inv], _B1Inv]:
     assert times.offset == 0
 
     data = np.zeros(
@@ -109,8 +109,8 @@ def solve_stochastic_schrodinger_equation(  # type: ignore bad overload
 
     return {
         "data": data.reshape(-1),
-        "basis": StackedBasis(
-            StackedBasis(FundamentalBasis(n_trajectories), times),
+        "basis": TupleBasis(
+            TupleBasis(FundamentalBasis(n_trajectories), times),
             initial_state["basis"],
         ),
     }

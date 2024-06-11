@@ -109,12 +109,12 @@ def plot_eigenstate_occupations(
     occupation = occupation[a_sort]
 
     (line,) = ax.plot(energies, occupation)
-    ax.axvline(np.average(energies, weights=occupation))
+    # ax.axvline(np.average(energies, weights=occupation))
 
     ax.set_yscale(scale)
-    ax.set_xlabel("Occupation")
+    ax.set_ylabel("Occupation")
     ax.set_xlabel("Energy /J")
-    ax.set_title("Plot of Occupation against Energy")
+    # ax.set_title("Plot of Occupation against Energy")
 
     return fig, ax, line
 

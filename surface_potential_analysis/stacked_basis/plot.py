@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 import numpy as np
 
 from surface_potential_analysis.basis.conversion import basis_as_single_point_basis
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
+from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.stacked_basis.brillouin_zone import (
     decrement_brillouin_zone,
@@ -24,14 +24,14 @@ if TYPE_CHECKING:
     from matplotlib.lines import Line2D
 
     from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
-    from surface_potential_analysis.basis.stacked_basis import StackedBasisLike
+    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.types import IndexLike, SingleStackedIndexLike
 
     _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
 
 
 def plot_k_points_projected_2d(
-    basis: StackedBasisLike[*tuple[Any, ...]],
+    basis: TupleBasisLike[*tuple[Any, ...]],
     axes: tuple[int, int],
     points: np.ndarray[tuple[int, ...], np.dtype[np.float64]],
     *,
@@ -69,7 +69,7 @@ def plot_k_points_projected_2d(
 
 
 def plot_brillouin_zone_points_projected_2d(
-    basis: StackedBasisLike[*tuple[Any, ...]],
+    basis: TupleBasisLike[*tuple[Any, ...]],
     axes: tuple[int, int],
     *,
     ax: Axes | None = None,
@@ -89,7 +89,7 @@ def plot_brillouin_zone_points_projected_2d(
     tuple[Figure, Axes, Line2D]
     """
     util = BasisUtil(
-        StackedBasis(basis[0], basis[1], basis_as_single_point_basis(basis[2]))
+        TupleBasis(basis[0], basis[1], basis_as_single_point_basis(basis[2]))
     )
     coordinates = decrement_brillouin_zone(basis, util.stacked_nk_points)
     coordinates = decrement_brillouin_zone(basis, coordinates)
@@ -99,7 +99,7 @@ def plot_brillouin_zone_points_projected_2d(
 
 
 def plot_bragg_points_projected_2d(
-    basis: StackedBasisLike[*tuple[Any, ...]],
+    basis: TupleBasisLike[*tuple[Any, ...]],
     axes: tuple[int, int],
     *,
     ax: Axes | None = None,
@@ -123,7 +123,7 @@ def plot_bragg_points_projected_2d(
 
 
 def plot_fundamental_k_in_plane_projected_2d(
-    basis: StackedBasisLike[*tuple[_BL0, ...]],
+    basis: TupleBasisLike[*tuple[_BL0, ...]],
     axes: tuple[int, int],
     idx: SingleStackedIndexLike,
     *,
@@ -154,7 +154,7 @@ def plot_fundamental_k_in_plane_projected_2d(
 
 
 def plot_x_points_projected_2d(
-    basis: StackedBasisLike[*tuple[_BL0, ...]],
+    basis: TupleBasisLike[*tuple[_BL0, ...]],
     axes: tuple[int, int],
     points: np.ndarray[tuple[int, ...], np.dtype[np.float64]],
     *,
@@ -192,7 +192,7 @@ def plot_x_points_projected_2d(
 
 
 def plot_fundamental_x_in_plane_projected_2d(
-    basis: StackedBasisLike[*tuple[_BL0, ...]],
+    basis: TupleBasisLike[*tuple[_BL0, ...]],
     axes: tuple[int, int],
     idx: SingleStackedIndexLike,
     *,
@@ -227,7 +227,7 @@ def plot_fundamental_x_in_plane_projected_2d(
 
 
 def plot_fundamental_x_at_index_projected_2d(
-    basis: StackedBasisLike[*tuple[Any, ...]],
+    basis: TupleBasisLike[*tuple[Any, ...]],
     idx: IndexLike,
     axes: tuple[int, int],
     *,

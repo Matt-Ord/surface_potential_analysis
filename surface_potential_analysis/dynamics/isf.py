@@ -7,7 +7,7 @@ import numpy as np
 import scipy.optimize
 
 from surface_potential_analysis.basis.basis import FundamentalPositionBasis
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
+from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.basis.time_basis_like import (
     BasisWithTimeLike,
     ExplicitTimeBasis,
@@ -86,7 +86,7 @@ def calculate_isf_approximate_locations(
     initial_location = np.average(locations, axis=1, weights=initial_occupation["data"])
     distances = locations - initial_location[:, np.newaxis]
     distances_wrapped = wrap_x_point_around_origin(
-        StackedBasis(
+        TupleBasis(
             FundamentalPositionBasis(
                 initial_occupation["basis"][2].unit_cell[0]
                 * initial_occupation["basis"][0].fundamental_n,
@@ -109,9 +109,7 @@ def calculate_isf_approximate_locations(
     )
     return {
         "data": eigenvalues.astype(np.complex128),
-        "basis": StackedBasis(
-            final_occupation["basis"][0], final_occupation["basis"][0]
-        ),
+        "basis": TupleBasis(final_occupation["basis"][0], final_occupation["basis"][0]),
     }
 
 
@@ -142,7 +140,7 @@ def get_isf_from_4_variable_fit(
     EigenvalueList[_L0Inv]
     """
     return {
-        "basis": StackedBasis(ExplicitTimeBasis(times), ExplicitTimeBasis(times)),
+        "basis": TupleBasis(ExplicitTimeBasis(times), ExplicitTimeBasis(times)),
         "data": np.asarray(
             fit.fast_amplitude * np.exp(-fit.fast_rate * times)
             + fit.slow_amplitude * np.exp(-fit.slow_rate * times)
@@ -308,7 +306,7 @@ def get_isf_from_fey_4_variable_model_110(
     EigenvalueList[_L0Inv]
     """
     return {
-        "basis": StackedBasis(ExplicitTimeBasis(times), ExplicitTimeBasis(times)),
+        "basis": TupleBasis(ExplicitTimeBasis(times), ExplicitTimeBasis(times)),
         "data": calculate_isf_fey_4_variable_model_110(
             times,
             fit.fast_rate,
@@ -538,7 +536,7 @@ def get_isf_from_fey_model_fit_110(
     EigenvalueList[_L0Inv]
     """
     return {
-        "basis": StackedBasis(ExplicitTimeBasis(times), ExplicitTimeBasis(times)),
+        "basis": TupleBasis(ExplicitTimeBasis(times), ExplicitTimeBasis(times)),
         "data": calculate_isf_fey_model_110(
             times, fit.fast_rate, fit.slow_rate, a_dk=fit.a_dk
         ).astype(np.complex128),
@@ -561,7 +559,7 @@ def get_isf_from_fey_model_fit_112bar(
     EigenvalueList[_L0Inv]
     """
     return {
-        "basis": StackedBasis(ExplicitTimeBasis(times), ExplicitTimeBasis(times)),
+        "basis": TupleBasis(ExplicitTimeBasis(times), ExplicitTimeBasis(times)),
         "data": calculate_isf_fey_model_112bar(
             times, fit.fast_rate, fit.slow_rate, a_dk=fit.a_dk
         ).astype(np.complex128),

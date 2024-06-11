@@ -17,7 +17,7 @@ from surface_potential_analysis.operator.conversion import (
 
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis_like import BasisLike
-    from surface_potential_analysis.basis.stacked_basis import StackedBasisLike
+    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.kernel.kernel import (
         NoiseOperatorList,
     )
@@ -31,14 +31,14 @@ if TYPE_CHECKING:
 
 def convert_noise_operator_list_to_basis(
     operator: NoiseOperatorList[_B4, _B0, _B1],
-    basis: StackedBasisLike[_B2, _B3],
+    basis: TupleBasisLike[_B2, _B3],
 ) -> NoiseOperatorList[_B4, _B2, _B3]:
     """Given a noise operator, convert it to the given basis.
 
     Parameters
     ----------
     operator : NoiseOperatorList[_B4, _B0Inv, _B1Inv]
-    basis : StackedBasisLike[_B2Inv, _B3Inv]
+    basis : TupleBasisLike[_B2Inv, _B3Inv]
 
     Returns
     -------
@@ -54,14 +54,14 @@ def convert_noise_operator_list_to_basis(
 
 def convert_diagonal_noise_operator_list_to_basis(
     operator: DiagonalNoiseOperatorList[_B4, _B0, _B1],
-    basis: StackedBasisLike[_B2, _B3],
+    basis: TupleBasisLike[_B2, _B3],
 ) -> NoiseOperatorList[_B4, _B2, _B3]:
     """Given a noise operator, convert it to the given basis.
 
     Parameters
     ----------
     operator : NoiseOperatorList[_B4, _B0Inv, _B1Inv]
-    basis : StackedBasisLike[_B2Inv, _B3Inv]
+    basis : TupleBasisLike[_B2Inv, _B3Inv]
 
     Returns
     -------
@@ -77,14 +77,14 @@ def convert_diagonal_noise_operator_list_to_basis(
 
 def convert_kernel_to_basis(
     kernel: NoiseKernel[_B0, _B1, _B0, _B1],
-    basis: StackedBasisLike[_B2, _B3],
+    basis: TupleBasisLike[_B2, _B3],
 ) -> NoiseKernel[_B2, _B3, _B2, _B3]:
     """Convert the kernel to the given basis.
 
     Parameters
     ----------
     kernel : NoiseKernel[_B0, _B1, _B0, _B1]
-    basis : StackedBasisLike[_B2Inv, _B3Inv]
+    basis : TupleBasisLike[_B2Inv, _B3Inv]
 
     Returns
     -------
@@ -97,14 +97,14 @@ def convert_kernel_to_basis(
 
 def convert_diagonal_kernel_to_basis(
     kernel: DiagonalNoiseKernel[_B0, _B1, _B0, _B1],
-    basis: StackedBasisLike[_B2, _B3],
+    basis: TupleBasisLike[_B2, _B3],
 ) -> NoiseKernel[_B2, _B3, _B2, _B3]:
     """Convert the kernel to the given basis.
 
     Parameters
     ----------
     kernel : NoiseKernel[_B0, _B1, _B0, _B1]
-    basis : StackedBasisLike[_B2Inv, _B3Inv]
+    basis : TupleBasisLike[_B2Inv, _B3Inv]
 
     Returns
     -------

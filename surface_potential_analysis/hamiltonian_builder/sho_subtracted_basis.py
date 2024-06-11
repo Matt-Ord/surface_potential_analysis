@@ -14,8 +14,8 @@ from surface_potential_analysis.basis.basis import (
     TransformedPositionBasis3d,
 )
 from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasis,
-    StackedBasisLike,
+    TupleBasis,
+    TupleBasisLike,
 )
 from surface_potential_analysis.basis.util import (
     BasisUtil,
@@ -44,7 +44,7 @@ class _SurfaceHamiltonianUtil(
     Generic[_N0Inv, _N1Inv, _N2Inv, _NF0Inv, _NF1Inv, _NF2Inv]
 ):
     _potential: Potential[
-        StackedBasisLike[
+        TupleBasisLike[
             FundamentalPositionBasis3d[_NF0Inv],
             FundamentalPositionBasis3d[_NF1Inv],
             FundamentalPositionBasis3d[_NF2Inv],
@@ -58,7 +58,7 @@ class _SurfaceHamiltonianUtil(
     def __init__(
         self,
         potential: Potential[
-            StackedBasisLike[
+            TupleBasisLike[
                 FundamentalPositionBasis3d[_NF0Inv],
                 FundamentalPositionBasis3d[_NF1Inv],
                 FundamentalPositionBasis3d[_NF2Inv],
@@ -119,12 +119,12 @@ class _SurfaceHamiltonianUtil(
     @property
     def basis(
         self,
-    ) -> StackedBasis[
+    ) -> TupleBasis[
         TransformedPositionBasis3d[_NF0Inv, _N0Inv],
         TransformedPositionBasis3d[_NF1Inv, _N1Inv],
         ExplicitBasis3d[_NF2Inv, _N2Inv],
     ]:
-        return StackedBasis(
+        return TupleBasis(
             TransformedPositionBasis(
                 self._potential["basis"][0].delta_x,
                 self._resolution[0],
@@ -148,7 +148,7 @@ class _SurfaceHamiltonianUtil(
     def hamiltonian(
         self, bloch_phase: np.ndarray[tuple[Literal[3]], np.dtype[np.float64]]
     ) -> SingleBasisOperator[
-        StackedBasisLike[
+        TupleBasisLike[
             TransformedPositionBasis3d[_NF0Inv, _N0Inv],
             TransformedPositionBasis3d[_NF1Inv, _N1Inv],
             ExplicitBasis3d[_NF2Inv, _N2Inv],
@@ -161,7 +161,7 @@ class _SurfaceHamiltonianUtil(
 
         return {
             "data": energies.reshape(-1),
-            "basis": StackedBasis(self.basis, self.basis),
+            "basis": TupleBasis(self.basis, self.basis),
         }
 
     @cached_property
@@ -267,7 +267,7 @@ class _SurfaceHamiltonianUtil(
 
 def total_surface_hamiltonian(
     potential: Potential[
-        StackedBasisLike[
+        TupleBasisLike[
             FundamentalPositionBasis3d[_NF0Inv],
             FundamentalPositionBasis3d[_NF1Inv],
             FundamentalPositionBasis3d[_NF2Inv],
@@ -277,7 +277,7 @@ def total_surface_hamiltonian(
     bloch_fraction: np.ndarray[tuple[Literal[3]], np.dtype[np.float64]],
     resolution: tuple[_N0Inv, _N1Inv, _N2Inv],
 ) -> SingleBasisOperator[
-    StackedBasisLike[
+    TupleBasisLike[
         TransformedPositionBasis3d[_NF0Inv, _N0Inv],
         TransformedPositionBasis3d[_NF1Inv, _N1Inv],
         ExplicitBasis3d[_NF2Inv, _N2Inv],

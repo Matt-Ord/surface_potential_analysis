@@ -10,8 +10,8 @@ from surface_potential_analysis.basis.conversion import (
     basis_as_n_point_basis,
 )
 from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasis,
-    StackedBasisLike,
+    TupleBasis,
+    TupleBasisLike,
 )
 
 if TYPE_CHECKING:
@@ -31,8 +31,8 @@ if TYPE_CHECKING:
 
 
 def stacked_basis_as_fundamental_transformed_basis(
-    basis: StackedBasisLike[*tuple[_B0, ...]],
-) -> StackedBasisLike[*tuple[FundamentalTransformedBasis[Any], ...]]:
+    basis: TupleBasisLike[*tuple[_B0, ...]],
+) -> TupleBasisLike[*tuple[FundamentalTransformedBasis[Any], ...]]:
     """
     Get the fundamental momentum basis for a given basis.
 
@@ -44,14 +44,14 @@ def stacked_basis_as_fundamental_transformed_basis(
     -------
     tuple[FundamentalMomentumBasis[Any, Any], ...]
     """
-    return StackedBasis(
+    return TupleBasis(
         *tuple(basis_as_fundamental_transformed_basis(axis) for axis in basis)
     )
 
 
 def stacked_basis_as_fundamental_basis(
-    basis: StackedBasisLike[*tuple[_B0, ...]],
-) -> StackedBasisLike[*tuple[FundamentalBasis[Any], ...]]:
+    basis: TupleBasisLike[*tuple[_B0, ...]],
+) -> TupleBasisLike[*tuple[FundamentalBasis[Any], ...]]:
     """
     Get the fundamental momentum basis for a given basis.
 
@@ -63,20 +63,20 @@ def stacked_basis_as_fundamental_basis(
     -------
     tuple[FundamentalMomentumBasis[Any, Any], ...]
     """
-    return StackedBasis(*tuple(basis_as_fundamental_basis(axis) for axis in basis))
+    return TupleBasis(*tuple(basis_as_fundamental_basis(axis) for axis in basis))
 
 
 @overload
 def stacked_basis_as_fundamental_momentum_basis(
-    basis: StackedBasisLike[_BL0],
-) -> StackedBasisLike[FundamentalTransformedPositionBasis[Any, Literal[1]]]:
+    basis: TupleBasisLike[_BL0],
+) -> TupleBasisLike[FundamentalTransformedPositionBasis[Any, Literal[1]]]:
     ...
 
 
 @overload
 def stacked_basis_as_fundamental_momentum_basis(
-    basis: StackedBasisLike[_BL0, _BL0],
-) -> StackedBasisLike[
+    basis: TupleBasisLike[_BL0, _BL0],
+) -> TupleBasisLike[
     FundamentalTransformedPositionBasis[Any, Literal[2]],
     FundamentalTransformedPositionBasis[Any, Literal[2]],
 ]:
@@ -85,8 +85,8 @@ def stacked_basis_as_fundamental_momentum_basis(
 
 @overload
 def stacked_basis_as_fundamental_momentum_basis(
-    basis: StackedBasisLike[_BL0, _BL0, _BL0],
-) -> StackedBasisLike[
+    basis: TupleBasisLike[_BL0, _BL0, _BL0],
+) -> TupleBasisLike[
     FundamentalTransformedPositionBasis[Any, Literal[3]],
     FundamentalTransformedPositionBasis[Any, Literal[3]],
     FundamentalTransformedPositionBasis[Any, Literal[3]],
@@ -96,17 +96,17 @@ def stacked_basis_as_fundamental_momentum_basis(
 
 @overload
 def stacked_basis_as_fundamental_momentum_basis(
-    basis: StackedBasisLike[*tuple[_BL0, ...]],
-) -> StackedBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]:
+    basis: TupleBasisLike[*tuple[_BL0, ...]],
+) -> TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]:
     ...
 
 
 def stacked_basis_as_fundamental_momentum_basis(
-    basis: StackedBasisLike[*tuple[_BL0, ...]]
-    | StackedBasisLike[_BL0]
-    | StackedBasisLike[_BL0, _BL0]
-    | StackedBasisLike[_BL0, _BL0, _BL0],
-) -> StackedBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]:
+    basis: TupleBasisLike[*tuple[_BL0, ...]]
+    | TupleBasisLike[_BL0]
+    | TupleBasisLike[_BL0, _BL0]
+    | TupleBasisLike[_BL0, _BL0, _BL0],
+) -> TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]:
     """
     Get the fundamental momentum basis for a given basis.
 
@@ -118,22 +118,22 @@ def stacked_basis_as_fundamental_momentum_basis(
     -------
     tuple[FundamentalMomentumBasis[Any, Any], ...]
     """
-    return StackedBasis(
+    return TupleBasis(
         *tuple(basis_as_fundamental_momentum_basis(axis) for axis in basis)
     )
 
 
 @overload
 def stacked_basis_as_fundamental_position_basis(
-    basis: StackedBasisLike[_BL0],
-) -> StackedBasisLike[FundamentalPositionBasis[Any, Literal[1]]]:
+    basis: TupleBasisLike[_BL0],
+) -> TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]]:
     ...
 
 
 @overload
 def stacked_basis_as_fundamental_position_basis(
-    basis: StackedBasisLike[_BL0, _BL0],
-) -> StackedBasisLike[
+    basis: TupleBasisLike[_BL0, _BL0],
+) -> TupleBasisLike[
     FundamentalPositionBasis[Any, Literal[2]],
     FundamentalPositionBasis[Any, Literal[2]],
 ]:
@@ -142,8 +142,8 @@ def stacked_basis_as_fundamental_position_basis(
 
 @overload
 def stacked_basis_as_fundamental_position_basis(
-    basis: StackedBasisLike[_BL0, _BL0, _BL0],
-) -> StackedBasisLike[
+    basis: TupleBasisLike[_BL0, _BL0, _BL0],
+) -> TupleBasisLike[
     FundamentalPositionBasis[Any, Literal[3]],
     FundamentalPositionBasis[Any, Literal[3]],
     FundamentalPositionBasis[Any, Literal[3]],
@@ -153,17 +153,17 @@ def stacked_basis_as_fundamental_position_basis(
 
 @overload
 def stacked_basis_as_fundamental_position_basis(
-    basis: StackedBasisLike[*tuple[Any, ...]],
-) -> StackedBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]:
+    basis: TupleBasisLike[*tuple[Any, ...]],
+) -> TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]:
     ...
 
 
 def stacked_basis_as_fundamental_position_basis(
-    basis: StackedBasisLike[*tuple[_BL0, ...]]
-    | StackedBasisLike[_BL0]
-    | StackedBasisLike[_BL0, _BL0]
-    | StackedBasisLike[_BL0, _BL0, _BL0],
-) -> StackedBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]:
+    basis: TupleBasisLike[*tuple[_BL0, ...]]
+    | TupleBasisLike[_BL0]
+    | TupleBasisLike[_BL0, _BL0]
+    | TupleBasisLike[_BL0, _BL0, _BL0],
+) -> TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]:
     """
     Get the fundamental position basis for a given basis.
 
@@ -173,17 +173,17 @@ def stacked_basis_as_fundamental_position_basis(
 
     Returns
     -------
-    StackedBasisLike[tuple[FundamentalPositionBasis[_LF0Inv], FundamentalPositionBasis[_LF1Inv], FundamentalPositionBasis[_LF2Inv]]
+    TupleBasisLike[tuple[FundamentalPositionBasis[_LF0Inv], FundamentalPositionBasis[_LF1Inv], FundamentalPositionBasis[_LF2Inv]]
     """
-    return StackedBasis(
+    return TupleBasis(
         *tuple(basis_as_fundamental_position_basis(axis) for axis in basis)
     )
 
 
 def stacked_basis_as_fundamental_with_shape(
-    basis: StackedBasisLike[*tuple[_BL0, ...]],
+    basis: TupleBasisLike[*tuple[_BL0, ...]],
     shape: tuple[int, ...],
-) -> StackedBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]:
+) -> TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]:
     """
     Given a basis get a fundamental position basis with the given shape.
 
@@ -196,7 +196,7 @@ def stacked_basis_as_fundamental_with_shape(
     -------
     Basis[_NDInv]
     """
-    return StackedBasis(
+    return TupleBasis(
         *tuple(
             basis_as_n_point_basis(ax, n=n)
             for (ax, n) in zip(basis, shape, strict=True)

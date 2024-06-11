@@ -7,8 +7,8 @@ import numpy as np
 from surface_potential_analysis.basis.basis import FundamentalBasis
 from surface_potential_analysis.basis.basis_like import BasisLike
 from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasis,
-    StackedBasisLike,
+    TupleBasis,
+    TupleBasisLike,
 )
 from surface_potential_analysis.operator.operator_list import (
     OperatorList,
@@ -41,8 +41,8 @@ each bloch k, and all other states can be found by translating the
 states by a unit cell.
 """
 
-_SB0 = TypeVar("_SB0", bound=StackedBasisLike[*tuple[Any, ...]])
-_SB1 = TypeVar("_SB1", bound=StackedBasisLike[*tuple[Any, ...]])
+_SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
+_SB1 = TypeVar("_SB1", bound=TupleBasisLike[*tuple[Any, ...]])
 
 
 def get_localized_wavepackets(
@@ -74,8 +74,8 @@ def get_localized_wavepackets(
     data = np.einsum("jil,ljk->ijk", stacked_operator, vectors)
 
     return {
-        "basis": StackedBasis(
-            StackedBasis(operator["basis"][1][0], wavepackets["basis"][0][1]),
+        "basis": TupleBasis(
+            TupleBasis(operator["basis"][1][0], wavepackets["basis"][0][1]),
             wavepackets["basis"][1],
         ),
         "data": data.reshape(-1),
@@ -122,9 +122,9 @@ def get_localized_hamiltonian_from_eigenvalues(
     # we now have n'; n' k, so we need to move k to the front
     # this is why we return an operator list
     return {
-        "basis": StackedBasis(
+        "basis": TupleBasis(
             hamiltonian["basis"][1][0],
-            StackedBasis(operator["basis"][1][0], operator["basis"][1][0]),
+            TupleBasis(operator["basis"][1][0], operator["basis"][1][0]),
         ),
         "data": np.moveaxis(converted, -1, 0).reshape(-1),
     }
@@ -135,8 +135,8 @@ def get_identity_operator(
 ) -> LocalizationOperator[_SB1, FundamentalBasis[int], _SB0]:
     return as_operator_list(
         {
-            "basis": StackedBasis(
-                basis[0], StackedBasis(FundamentalBasis(basis[1].n), basis[1])
+            "basis": TupleBasis(
+                basis[0], TupleBasis(FundamentalBasis(basis[1].n), basis[1])
             ),
             "data": np.ones(basis.n, dtype=np.complex128),
         }

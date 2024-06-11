@@ -16,7 +16,7 @@ from surface_potential_analysis.basis.basis import (
 from surface_potential_analysis.basis.explicit_basis import (
     ExplicitBasisWithLength,
 )
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
+from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.stacked_basis.potential_basis import (
     PotentialBasisConfig,
@@ -100,7 +100,7 @@ def get_sho_potential_basis_config(
 
     Returns
     -------
-    PotentialStackedBasisLike[tuple[_L0Inv, _L1Inv]
+    PotentialTupleBasisLike[tuple[_L0Inv, _L1Inv]
     """
     delta_x1 = (
         np.array([0, 1, 0])
@@ -110,7 +110,7 @@ def get_sho_potential_basis_config(
     delta_x2 = np.cross(parent.delta_x, delta_x1)
     delta_x2 /= np.linalg.norm(delta_x2)
 
-    basis = StackedBasis(
+    basis = TupleBasis(
         FundamentalPositionBasis(np.array([np.linalg.norm(parent.delta_x)]), parent.n),
     )
     x_distances = calculate_x_distances(parent, config["x_origin"])

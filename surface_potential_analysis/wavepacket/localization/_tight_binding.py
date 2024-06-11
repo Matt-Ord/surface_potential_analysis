@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis import FundamentalBasis
     from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
     from surface_potential_analysis.basis.stacked_basis import (
-        StackedBasisLike,
+        TupleBasisLike,
     )
     from surface_potential_analysis.types import (
         ArrayIndexLike,
@@ -45,8 +45,8 @@ if TYPE_CHECKING:
     _FB0 = TypeVar("_FB0", bound=FundamentalBasis[Any])
     _FB1 = TypeVar("_FB1", bound=FundamentalBasis[Any])
 
-    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[*tuple[Any, ...]])
-    _SB1 = TypeVar("_SB1", bound=StackedBasisLike[*tuple[Any, ...]])
+    _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
+    _SB1 = TypeVar("_SB1", bound=TupleBasisLike[*tuple[Any, ...]])
 
     _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Literal[3]])
     _BL1 = TypeVar("_BL1", bound=BasisWithLengthLike[Any, Any, Literal[3]])
@@ -85,7 +85,7 @@ def _get_global_phases(
 
     Parameters
     ----------
-    wavepacket : Wavepacket[_NS0Inv, _NS1Inv, StackedBasisLike[tuple[_A3d0Inv, _A3d1Inv, _A3d2Inv]]
+    wavepacket : Wavepacket[_NS0Inv, _NS1Inv, TupleBasisLike[tuple[_A3d0Inv, _A3d1Inv, _A3d2Inv]]
         The wavepacket to get the global phase for
     idx : int | tuple[int, int, int], optional
         The index in ravelled or unravelled form, by default 0
@@ -114,7 +114,7 @@ def _get_bloch_wavefunction_phases(
 
     Parameters
     ----------
-    wavepacket : Wavepacket[ _NS0Inv, _NS1Inv, StackedBasisLike[tuple[PositionBasis[_L0Inv], PositionBasis[_L1Inv], _A3d2Inv]]
+    wavepacket : Wavepacket[ _NS0Inv, _NS1Inv, TupleBasisLike[tuple[PositionBasis[_L0Inv], PositionBasis[_L1Inv], _A3d2Inv]]
         the wavepacket to calculate the phase of
     idx : SingleIndexLike, optional
         the index in real space, by default 0
@@ -142,7 +142,7 @@ def localize_tightly_bound_wavepacket_idx(
 
     Parameters
     ----------
-    wavepacket : Wavepacket[ _NS0Inv, _NS1Inv, StackedBasisLike[tuple[ TruncatedBasis[_L0Inv, MomentumBasis[_LF0Inv]], TruncatedBasis[_L1Inv, MomentumBasis[_LF1Inv]], ExplicitBasis[_L2Inv, PositionBasis[_LF2Inv]], ], ]
+    wavepacket : Wavepacket[ _NS0Inv, _NS1Inv, TupleBasisLike[tuple[ TruncatedBasis[_L0Inv, MomentumBasis[_LF0Inv]], TruncatedBasis[_L1Inv, MomentumBasis[_LF1Inv]], ExplicitBasis[_L2Inv, PositionBasis[_LF2Inv]], ], ]
     idx : SingleIndexLike , optional
         Index of the eigenstate to localize, by default 0
         This index is taken in the irreducible unit cell
@@ -153,7 +153,7 @@ def localize_tightly_bound_wavepacket_idx(
 
     Returns
     -------
-    Wavepacket[ _NS0Inv, _NS1Inv, StackedBasisLike[tuple[ TruncatedBasis[_L0Inv, MomentumBasis[_LF0Inv]], TruncatedBasis[_L1Inv, MomentumBasis[_LF1Inv]], ExplicitBasis[_L2Inv, PositionBasis[_LF2Inv]], ], ]
+    Wavepacket[ _NS0Inv, _NS1Inv, TupleBasisLike[tuple[ TruncatedBasis[_L0Inv, MomentumBasis[_LF0Inv]], TruncatedBasis[_L1Inv, MomentumBasis[_LF1Inv]], ExplicitBasis[_L2Inv, PositionBasis[_LF2Inv]], ], ]
     """
     bloch_angles = _get_bloch_wavefunction_phases(wavepacket, idx)
     global_phases = _get_global_phases(wavepacket, idx)
@@ -167,8 +167,8 @@ def localize_tightly_bound_wavepacket_idx(
 
 def get_wavepacket_two_points(
     wavepacket: BlochWavefunctionList[
-        StackedBasisLike[_FB0, _FB1, FundamentalBasis[Literal[1]]],
-        StackedBasisLike[_BL0, _BL1, _BL2],
+        TupleBasisLike[_FB0, _FB1, FundamentalBasis[Literal[1]]],
+        TupleBasisLike[_BL0, _BL1, _BL2],
     ],
     offset: tuple[int, int] = (0, 0),
 ) -> tuple[SingleStackedIndexLike, SingleStackedIndexLike]:
@@ -211,14 +211,14 @@ def _wrap_phases(
 @timed
 def localize_tightly_bound_wavepacket_two_point_max(
     wavepacket: BlochWavefunctionList[
-        StackedBasisLike[_FB0, _FB1, FundamentalBasis[Literal[1]]],
-        StackedBasisLike[_BL0, _BL1, _BL2],
+        TupleBasisLike[_FB0, _FB1, FundamentalBasis[Literal[1]]],
+        TupleBasisLike[_BL0, _BL1, _BL2],
     ],
     offset: tuple[int, int] = (0, 0),
     angle: float = 0,
 ) -> BlochWavefunctionList[
-    StackedBasisLike[_FB0, _FB1, FundamentalBasis[Literal[1]]],
-    StackedBasisLike[_BL0, _BL1, _BL2],
+    TupleBasisLike[_FB0, _FB1, FundamentalBasis[Literal[1]]],
+    TupleBasisLike[_BL0, _BL1, _BL2],
 ]:
     """
     Normalize a wavepacket using a 'two-point' calculation.

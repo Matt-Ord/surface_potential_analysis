@@ -31,7 +31,7 @@ if TYPE_CHECKING:
         StackedIndexLike,
     )
 
-    from .stacked_basis import StackedBasisLike
+    from .stacked_basis import TupleBasisLike
 
 
 _NF0Inv = TypeVar("_NF0Inv", bound=int)
@@ -147,28 +147,28 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
     ) -> np.ndarray[tuple[_ND0Inv, _NF0Inv], np.dtype[np.int_]]:
         return self.fundamental_dx[:, np.newaxis] * self.fundamental_nx_points  # type: ignore[no-any-return]
 
-    def __iter__(self: BasisUtil[StackedBasisLike[*_B]]) -> Iterator[Union[*_B]]:
+    def __iter__(self: BasisUtil[TupleBasisLike[*_B]]) -> Iterator[Union[*_B]]:
         return self._basis.__iter__()
 
     @property
     def shape(
-        self: BasisUtil[StackedBasisLike[*tuple[_B0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
     ) -> tuple[int, ...]:
         return self._basis.shape
 
     @property
-    def ndim(self: BasisUtil[StackedBasisLike[*tuple[_B0Inv, ...]]]) -> int:
+    def ndim(self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]]) -> int:
         return self._basis.ndim
 
     @property
     def fundamental_shape(
-        self: BasisUtil[StackedBasisLike[*tuple[_B0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
     ) -> tuple[int, ...]:
         return self._basis.fundamental_shape
 
     @property
     def stacked_nk_points(
-        self: BasisUtil[StackedBasisLike[*tuple[_B0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
     ) -> ArrayStackedIndexLike[tuple[int]]:
         nk_mesh = np.meshgrid(
             *[BasisUtil(xi_basis).nk_points for xi_basis in self],
@@ -178,7 +178,7 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @property
     def fundamental_stacked_nk_points(
-        self: BasisUtil[StackedBasisLike[*tuple[_B0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
     ) -> ArrayStackedIndexLike[tuple[int]]:
         nk_mesh = np.meshgrid(
             *[BasisUtil(xi_basis).fundamental_nk_points for xi_basis in self],
@@ -188,7 +188,7 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @property
     def stacked_nx_points(
-        self: BasisUtil[StackedBasisLike[*tuple[_B0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
     ) -> ArrayStackedIndexLike[tuple[int]]:
         nx_mesh = np.meshgrid(
             *[BasisUtil(xi_basis).nx_points for xi_basis in self],
@@ -198,7 +198,7 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @property
     def fundamental_stacked_nx_points(
-        self: BasisUtil[StackedBasisLike[*tuple[_B0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
     ) -> ArrayStackedIndexLike[tuple[int]]:
         nx_mesh = np.meshgrid(
             *[BasisUtil(xi_basis).fundamental_nx_points for xi_basis in self],
@@ -208,7 +208,7 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @overload
     def get_flat_index(
-        self: BasisUtil[StackedBasisLike[*tuple[_B0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
         idx: SingleStackedIndexLike,
         *,
         mode: Literal["raise", "wrap", "clip"] = "raise",
@@ -217,7 +217,7 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @overload
     def get_flat_index(
-        self: BasisUtil[StackedBasisLike[*tuple[_B0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
         idx: ArrayStackedIndexLike[Unpack[_TS]],
         *,
         mode: Literal["raise", "wrap", "clip"] = "raise",
@@ -225,7 +225,7 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
         ...
 
     def get_flat_index(
-        self: BasisUtil[StackedBasisLike[*tuple[_B0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
         idx: StackedIndexLike,
         *,
         mode: Literal["raise", "wrap", "clip"] = "raise",
@@ -249,20 +249,20 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @overload
     def get_stacked_index(
-        self: BasisUtil[StackedBasisLike[*tuple[_B0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
         idx: SingleFlatIndexLike,
     ) -> SingleStackedIndexLike:
         ...
 
     @overload
     def get_stacked_index(
-        self: BasisUtil[StackedBasisLike[*tuple[_B0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
         idx: ArrayFlatIndexLike[Unpack[_TS]],
     ) -> ArrayStackedIndexLike[Unpack[_TS]]:
         ...
 
     def get_stacked_index(
-        self: BasisUtil[StackedBasisLike[*tuple[_B0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
         idx: FlatIndexLike,
     ) -> StackedIndexLike:
         """
@@ -280,18 +280,18 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @overload
     def __getitem__(
-        self: BasisUtil[StackedBasisLike[*tuple[_B0Inv, ...]]], index: int
+        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]], index: int
     ) -> BasisLike[Any, Any]:
         ...
 
     @overload
     def __getitem__(
-        self: BasisUtil[StackedBasisLike[*tuple[Any, ...]]], index: slice
-    ) -> StackedBasisLike[*tuple[Any, ...]]:
+        self: BasisUtil[TupleBasisLike[*tuple[Any, ...]]], index: slice
+    ) -> TupleBasisLike[*tuple[Any, ...]]:
         ...
 
     def __getitem__(
-        self: BasisUtil[StackedBasisLike[*tuple[Any, ...]]], index: int | slice
+        self: BasisUtil[TupleBasisLike[*tuple[Any, ...]]], index: int | slice
     ) -> Any:
         return self._basis.__getitem__(index)
 
@@ -305,19 +305,19 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @overload
     def get_k_points_at_index(
-        self: BasisUtil[StackedBasisLike[*tuple[_BL0Inv, ...]]], idx: SingleIndexLike
+        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]], idx: SingleIndexLike
     ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
         ...
 
     @overload
     def get_k_points_at_index(
-        self: BasisUtil[StackedBasisLike[*tuple[_BL0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
         idx: ArrayIndexLike[Unpack[_TS]],
     ) -> np.ndarray[tuple[int, Unpack[_TS]], np.dtype[np.float64]]:
         ...
 
     def get_k_points_at_index(
-        self: BasisUtil[StackedBasisLike[*tuple[_BL0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
         idx: ArrayIndexLike[Unpack[_TS]] | SingleIndexLike,
     ) -> (
         np.ndarray[tuple[int, Unpack[_TS]], np.dtype[np.float64]]
@@ -328,13 +328,13 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @property
     def k_points(
-        self: BasisUtil[StackedBasisLike[*tuple[_BL0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         return self.get_k_points_at_index(self.stacked_nk_points)
 
     @property
     def fundamental_stacked_k_points(
-        self: BasisUtil[StackedBasisLike[*tuple[_BL0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         return np.tensordot(
             self.fundamental_dk_stacked, self.fundamental_stacked_nk_points, axes=(0, 0)
@@ -342,19 +342,19 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @overload
     def get_x_points_at_index(
-        self: BasisUtil[StackedBasisLike[*tuple[Any, ...]]], idx: SingleIndexLike
+        self: BasisUtil[TupleBasisLike[*tuple[Any, ...]]], idx: SingleIndexLike
     ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
         ...
 
     @overload
     def get_x_points_at_index(
-        self: BasisUtil[StackedBasisLike[*tuple[Any, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[Any, ...]]],
         idx: ArrayIndexLike[Unpack[_TS]],
     ) -> np.ndarray[tuple[int, Unpack[_TS]], np.dtype[np.float64]]:
         ...
 
     def get_x_points_at_index(
-        self: BasisUtil[StackedBasisLike[*tuple[_BL0_co, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_BL0_co, ...]]],
         idx: ArrayIndexLike[Unpack[_TS]] | SingleIndexLike,
     ) -> (
         np.ndarray[tuple[int, Unpack[_TS]], np.dtype[np.float64]]
@@ -365,13 +365,13 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @property
     def x_points_stacked(
-        self: BasisUtil[StackedBasisLike[*tuple[_BL0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         return self.get_x_points_at_index(self.stacked_nx_points)
 
     @property
     def fundamental_x_points_stacked(
-        self: BasisUtil[StackedBasisLike[*tuple[_BL0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         return np.tensordot(
             self.fundamental_dx_stacked, self.fundamental_stacked_nx_points, axes=(0, 0)
@@ -379,49 +379,49 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @property
     def delta_x_stacked(
-        self: BasisUtil[StackedBasisLike[*tuple[_BL0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         return np.array([axi.delta_x for axi in self])
 
     @property
     def fundamental_delta_x_stacked(
-        self: BasisUtil[StackedBasisLike[*tuple[_BL0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         return np.array([axi.delta_x for axi in self])
 
     @cached_property
     def dx_stacked(
-        self: BasisUtil[StackedBasisLike[*tuple[_BL0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         return np.array([BasisUtil(axi).dx for axi in self])
 
     @cached_property
     def fundamental_dx_stacked(
-        self: BasisUtil[StackedBasisLike[*tuple[_BL0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         return np.array([BasisUtil(axi).fundamental_dx for axi in self])
 
     @property
     def delta_k_stacked(
-        self: BasisUtil[StackedBasisLike[*tuple[_BL0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         return np.array(self.shape)[:, np.newaxis] * self.dk_stacked
 
     @cached_property
     def fundamental_delta_k_stacked(
-        self: BasisUtil[StackedBasisLike[*tuple[_BL0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         return np.array(self.fundamental_shape)[:, np.newaxis] * self.dk_stacked
 
     @cached_property
     def dk_stacked(
-        self: BasisUtil[StackedBasisLike[*tuple[_BL0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         """Get dk as a list of dk for each axis."""
         return 2 * np.pi * np.linalg.inv(self.delta_x_stacked).T
 
     @property
     def fundamental_dk_stacked(
-        self: BasisUtil[StackedBasisLike[*tuple[_BL0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         return self.dk_stacked

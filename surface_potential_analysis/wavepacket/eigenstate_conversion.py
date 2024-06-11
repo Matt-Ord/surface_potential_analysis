@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 import numpy as np
 
 from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasis,
-    StackedBasisLike,
+    TupleBasis,
+    TupleBasisLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.stacked_basis.build import (
@@ -51,9 +51,9 @@ if TYPE_CHECKING:
 
     _A3d2Inv = TypeVar("_A3d2Inv", bound=BasisWithLengthLike3d[Any, Any])
 
-    _SB1 = TypeVar("_SB1", bound=StackedBasisLike[*tuple[Any, ...]])
+    _SB1 = TypeVar("_SB1", bound=TupleBasisLike[*tuple[Any, ...]])
     _MB0 = TypeVar("_MB0", bound=FundamentalTransformedPositionBasis[Any, Any])
-    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[*tuple[Any, ...]])
+    _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
     _FB0 = TypeVar("_FB0", bound=FundamentalBasis[Any])
     _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
 
@@ -63,7 +63,7 @@ if TYPE_CHECKING:
 
 def furl_eigenstate(
     eigenstate: StateVector[
-        StackedBasisLike[
+        TupleBasisLike[
             FundamentalTransformedPositionBasis[_L0Inv, Literal[3]],
             FundamentalTransformedPositionBasis[_L1Inv, Literal[3]],
             _A3d2Inv,
@@ -71,12 +71,12 @@ def furl_eigenstate(
     ],
     shape: tuple[_NS0Inv, _NS1Inv, Literal[1]],
 ) -> BlochWavefunctionList[
-    StackedBasisLike[
+    TupleBasisLike[
         FundamentalBasis[_NS0Inv],
         FundamentalBasis[_NS1Inv],
         FundamentalBasis[Literal[1]],
     ],
-    StackedBasisLike[
+    TupleBasisLike[
         FundamentalTransformedPositionBasis[_L0Inv, Literal[3]],
         FundamentalTransformedPositionBasis[_L1Inv, Literal[3]],
         _A3d2Inv,
@@ -112,7 +112,7 @@ def furl_eigenstate(
 
     basis = get_furled_basis(eigenstate["basis"], shape)
     return {
-        "basis": StackedBasis(
+        "basis": TupleBasis(
             fundamental_stacked_basis_from_shape(shape),
             stacked_basis_as_fundamental_momentum_basis(basis),  # type: ignore z ax is wrong here
         ),
@@ -123,10 +123,10 @@ def furl_eigenstate(
 
 def _unfurl_momentum_basis_wavepacket(
     wavepacket: BlochWavefunctionList[
-        StackedBasisLike[*tuple[_FB0, ...]], StackedBasisLike[*tuple[_MB0, ...]]
+        TupleBasisLike[*tuple[_FB0, ...]], TupleBasisLike[*tuple[_MB0, ...]]
     ],
 ) -> StateVector[
-    StackedBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
+    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
 ]:
     list_shape = wavepacket["basis"][0].shape
     states_shape = wavepacket["basis"][1].shape
@@ -159,7 +159,7 @@ def _unfurl_momentum_basis_wavepacket(
     basis = get_unfurled_basis(wavepacket["basis"])
     return {
         "basis": stacked_basis_as_fundamental_momentum_basis(
-            cast(StackedBasisLike[*tuple[Any, ...]], basis)
+            cast(TupleBasisLike[*tuple[Any, ...]], basis)
         ),
         "data": flattened / np.sqrt(np.prod(list_shape)),
     }
@@ -168,7 +168,7 @@ def _unfurl_momentum_basis_wavepacket(
 def unfurl_wavepacket(
     wavepacket: BlochWavefunctionList[_SB0, _SB1],
 ) -> StateVector[
-    StackedBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
+    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
 ]:
     """
     Convert a wavepacket into an eigenstate of the irreducible unit cell.
@@ -195,7 +195,7 @@ def unfurl_wavepacket(
 def unfurl_wavepacket_list(
     wavepackets: BlochWavefunctionListList[_B0, _SB0, _SB1],
 ) -> StateVectorList[
-    _B0, StackedBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
+    _B0, TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
 ]:
     """
     Convert a wavepacket list into a StateVectorList.
@@ -218,6 +218,6 @@ def unfurl_wavepacket_list(
         unfurl_wavepacket(w) for w in wavepacket_list_into_iter(wavepackets)
     )
     return {
-        "basis": StackedBasis(wavepackets["basis"][0][0], unfurled["basis"][1]),
+        "basis": TupleBasis(wavepackets["basis"][0][0], unfurled["basis"][1]),
         "data": unfurled["data"],
     }

@@ -15,7 +15,7 @@ from surface_potential_analysis.basis.basis import (
 from surface_potential_analysis.basis.explicit_basis import ExplicitBasisWithLength
 from surface_potential_analysis.basis.stacked_basis import (
     StackedBasis,
-    StackedBasisLike,
+    TupleBasisLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.stacked_basis.sho_basis import (
@@ -37,7 +37,7 @@ _rng = np.random.default_rng()
 def _get_random_sho_eigenstate(
     resolution: tuple[int, int, int], fundamental_resolution: tuple[int, int, int]
 ) -> StateVector[
-    StackedBasisLike[
+    TupleBasisLike[
         TransformedPositionBasis3d[Any, Any],
         TransformedPositionBasis3d[Any, Any],
         ExplicitBasis3d[int, Any],

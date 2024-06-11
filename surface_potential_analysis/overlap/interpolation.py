@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, TypeVarTuple
 import numpy as np
 
 from surface_potential_analysis.basis.conversion import basis_as_single_point_basis
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
+from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.stacked_basis.util import (
     wrap_index_around_origin,
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from surface_potential_analysis.basis.basis import FundamentalPositionBasis
-    from surface_potential_analysis.basis.stacked_basis import StackedBasisLike
+    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.overlap.overlap import SingleOverlap
     from surface_potential_analysis.types import IntLike_co
 
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     _L2Inv = TypeVar("_L2Inv", bound=int)
 
     FundamentalPositionOverlap = SingleOverlap[
-        StackedBasisLike[
+        TupleBasisLike[
             FundamentalPositionBasis[_L0Inv, Literal[3]],
             FundamentalPositionBasis[_L1Inv, Literal[3]],
             FundamentalPositionBasis[_L2Inv, Literal[3]],
@@ -45,7 +45,7 @@ ArrayStackedIndexFractionLike = tuple[
 
 def get_overlap_momentum_interpolator_k_fractions(
     overlap: SingleOverlap[
-        StackedBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
+        TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
     ],
 ) -> Callable[
     [ArrayStackedIndexFractionLike[_S0Inv]],
@@ -116,7 +116,7 @@ def get_overlap_momentum_interpolator(
 @timed
 def get_overlap_momentum_interpolator_flat(
     overlap: SingleOverlap[
-        StackedBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
+        TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
     ],
     n_points: IntLike_co | None = None,
 ) -> Callable[
@@ -138,7 +138,7 @@ def get_overlap_momentum_interpolator_flat(
     Callable[[np.ndarray[tuple[Literal[2], Unpack[_S0Inv]], np.dtype[np.float_]]], np.ndarray[_S0Inv, np.dtype[np.complex_]], ]
         Interpolator, which takes a coordinate list in momentum basis ignoring k2 axis
     """
-    basis = StackedBasis[Any, Any, Any](
+    basis = TupleBasis[Any, Any, Any](
         *overlap["basis"][0][:-1],
         basis_as_single_point_basis(overlap["basis"][0][-1]),  # type: ignore cannot deal with *
     )

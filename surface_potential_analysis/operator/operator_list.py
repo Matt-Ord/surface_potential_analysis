@@ -6,10 +6,10 @@ import numpy as np
 
 from surface_potential_analysis.basis.basis import FundamentalBasis
 from surface_potential_analysis.basis.basis_like import BasisLike
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
+from surface_potential_analysis.basis.stacked_basis import TupleBasis
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.stacked_basis import StackedBasisLike
+    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.operator.operator import (
         SingleBasisDiagonalOperator,
         SingleBasisOperator,
@@ -33,7 +33,7 @@ _B2_co = TypeVar("_B2_co", bound=BasisLike[Any, Any], covariant=True)
 class OperatorList(TypedDict, Generic[_B0_co, _B1_co, _B2_co]):
     """Represents a list of eigenstates, each with the same basis and bloch wavevector."""
 
-    basis: StackedBasisLike[_B0_co, StackedBasisLike[_B1_co, _B2_co]]
+    basis: TupleBasisLike[_B0_co, TupleBasisLike[_B1_co, _B2_co]]
     data: np.ndarray[tuple[int], np.dtype[np.complex128]]
     """A list of state vectors"""
 
@@ -67,7 +67,7 @@ def select_operator(
 class DiagonalOperatorList(TypedDict, Generic[_B0_co, _B1_co, _B2_co]):
     """Represents a list of eigenstates, each with the same basis and bloch wavevector."""
 
-    basis: StackedBasisLike[_B0_co, StackedBasisLike[_B1_co, _B2_co]]
+    basis: TupleBasisLike[_B0_co, TupleBasisLike[_B1_co, _B2_co]]
     data: np.ndarray[tuple[int], np.dtype[np.complex128]]
     """A list of state vectors"""
 
@@ -142,7 +142,7 @@ def operator_list_from_iter(
     n = len(operators)
     data = np.array([x["data"] for x in operators])
     return {
-        "basis": StackedBasis(FundamentalBasis(n), basis),
+        "basis": TupleBasis(FundamentalBasis(n), basis),
         "data": data.ravel(),
     }
 
@@ -176,7 +176,7 @@ def operator_list_into_iter(
 
 def as_flat_operator(
     operator_list: SingleBasisDiagonalOperatorList[_B0, _B1],
-) -> SingleBasisDiagonalOperator[StackedBasisLike[_B0, Unpack[tuple[Any, ...]]]]:
+) -> SingleBasisDiagonalOperator[TupleBasisLike[_B0, Unpack[tuple[Any, ...]]]]:
     """
     Given a diagonal operator list, re-interpret it as an operator.
 
@@ -186,14 +186,14 @@ def as_flat_operator(
 
     Returns
     -------
-    SingleBasisDiagonalOperator[StackedBasisLike[_B0, Unpack[tuple[Any, ...]]]]
+    SingleBasisDiagonalOperator[TupleBasisLike[_B0, Unpack[tuple[Any, ...]]]]
 
     """
-    basis = StackedBasis[_B0, Unpack[tuple[Any, ...]]](
+    basis = TupleBasis[_B0, Unpack[tuple[Any, ...]]](
         operator_list["basis"][0], *operator_list["basis"][1]
     )
     return {
-        "basis": StackedBasis(basis, basis),
+        "basis": TupleBasis(basis, basis),
         "data": operator_list["data"],
     }
 
@@ -242,9 +242,7 @@ def sum_diagonal_operator_list_over_axes(
     )
     # TODO: just wrong
     return {
-        "basis": StackedBasis(
-            states["basis"][0], StackedBasis(traced_basis, traced_basis)
-        ),
+        "basis": TupleBasis(states["basis"][0], TupleBasis(traced_basis, traced_basis)),
         "data": np.sum(
             states["data"].reshape(-1, *states["basis"][1][0].shape),
             axis=tuple(1 + np.array(axes, dtype=np.int_)),
@@ -275,8 +273,8 @@ def matmul_operator_list(
         rhs["data"].reshape(-1, *rhs["basis"][1].shape),
     ).reshape(-1)
     return {
-        "basis": StackedBasis(
-            rhs["basis"][0], StackedBasis(lhs["basis"][0], rhs["basis"][1][1])
+        "basis": TupleBasis(
+            rhs["basis"][0], TupleBasis(lhs["basis"][0], rhs["basis"][1][1])
         ),
         "data": data,
     }
@@ -305,8 +303,8 @@ def matmul_list_operator(
         axes=(2, 0),
     ).reshape(-1)
     return {
-        "basis": StackedBasis(
-            lhs["basis"][0], StackedBasis(lhs["basis"][1][0], rhs["basis"][1])
+        "basis": TupleBasis(
+            lhs["basis"][0], TupleBasis(lhs["basis"][1][0], rhs["basis"][1])
         ),
         "data": data,
     }

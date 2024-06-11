@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from matplotlib.lines import Line2D
 
     from surface_potential_analysis.basis.basis_like import BasisLike
-    from surface_potential_analysis.basis.stacked_basis import StackedBasisLike
+    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.basis.time_basis_like import BasisWithTimeLike
     from surface_potential_analysis.probability_vector.probability_vector import (
         ProbabilityVectorList,
@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 if TYPE_CHECKING:
     _B0 = TypeVar("_B0", bound=BasisWithTimeLike[int, int])
     _B1 = TypeVar("_B1", bound=BasisLike[int, int])
-    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[*tuple[Any, ...]])
+    _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
 
 
 def plot_probability_against_time(
@@ -108,7 +108,7 @@ def plot_total_probability_against_time(
 
 
 def plot_probability_1d_k(
-    state: ProbabilityVector[StackedBasisLike[*tuple[Any, ...]]],
+    state: ProbabilityVector[TupleBasisLike[*tuple[Any, ...]]],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -153,7 +153,7 @@ def plot_probability_1d_k(
 
 
 def plot_probability_1d_x(
-    state: ProbabilityVector[StackedBasisLike[*tuple[Any, ...]]],
+    state: ProbabilityVector[TupleBasisLike[*tuple[Any, ...]]],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -198,7 +198,7 @@ def plot_probability_1d_x(
 
 
 def plot_probability_2d_k(
-    state: ProbabilityVector[StackedBasisLike[*tuple[Any, ...]]],
+    state: ProbabilityVector[TupleBasisLike[*tuple[Any, ...]]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -211,7 +211,7 @@ def plot_probability_2d_k(
 
     Parameters
     ----------
-    state : ProbabilityVector[StackedBasisLike
+    state : ProbabilityVector[TupleBasisLike
     axes : tuple[int, int], optional
         axes to plot, by default (0, 1)
     idx : SingleStackedIndexLike | None, optional
@@ -243,7 +243,7 @@ def plot_probability_2d_k(
 
 
 def plot_probability_2d_x(
-    state: ProbabilityVector[StackedBasisLike[*tuple[Any, ...]]],
+    state: ProbabilityVector[TupleBasisLike[*tuple[Any, ...]]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -256,7 +256,7 @@ def plot_probability_2d_x(
 
     Parameters
     ----------
-    state : ProbabilityVector[StackedBasisLike
+    state : ProbabilityVector[TupleBasisLike
     axes : tuple[int, int], optional
         axes to plot, by default (0, 1)
     idx : SingleStackedIndexLike | None, optional

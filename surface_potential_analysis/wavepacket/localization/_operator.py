@@ -7,7 +7,7 @@ import numpy as np
 from surface_potential_analysis.basis.basis import (
     FundamentalBasis,
 )
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
+from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.basis.util import (
     BasisUtil,
 )
@@ -45,13 +45,13 @@ if TYPE_CHECKING:
         BasisWithLengthLike,
     )
     from surface_potential_analysis.basis.stacked_basis import (
-        StackedBasisLike,
+        TupleBasisLike,
     )
     from surface_potential_analysis.operator.operator import SingleBasisOperator
 
-    _B1Inv = TypeVar("_B1Inv", bound=StackedBasisLike[*tuple[Any, ...]])
-    _B2Inv = TypeVar("_B2Inv", bound=StackedBasisLike[*tuple[Any, ...]])
-    _B0Inv = TypeVar("_B0Inv", bound=StackedBasisLike[*tuple[Any, ...]])
+    _B1Inv = TypeVar("_B1Inv", bound=TupleBasisLike[*tuple[Any, ...]])
+    _B2Inv = TypeVar("_B2Inv", bound=TupleBasisLike[*tuple[Any, ...]])
+    _B0Inv = TypeVar("_B0Inv", bound=TupleBasisLike[*tuple[Any, ...]])
 
     _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
     _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
@@ -64,10 +64,10 @@ def _get_position_operator(basis: _B1Inv) -> SingleBasisOperator[_B1Inv]:
 
     basis_position = stacked_basis_as_fundamental_position_basis(basis)
     operator: SingleBasisOperator[Any] = {
-        "basis": StackedBasis(basis_position, basis_position),
+        "basis": TupleBasis(basis_position, basis_position),
         "data": np.diag(locations),
     }
-    return convert_operator_to_basis(operator, StackedBasis(basis, basis))
+    return convert_operator_to_basis(operator, TupleBasis(basis, basis))
 
 
 @timed
@@ -85,7 +85,7 @@ def _get_operator_between_states(
             )
 
     basis = FundamentalBasis(n_states)
-    return {"data": array, "basis": StackedBasis(basis, basis)}
+    return {"data": array, "basis": TupleBasis(basis, basis)}
 
 
 def _localize_operator(
@@ -134,7 +134,7 @@ def localize_position_operator(
 def localize_position_operator_many_band(
     wavepackets: list[
         BlochWavefunctionListWithEigenvalues[
-            StackedBasisLike[*tuple[_B0, ...]], StackedBasisLike[*tuple[_BL0, ...]]
+            TupleBasisLike[*tuple[_B0, ...]], TupleBasisLike[*tuple[_BL0, ...]]
         ]
     ],
 ) -> list[StateVector[Any]]:

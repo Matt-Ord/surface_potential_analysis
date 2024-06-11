@@ -6,7 +6,7 @@ import numpy as np
 
 from surface_potential_analysis.basis.basis import FundamentalBasis
 from surface_potential_analysis.basis.basis_like import BasisLike
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
+from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.dynamics.tunnelling_basis import (
     TunnellingSimulationBandsBasis,
@@ -20,7 +20,7 @@ from surface_potential_analysis.util.decorators import timed
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from surface_potential_analysis.basis.stacked_basis import StackedBasisLike
+    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.operator.operator import DiagonalOperator
     from surface_potential_analysis.operator.operator_list import DiagonalOperatorList
     from surface_potential_analysis.probability_vector.probability_vector import (
@@ -106,7 +106,7 @@ def get_jump_matrix_from_a_matrix(
                 data[n_0, n_1, hop] = hop_val
 
     return {
-        "basis": StackedBasis(matrix["basis"][0][2], matrix["basis"][1][2]),
+        "basis": TupleBasis(matrix["basis"][0][2], matrix["basis"][1][2]),
         "data": data.reshape(-1),
     }
 
@@ -118,7 +118,7 @@ def get_a_matrix_from_jump_matrix(
     *,
     n_bands: None = None,
 ) -> TunnellingAMatrix[
-    StackedBasisLike[
+    TupleBasisLike[
         FundamentalBasis[_L0Inv],
         FundamentalBasis[_L1Inv],
         TunnellingSimulationBandsBasis[_L2Inv],
@@ -134,7 +134,7 @@ def get_a_matrix_from_jump_matrix(
     *,
     n_bands: _L3Inv,
 ) -> TunnellingAMatrix[
-    StackedBasisLike[
+    TupleBasisLike[
         FundamentalBasis[_L0Inv],
         FundamentalBasis[_L1Inv],
         TunnellingSimulationBandsBasis[_L3Inv],
@@ -149,7 +149,7 @@ def get_a_matrix_from_jump_matrix(
     *,
     n_bands: Any = None,
 ) -> TunnellingAMatrix[
-    StackedBasisLike[
+    TupleBasisLike[
         FundamentalBasis[_L0Inv],
         FundamentalBasis[_L1Inv],
         TunnellingSimulationBandsBasis[Any],
@@ -184,7 +184,7 @@ def get_a_matrix_from_jump_matrix(
                 array[:, :, n_1, :, :, n_0] += operator
     # A matrix uses the reverse convention for array, ie n_0 first
     return {
-        "basis": StackedBasis(final_basis, final_basis),
+        "basis": TupleBasis(final_basis, final_basis),
         "data": array.reshape(final_util.n, final_util.n).T.reshape(-1),
     }
 
@@ -194,7 +194,7 @@ def resample_tunnelling_a_matrix(
     shape: tuple[_L0Inv, _L1Inv],
     n_bands: _L2Inv,
 ) -> TunnellingAMatrix[
-    StackedBasisLike[
+    TupleBasisLike[
         FundamentalBasis[_L0Inv],
         FundamentalBasis[_L1Inv],
         TunnellingSimulationBandsBasis[_L2Inv],
@@ -245,12 +245,12 @@ def get_jump_matrix_from_function(
         for n1 in range(n_bands):
             for d1 in range(9):
                 data[n0, n1, d1] = jump_function((n0), n1, d1)
-    return {"basis": StackedBasis(bands_basis, bands_basis), "data": data.reshape(-1)}
+    return {"basis": TupleBasis(bands_basis, bands_basis), "data": data.reshape(-1)}
 
 
 def get_a_matrix_reduced_bands(
     matrix: TunnellingAMatrix[
-        StackedBasisLike[
+        TupleBasisLike[
             _AX0Inv,
             _AX1Inv,
             TunnellingSimulationBandsBasis[_L0Inv],
@@ -258,7 +258,7 @@ def get_a_matrix_reduced_bands(
     ],
     n_bands: _L1Inv,
 ) -> TunnellingAMatrix[
-    StackedBasisLike[_AX0Inv, _AX1Inv, TunnellingSimulationBandsBasis[_L1Inv]]
+    TupleBasisLike[_AX0Inv, _AX1Inv, TunnellingSimulationBandsBasis[_L1Inv]]
 ]:
     """
     Get the MMatrix with only the first n_bands included.
@@ -273,7 +273,7 @@ def get_a_matrix_reduced_bands(
     TunnellingMMatrix[tuple[_AX0Inv, _AX1Inv, TunnellingSimulationBandsBasis[_L1Inv]]]
     """
     util = BasisUtil(matrix["basis"])
-    a_basis = StackedBasis(
+    a_basis = TupleBasis(
         matrix["basis"][0][0],
         matrix["basis"][0][1],
         TunnellingSimulationBandsBasis(
@@ -282,7 +282,7 @@ def get_a_matrix_reduced_bands(
         ),
     )
     return {
-        "basis": StackedBasis(a_basis, a_basis),
+        "basis": TupleBasis(a_basis, a_basis),
         "data": matrix["data"]
         .reshape(*util.shape, *util.shape)[:, :, :n_bands, :, :, :n_bands]
         .reshape(-1),
@@ -292,7 +292,7 @@ def get_a_matrix_reduced_bands(
 @overload
 def get_tunnelling_m_matrix(
     matrix: TunnellingAMatrix[
-        StackedBasisLike[
+        TupleBasisLike[
             _AX0Inv,
             _AX1Inv,
             TunnellingSimulationBandsBasis[_L0Inv],
@@ -300,7 +300,7 @@ def get_tunnelling_m_matrix(
     ],
     n_bands: _L1Inv,
 ) -> TunnellingMMatrix[
-    StackedBasisLike[_AX0Inv, _AX1Inv, TunnellingSimulationBandsBasis[_L1Inv]]
+    TupleBasisLike[_AX0Inv, _AX1Inv, TunnellingSimulationBandsBasis[_L1Inv]]
 ]:
     ...
 
@@ -356,7 +356,7 @@ def get_initial_pure_density_matrix_for_basis(
     idx = util.get_flat_index(idx) if isinstance(idx, tuple) else idx
     vector = np.zeros(basis.n, dtype=np.complex128)
     vector[idx] = 1
-    return {"basis": StackedBasis(basis, basis), "data": vector}
+    return {"basis": TupleBasis(basis, basis), "data": vector}
 
 
 def density_matrix_as_probability(
@@ -391,6 +391,6 @@ def density_matrix_list_as_probabilities(
     ProbabilityVectorList[_B0Inv, _L0Inv]
     """
     return {
-        "basis": StackedBasis(matrix["basis"][0], matrix["basis"][1][0]),
+        "basis": TupleBasis(matrix["basis"][0], matrix["basis"][1][0]),
         "data": np.real(matrix["data"]),
     }

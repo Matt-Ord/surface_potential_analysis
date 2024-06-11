@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 from surface_potential_analysis.basis.basis import FundamentalBasis
 from surface_potential_analysis.basis.basis_like import BasisLike
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
+from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.operator.operator_list import OperatorList
 
@@ -43,9 +43,9 @@ def get_single_overlap(
         else idx
     )
     return {
-        "basis": StackedBasis(
+        "basis": TupleBasis(
             overlap["basis"][0],
-            StackedBasis(
+            TupleBasis(
                 FundamentalBasis[Literal[1]](1), FundamentalBasis[Literal[1]](1)
             ),
         ),

@@ -19,8 +19,8 @@ from surface_potential_analysis.basis.basis import (
     FundamentalPositionBasis3d,
 )
 from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasis,
-    StackedBasisLike,
+    TupleBasis,
+    TupleBasisLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.util.interpolation import (
@@ -44,8 +44,8 @@ _L0Inv = TypeVar("_L0Inv", bound=int)
 _L1Inv = TypeVar("_L1Inv", bound=int)
 _L2Inv = TypeVar("_L2Inv", bound=int)
 
-# TODO: report bug in pylance - not possible to use StackedBasisLike[*tuple[Any, ...]]
-_SB0 = TypeVar("_SB0", bound=StackedBasisLike)  # type: ignore use StackedBasisLike[*tuple[Any, ...]]
+# TODO: report bug in pylance - not possible to use TupleBasisLike[*tuple[Any, ...]]
+_SB0 = TypeVar("_SB0", bound=TupleBasisLike)  # type: ignore use TupleBasisLike[*tuple[Any, ...]]
 
 
 class Potential(TypedDict, Generic[_SB0]):
@@ -74,7 +74,7 @@ def load_potential(path: Path) -> Potential[Any]:
 def load_potential_grid_json(
     path: Path,
 ) -> Potential[
-    StackedBasisLike[
+    TupleBasisLike[
         BasisWithLengthLike[Any, Any, Literal[3]],
         BasisWithLengthLike[Any, Any, Literal[3]],
         BasisWithLengthLike[Any, Any, Literal[3]],
@@ -102,7 +102,7 @@ def load_potential_grid_json(
         out: SurfacePotentialRaw = json.load(f)
         points = np.array(out["points"])
         return {
-            "basis": StackedBasis(
+            "basis": TupleBasis(
                 FundamentalPositionBasis(np.array(out["delta_x0"]), points.shape[0]),
                 FundamentalPositionBasis(np.array(out["delta_x1"]), points.shape[1]),
                 FundamentalPositionBasis(np.array(out["delta_x2"]), points.shape[2]),
@@ -124,7 +124,7 @@ class UnevenPotential3dZBasis(FundamentalBasis[_L2_co]):
 class UnevenPotential3d(TypedDict, Generic[_L0_co, _L1_co, _L2_co]):
     """Represents a potential unevenly spaced in the z direction."""
 
-    basis: StackedBasisLike[
+    basis: TupleBasisLike[
         FundamentalPositionBasis2d[_L0_co],
         FundamentalPositionBasis2d[_L1_co],
         UnevenPotential3dZBasis[_L2_co],
@@ -173,7 +173,7 @@ def load_uneven_potential_json(
         points = np.array(out["points"])
 
         return {
-            "basis": StackedBasis(
+            "basis": TupleBasis(
                 FundamentalPositionBasis(np.array(out["delta_x0"]), points.shape[0]),
                 FundamentalPositionBasis(np.array(out["delta_x1"]), points.shape[1]),
                 UnevenPotential3dZBasis(np.array(out["z_points"])),
@@ -231,7 +231,7 @@ def undo_truncate_potential(
 def interpolate_uneven_potential(
     data: UnevenPotential3d[int, int, int], shape: tuple[_L0Inv, _L1Inv, _L2Inv]
 ) -> Potential[
-    StackedBasisLike[
+    TupleBasisLike[
         FundamentalPositionBasis3d[_L0Inv],
         FundamentalPositionBasis3d[_L1Inv],
         FundamentalPositionBasis3d[_L2Inv],
@@ -255,7 +255,7 @@ def interpolate_uneven_potential(
     delta_x_0 = np.concatenate([data["basis"][0].delta_x, [0]])
     delta_x_1 = np.concatenate([data["basis"][1].delta_x, [0]])
     return {
-        "basis": StackedBasis(
+        "basis": TupleBasis(
             FundamentalPositionBasis(delta_x_0, shape[0]),
             FundamentalPositionBasis(delta_x_1, shape[1]),
             FundamentalPositionBasis(
@@ -276,7 +276,7 @@ def interpolate_uneven_potential(
 def mock_even_potential(
     uneven: UnevenPotential3d[_L0Inv, _L1Inv, _L2Inv],
 ) -> Potential[
-    StackedBasisLike[
+    TupleBasisLike[
         FundamentalPositionBasis3d[_L0Inv],
         FundamentalPositionBasis3d[_L1Inv],
         FundamentalPositionBasis3d[_L2Inv],
@@ -294,7 +294,7 @@ def mock_even_potential(
     Potential[_L0Inv, _L1Inv, _L2Inv]
     """
     return {
-        "basis": StackedBasis(
+        "basis": TupleBasis(
             FundamentalPositionBasis(
                 np.array([*uneven["basis"][0].delta_x, 0]), uneven["basis"][0].n
             ),

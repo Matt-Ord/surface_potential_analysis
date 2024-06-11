@@ -23,7 +23,7 @@ if TYPE_CHECKING:
         BasisWithBlockFractionLike,
     )
     from surface_potential_analysis.basis.stacked_basis import (
-        StackedBasisLike,
+        TupleBasisLike,
     )
     from surface_potential_analysis.state_vector.eigenstate_collection import (
         EigenstateColllection,
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from surface_potential_analysis.util.util import Measure
 
     _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[*tuple[Any, ...]])
+    _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
     _L0 = TypeVar("_L0", bound=int)
     _BF0 = TypeVar("_BF0", bound=BasisWithBlockFractionLike[Any, Any])
 
@@ -45,7 +45,7 @@ if TYPE_CHECKING:
 
 
 def _get_projected_bloch_phases(
-    collection: EigenstateColllection[StackedBasisLike[_BF0, Any], Any],
+    collection: EigenstateColllection[TupleBasisLike[_BF0, Any], Any],
     direction: np.ndarray[tuple[_L0], np.dtype[np.float64]],
 ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
     util = BasisUtil(collection["basis"][1])
@@ -96,7 +96,7 @@ def plot_states_1d_x(
 
 
 def plot_eigenvalues_against_bloch_phase_1d(
-    collection: EigenstateColllection[StackedBasisLike[_BF0, Any], Any],
+    collection: EigenstateColllection[TupleBasisLike[_BF0, Any], Any],
     direction: np.ndarray[tuple[int], np.dtype[np.float64]],
     band: int = 0,
     *,
@@ -131,7 +131,7 @@ def plot_eigenvalues_against_bloch_phase_1d(
 
 
 def plot_occupation_against_bloch_phase_1d(
-    collection: EigenstateColllection[StackedBasisLike[_BF0, Any], Any],
+    collection: EigenstateColllection[TupleBasisLike[_BF0, Any], Any],
     direction: np.ndarray[tuple[int], np.dtype[np.float64]],
     temperature: float,
     band: int = 0,
@@ -167,7 +167,7 @@ def plot_occupation_against_bloch_phase_1d(
 
 
 def plot_occupation_against_band(
-    collection: EigenstateColllection[StackedBasisLike[_BF0, Any], Any],
+    collection: EigenstateColllection[TupleBasisLike[_BF0, Any], Any],
     temperature: float,
     *,
     ax: Axes | None = None,
@@ -200,7 +200,7 @@ def plot_occupation_against_band(
 
 
 def plot_lowest_band_eigenvalues_against_bloch_k(
-    collection: EigenstateColllection[StackedBasisLike[_BF0, Any], Any],
+    collection: EigenstateColllection[TupleBasisLike[_BF0, Any], Any],
     *,
     ax: Axes | None = None,
 ) -> tuple[Figure, Axes, Line2D]:

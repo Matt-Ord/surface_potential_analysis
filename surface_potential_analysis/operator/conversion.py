@@ -12,7 +12,8 @@ from surface_potential_analysis.basis.basis_like import (
     BasisWithLengthLike,
     convert_matrix,
 )
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
+from surface_potential_analysis.basis.stacked_basis import TupleBasis
+from surface_potential_analysis.operator.operator import DiagonalOperator, as_operator
 from surface_potential_analysis.operator.operator_list import as_operator_list
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_momentum_basis,
@@ -20,7 +21,7 @@ from surface_potential_analysis.stacked_basis.conversion import (
 
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis_like import BasisLike
-    from surface_potential_analysis.basis.stacked_basis import StackedBasisLike
+    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.operator.operator import (
         Operator,
         SingleBasisOperator,
@@ -39,7 +40,7 @@ if TYPE_CHECKING:
 
 
 def convert_operator_to_basis(
-    operator: Operator[_B0Inv, _B1Inv], basis: StackedBasisLike[_B2Inv, _B3Inv]
+    operator: Operator[_B0Inv, _B1Inv], basis: TupleBasisLike[_B2Inv, _B3Inv]
 ) -> Operator[_B2Inv, _B3Inv]:
     """
     Given an operator, convert it to the given basis.
@@ -63,15 +64,34 @@ def convert_operator_to_basis(
     return {"basis": basis, "data": converted.reshape(-1)}
 
 
+def convert_diagonal_operator_to_basis(
+    operator: DiagonalOperator[_B0Inv, _B1Inv],
+    basis: TupleBasisLike[_B2Inv, _B3Inv],
+) -> Operator[_B2Inv, _B3Inv]:
+    """Given an operator, convert it to the given basis.
+
+    Parameters
+    ----------
+    operator : OperatorList[_B4, _B0Inv, _B1Inv]
+    basis : TupleBasisLike[_B2Inv, _B3Inv]
+
+    Returns
+    -------
+    OperatorList[_B4, _B2Inv, _B3Inv]
+    """
+    full = as_operator(operator)
+    return convert_operator_to_basis(full, basis)
+
+
 def convert_operator_list_to_basis(
-    operator: OperatorList[_B4, _B0Inv, _B1Inv], basis: StackedBasisLike[_B2Inv, _B3Inv]
+    operator: OperatorList[_B4, _B0Inv, _B1Inv], basis: TupleBasisLike[_B2Inv, _B3Inv]
 ) -> OperatorList[_B4, _B2Inv, _B3Inv]:
     """Given an operator, convert it to the given basis.
 
     Parameters
     ----------
     operator : OperatorList[_B4, _B0Inv, _B1Inv]
-    basis : StackedBasisLike[_B2Inv, _B3Inv]
+    basis : TupleBasisLike[_B2Inv, _B3Inv]
 
     Returns
     -------
@@ -86,21 +106,21 @@ def convert_operator_list_to_basis(
         axes=(1, 2),
     )
     return {
-        "basis": StackedBasis(operator["basis"][0], basis),
+        "basis": TupleBasis(operator["basis"][0], basis),
         "data": converted.reshape(-1),
     }
 
 
 def convert_diagonal_operator_list_to_basis(
     operator: DiagonalOperatorList[_B4, _B0Inv, _B1Inv],
-    basis: StackedBasisLike[_B2Inv, _B3Inv],
+    basis: TupleBasisLike[_B2Inv, _B3Inv],
 ) -> OperatorList[_B4, _B2Inv, _B3Inv]:
     """Given an operator, convert it to the given basis.
 
     Parameters
     ----------
     operator : OperatorList[_B4, _B0Inv, _B1Inv]
-    basis : StackedBasisLike[_B2Inv, _B3Inv]
+    basis : TupleBasisLike[_B2Inv, _B3Inv]
 
     Returns
     -------
@@ -112,13 +132,13 @@ def convert_diagonal_operator_list_to_basis(
 
 def sample_operator(
     operator: Operator[
-        StackedBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]],
-        StackedBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]],
+        TupleBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]],
+        TupleBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]],
     ],
     *,
     sample: tuple[int, ...],
 ) -> SingleBasisOperator[
-    StackedBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
+    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
 ]:
     """
     Sample an operator, taking only the sample lowest states in k.
@@ -129,7 +149,7 @@ def sample_operator(
         _description_
     """
     basis_k = stacked_basis_as_fundamental_momentum_basis(operator["basis"][0])
-    basis_k_sampled = StackedBasis(
+    basis_k_sampled = TupleBasis(
         *tuple(
             TransformedPositionBasis(
                 basis_k[i].delta_x,
@@ -143,12 +163,12 @@ def sample_operator(
     operators_k = convert_operator_to_basis(
         convert_operator_to_basis(
             operator,
-            StackedBasis(basis_k, basis_k),
+            TupleBasis(basis_k, basis_k),
         ),
-        StackedBasis(StackedBasis(basis_k_sampled), StackedBasis(basis_k_sampled)),
+        TupleBasis(TupleBasis(basis_k_sampled), TupleBasis(basis_k_sampled)),
     )
 
-    basis_k_full = StackedBasis(
+    basis_k_full = TupleBasis(
         *tuple(
             FundamentalTransformedPositionBasis(
                 basis_k[i].delta_x,
@@ -165,7 +185,7 @@ def sample_operator(
     )
 
     return {
-        "basis": StackedBasis(basis_k_full, basis_k_full),
+        "basis": TupleBasis(basis_k_full, basis_k_full),
         "data": data,
     }
 
@@ -173,14 +193,14 @@ def sample_operator(
 def sample_operator_list(
     operators: OperatorList[
         _B4,
-        StackedBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]],
-        StackedBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]],
+        TupleBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]],
+        TupleBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]],
     ],
     *,
     sample: tuple[int, ...],
 ) -> SingleBasisOperatorList[
     _B4,
-    StackedBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
+    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
 ]:
     """
     Sample an operator list, staking only the sample lowest omentum states.
@@ -189,12 +209,12 @@ def sample_operator_list(
     -------
     SingleBasisOperatorList[
     _B4,
-    StackedBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
+    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
     ]
 
     """
     basis_k = stacked_basis_as_fundamental_momentum_basis(operators["basis"][1][0])
-    basis_k_sampled = StackedBasis(
+    basis_k_sampled = TupleBasis(
         *tuple(
             TransformedPositionBasis(
                 basis_k[i].delta_x,
@@ -208,12 +228,12 @@ def sample_operator_list(
     operators_k = convert_operator_list_to_basis(
         convert_operator_list_to_basis(
             operators,
-            StackedBasis(basis_k, basis_k),
+            TupleBasis(basis_k, basis_k),
         ),
-        StackedBasis(StackedBasis(basis_k_sampled), StackedBasis(basis_k_sampled)),
+        TupleBasis(TupleBasis(basis_k_sampled), TupleBasis(basis_k_sampled)),
     )
 
-    basis_k_full = StackedBasis(
+    basis_k_full = TupleBasis(
         *tuple(
             FundamentalTransformedPositionBasis(
                 basis_k[i].delta_x,
@@ -230,9 +250,9 @@ def sample_operator_list(
     )
 
     return {
-        "basis": StackedBasis(
+        "basis": TupleBasis(
             operators["basis"][0],
-            StackedBasis(basis_k_full, basis_k_full),
+            TupleBasis(basis_k_full, basis_k_full),
         ),
         "data": data,
     }

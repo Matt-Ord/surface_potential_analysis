@@ -8,8 +8,8 @@ from surface_potential_analysis.basis.basis_like import (
     convert_vector,
 )
 from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasis,
-    StackedBasisLike,
+    TupleBasis,
+    TupleBasisLike,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_momentum_basis,
@@ -74,16 +74,14 @@ def convert_probability_vector_list_to_basis(
         -1
     )
     return {
-        "basis": StackedBasis(probability_vector["basis"][0], basis),
+        "basis": TupleBasis(probability_vector["basis"][0], basis),
         "data": converted,
     }
 
 
 def convert_probability_vector_to_position_basis(
-    probability_vector: ProbabilityVector[StackedBasisLike[*tuple[_BL0, ...]]],
-) -> ProbabilityVector[
-    StackedBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
-]:
+    probability_vector: ProbabilityVector[TupleBasisLike[*tuple[_BL0, ...]]],
+) -> ProbabilityVector[TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]]:
     """
     Given an state vector, calculate the vector in position basis.
 
@@ -102,9 +100,9 @@ def convert_probability_vector_to_position_basis(
 
 
 def convert_probability_vector_to_momentum_basis(
-    probability_vector: ProbabilityVector[StackedBasisLike[*tuple[_BL0, ...]]],
+    probability_vector: ProbabilityVector[TupleBasisLike[*tuple[_BL0, ...]]],
 ) -> ProbabilityVector[
-    StackedBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
+    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
 ]:
     """
     Given a state vector, calculate the vector in the given basis.

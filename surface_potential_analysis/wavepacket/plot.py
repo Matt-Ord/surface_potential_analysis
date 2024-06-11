@@ -48,7 +48,7 @@ if TYPE_CHECKING:
     from matplotlib.lines import Line2D
 
     from surface_potential_analysis.basis.stacked_basis import (
-        StackedBasisLike,
+        TupleBasisLike,
     )
     from surface_potential_analysis.state_vector.state_vector import StateVector
     from surface_potential_analysis.types import (
@@ -56,15 +56,15 @@ if TYPE_CHECKING:
     )
     from surface_potential_analysis.util.plot import Scale
 
-    _B0Inv = TypeVar("_B0Inv", bound=StackedBasisLike[*tuple[Any, ...]])
-    _B1Inv = TypeVar("_B1Inv", bound=StackedBasisLike[*tuple[Any, ...]])
+    _B0Inv = TypeVar("_B0Inv", bound=TupleBasisLike[*tuple[Any, ...]])
+    _B1Inv = TypeVar("_B1Inv", bound=TupleBasisLike[*tuple[Any, ...]])
 # ruff: noqa: PLR0913
 
 
 def plot_wavepacket_sample_frequencies(
     wavepacket: BlochWavefunctionList[
-        StackedBasisLike[*tuple[Any, ...]],
-        StackedBasisLike[*tuple[Any, ...]],
+        TupleBasisLike[*tuple[Any, ...]],
+        TupleBasisLike[*tuple[Any, ...]],
     ],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
@@ -105,8 +105,8 @@ def plot_wavepacket_sample_frequencies(
 
 def plot_wavepacket_eigenvalues_2d_k(
     wavepacket: BlochWavefunctionListWithEigenvalues[
-        StackedBasisLike[*tuple[Any, ...]],
-        StackedBasisLike[*tuple[Any, ...]],
+        TupleBasisLike[*tuple[Any, ...]],
+        TupleBasisLike[*tuple[Any, ...]],
     ],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
@@ -120,7 +120,7 @@ def plot_wavepacket_eigenvalues_2d_k(
 
     Parameters
     ----------
-    wavepacket : Wavepacket[_NS0Inv, _NS1Inv, StackedBasisLike[tuple[_A3d0Inv, _A3d1Inv, _A3d2Inv]]
+    wavepacket : Wavepacket[_NS0Inv, _NS1Inv, TupleBasisLike[tuple[_A3d0Inv, _A3d1Inv, _A3d2Inv]]
     ax : Axes | None, optional
         plot axis, by default None
     scale : Literal[&quot;symlog&quot;, &quot;linear&quot;], optional
@@ -142,8 +142,8 @@ def plot_wavepacket_eigenvalues_2d_k(
 
 def plot_wavepacket_eigenvalues_2d_x(
     wavepacket: BlochWavefunctionListWithEigenvalues[
-        StackedBasisLike[*tuple[Any, ...]],
-        StackedBasisLike[*tuple[Any, ...]],
+        TupleBasisLike[*tuple[Any, ...]],
+        TupleBasisLike[*tuple[Any, ...]],
     ],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
@@ -157,7 +157,7 @@ def plot_wavepacket_eigenvalues_2d_x(
 
     Parameters
     ----------
-    wavepacket : WavepacketWithEigenvalues[_NS0Inv, _NS1Inv, StackedBasisLike[tuple[_A3d0Inv, _A3d1Inv, _A3d2Inv]]
+    wavepacket : WavepacketWithEigenvalues[_NS0Inv, _NS1Inv, TupleBasisLike[tuple[_A3d0Inv, _A3d1Inv, _A3d2Inv]]
     ax : Axes | None, optional
         plot axis, by default None
     measure : Literal[&quot;real&quot;, &quot;imag&quot;, &quot;abs&quot;], optional
@@ -183,7 +183,7 @@ def plot_wavepacket_eigenvalues_2d_x(
 
 def plot_eigenvalues_1d_x(
     wavepacket: BlochWavefunctionListWithEigenvalues[
-        StackedBasisLike[*tuple[Any, ...]], StackedBasisLike[*tuple[Any, ...]]
+        TupleBasisLike[*tuple[Any, ...]], TupleBasisLike[*tuple[Any, ...]]
     ],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -223,7 +223,7 @@ def plot_eigenvalues_1d_x(
 
 def plot_wavepacket_1d_x(
     wavepacket: BlochWavefunctionList[
-        StackedBasisLike[*tuple[Any, ...]], StackedBasisLike[*tuple[Any, ...]]
+        TupleBasisLike[*tuple[Any, ...]], TupleBasisLike[*tuple[Any, ...]]
     ],
     axes: tuple[int] = (0,),
     idx: tuple[int, ...] | None = None,
@@ -259,7 +259,7 @@ def plot_wavepacket_1d_x(
 
 def plot_wavepacket_1d_k(
     wavepacket: BlochWavefunctionList[
-        StackedBasisLike[*tuple[Any, ...]], StackedBasisLike[*tuple[Any, ...]]
+        TupleBasisLike[*tuple[Any, ...]], TupleBasisLike[*tuple[Any, ...]]
     ],
     axes: tuple[int] = (0,),
     idx: tuple[int, ...] | None = None,
@@ -295,7 +295,7 @@ def plot_wavepacket_1d_k(
 
 def plot_wavepacket_2d_k(
     wavepacket: BlochWavefunctionList[
-        StackedBasisLike[*tuple[Any, ...]], StackedBasisLike[*tuple[Any, ...]]
+        TupleBasisLike[*tuple[Any, ...]], TupleBasisLike[*tuple[Any, ...]]
     ],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
@@ -329,7 +329,7 @@ def plot_wavepacket_2d_k(
 
 def plot_all_wavepacket_states_2d_k(
     wavepacket: BlochWavefunctionList[
-        StackedBasisLike[*tuple[Any, ...]], StackedBasisLike[*tuple[Any, ...]]
+        TupleBasisLike[*tuple[Any, ...]], TupleBasisLike[*tuple[Any, ...]]
     ],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
@@ -365,7 +365,7 @@ def plot_all_wavepacket_states_2d_k(
 
 def plot_wavepacket_2d_x(
     wavepacket: BlochWavefunctionList[
-        StackedBasisLike[*tuple[Any, ...]], StackedBasisLike[*tuple[Any, ...]]
+        TupleBasisLike[*tuple[Any, ...]], TupleBasisLike[*tuple[Any, ...]]
     ],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
@@ -399,7 +399,7 @@ def plot_wavepacket_2d_x(
 
 def plot_all_wavepacket_states_2d_x(
     wavepacket: BlochWavefunctionList[
-        StackedBasisLike[*tuple[Any, ...]], StackedBasisLike[*tuple[Any, ...]]
+        TupleBasisLike[*tuple[Any, ...]], TupleBasisLike[*tuple[Any, ...]]
     ],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
@@ -477,7 +477,7 @@ def plot_wavepacket_difference_2d_x(
 
 def animate_wavepacket_3d_x(
     wavepacket: BlochWavefunctionList[
-        StackedBasisLike[*tuple[Any, ...]], StackedBasisLike[*tuple[Any, ...]]
+        TupleBasisLike[*tuple[Any, ...]], TupleBasisLike[*tuple[Any, ...]]
     ],
     axes: tuple[int, int, int] = (0, 1, 2),
     idx: SingleStackedIndexLike | None = None,
@@ -509,7 +509,7 @@ def animate_wavepacket_3d_x(
 
 def plot_wavepacket_along_path(
     wavepacket: BlochWavefunctionList[
-        StackedBasisLike[*tuple[Any, ...]], StackedBasisLike[*tuple[Any, ...]]
+        TupleBasisLike[*tuple[Any, ...]], TupleBasisLike[*tuple[Any, ...]]
     ],
     path: np.ndarray[tuple[int, int], np.dtype[np.int_]],
     *,
