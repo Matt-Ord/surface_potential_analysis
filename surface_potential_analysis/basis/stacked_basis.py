@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 _S0Inv = TypeVar("_S0Inv", bound=tuple[int, ...])
 
 _B0 = TypeVarTuple("_B0")
+_B1s = TypeVarTuple("_B1s")
 _B0Inv = TypeVar("_B0Inv", bound=BasisLike[Any, Any])
 
 _FN0_co = TypeVar("_FN0_co", bound=int, covariant=True)
@@ -68,20 +69,55 @@ class StackedBasisLike(BasisLike[_FN0_co, _N0_co], Protocol[_N0_co, _FN0_co, _ND
 
 
 @runtime_checkable
+class StackedBasisWithVolumeLike(
+    StackedBasisLike[_N0_co, _FN0_co, _ND0_co], Protocol[_N0_co, _FN0_co, _ND0_co]
+):
+    """Represents a basis formed from two disjoint basis."""
+
+    @property
+    def ndim(self) -> int:
+        return len(self.fundamental_shape)
+
+    @property
+    def n(self) -> _N0_co:
+        return cast(_N0_co, np.prod(self.shape).item())
+
+    @property
+    def fundamental_n(self) -> _FN0_co:
+        return cast(_FN0_co, np.prod(self.fundamental_shape).item())
+
+    @property
+    def shape(self) -> tuple[int, ...]:
+        ...
+
+    @property
+    def fundamental_shape(
+        self,
+    ) -> tuple[int, ...]:
+        ...
+
+    @property
+    def delta_x_stacked(
+        self,
+    ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
+        ...
+
+
+@runtime_checkable
 class TupleBasisLike(StackedBasisLike[Any, Any, Any], Protocol[*_B0]):
     """Represents a basis formed from two disjoint basis."""
 
     @property
-    def shape(self: TupleBasisLike[*tuple[_B0Inv, ...]]) -> tuple[int, ...]:
+    def shape(self: TupleBasisLike[*_B1s]) -> tuple[int, ...]:
         return tuple(ax.n for ax in self)
 
     @property
     def fundamental_shape(
-        self: TupleBasisLike[*tuple[_B0Inv, ...]],
+        self: TupleBasisLike[*_B1s],
     ) -> tuple[int, ...]:
         return tuple(ax.fundamental_n for ax in self)
 
-    def __repr__(self: TupleBasisLike[*tuple[_B0Inv, ...]]) -> str:
+    def __repr__(self: TupleBasisLike[*_B1s]) -> str:
         return f"{self.__class__.__name__}({', '.join(b.__repr__() for b in self.__iter__())})"
 
     def __iter__(self) -> Iterator[Union[*_B0]]:
@@ -117,6 +153,19 @@ class TupleBasisLike(StackedBasisLike[Any, Any, Any], Protocol[*_B0]):
         ...
 
 
+class TupleBasisWithLengthLike(
+    TupleBasisLike[*_B0], StackedBasisWithVolumeLike[Any, Any, Any], Protocol[*_B0]
+):
+    """Represents a basis formed from multiple basis, each with a length."""
+
+    @property
+    def delta_x_stacked(
+        self: TupleBasisLike[*_B1s],
+    ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
+        # Note: this is only valid if each basis has a length too.
+        return np.array([axi.delta_x for axi in self])
+
+
 def _convert_tuple_basis_vector(
     vector: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
     initial_basis: TupleBasisLike[*tuple[BasisLike[Any, Any], ...]],
@@ -150,7 +199,7 @@ def _convert_tuple_basis_vector(
     )
 
 
-class TupleBasis(TupleBasisLike[Unpack[_B0]]):
+class TupleBasis(TupleBasisWithLengthLike[Unpack[_B0]]):
     """Represents a basis formed from two disjoint basis."""
 
     _axes: tuple[Unpack[_B0]]
@@ -164,7 +213,7 @@ class TupleBasis(TupleBasisLike[Unpack[_B0]]):
         vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
-        basis = TupleBasis[Any](
+        basis = TupleBasis[*tuple[Any, ...]](
             *tuple(FundamentalBasis(axis.fundamental_n) for axis in self)
         )
         return _convert_tuple_basis_vector(vectors, basis, self, axis)
@@ -174,7 +223,7 @@ class TupleBasis(TupleBasisLike[Unpack[_B0]]):
         vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
-        basis = TupleBasis[Any](
+        basis = TupleBasis[*tuple[Any, ...]](
             *tuple(FundamentalBasis(axis.fundamental_n) for axis in self)
         )
         return _convert_tuple_basis_vector(vectors, self, basis, axis)
@@ -184,7 +233,7 @@ class TupleBasis(TupleBasisLike[Unpack[_B0]]):
         vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
-        basis = TupleBasis[Any](
+        basis = TupleBasis[*tuple[Any, ...]](
             *tuple(FundamentalTransformedBasis(axis.fundamental_n) for axis in self)
         )
         return _convert_tuple_basis_vector(vectors, self, basis, axis)
@@ -194,7 +243,7 @@ class TupleBasis(TupleBasisLike[Unpack[_B0]]):
         vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
-        basis = TupleBasis[Any](
+        basis = TupleBasis[*tuple[Any, ...]](
             *tuple(FundamentalTransformedBasis(axis.fundamental_n) for axis in self)
         )
         return _convert_tuple_basis_vector(vectors, basis, self, axis)

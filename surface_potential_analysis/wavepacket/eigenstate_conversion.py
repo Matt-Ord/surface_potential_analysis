@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 import numpy as np
 
 from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
     TupleBasisLike,
+    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.stacked_basis.build import (
@@ -51,7 +52,7 @@ if TYPE_CHECKING:
 
     _A3d2Inv = TypeVar("_A3d2Inv", bound=BasisWithLengthLike3d[Any, Any])
 
-    _SB1 = TypeVar("_SB1", bound=TupleBasisLike[*tuple[Any, ...]])
+    _SB1 = TypeVar("_SB1", bound=TupleBasisWithLengthLike[*tuple[Any, ...]])
     _MB0 = TypeVar("_MB0", bound=FundamentalTransformedPositionBasis[Any, Any])
     _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
     _FB0 = TypeVar("_FB0", bound=FundamentalBasis[Any])
@@ -123,7 +124,7 @@ def furl_eigenstate(
 
 def _unfurl_momentum_basis_wavepacket(
     wavepacket: BlochWavefunctionList[
-        TupleBasisLike[*tuple[_FB0, ...]], TupleBasisLike[*tuple[_MB0, ...]]
+        TupleBasisLike[*tuple[_FB0, ...]], TupleBasisWithLengthLike[*tuple[_MB0, ...]]
     ],
 ) -> StateVector[
     TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
@@ -158,9 +159,7 @@ def _unfurl_momentum_basis_wavepacket(
 
     basis = get_unfurled_basis(wavepacket["basis"])
     return {
-        "basis": stacked_basis_as_fundamental_momentum_basis(
-            cast(TupleBasisLike[*tuple[Any, ...]], basis)
-        ),
+        "basis": stacked_basis_as_fundamental_momentum_basis(basis),
         "data": flattened / np.sqrt(np.prod(list_shape)),
     }
 

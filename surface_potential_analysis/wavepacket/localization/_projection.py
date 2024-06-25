@@ -12,6 +12,7 @@ from surface_potential_analysis.basis.basis_like import BasisLike, BasisWithLeng
 from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
     TupleBasisLike,
+    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import (
     BasisUtil,
@@ -349,7 +350,7 @@ def localize_exponential_decay_projection(
 
 def get_gaussian_states(
     wavepacket: BlochWavefunctionList[
-        TupleBasisLike[*tuple[_B0, ...]], TupleBasisLike[*tuple[_BL0, ...]]
+        TupleBasisLike[*tuple[_B0, ...]], TupleBasisWithLengthLike[*tuple[_BL0, ...]]
     ],
     origin: SingleIndexLike = 0,
 ) -> StateVectorList[

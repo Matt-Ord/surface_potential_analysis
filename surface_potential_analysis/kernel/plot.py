@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
@@ -7,8 +8,9 @@ from scipy.constants import hbar
 
 from surface_potential_analysis.kernel.kernel import (
     SingleBasisDiagonalNoiseKernel,
-    get_single_factorized_noise_operators,
-    get_single_factorized_noise_operators_diagonal,
+    SingleBasisDiagonalNoiseOperatorList,
+    get_noise_operators,
+    get_noise_operators_diagonal,
 )
 from surface_potential_analysis.operator.operator_list import (
     select_operator_diagonal,
@@ -30,6 +32,7 @@ if TYPE_CHECKING:
     from matplotlib.lines import Line2D
 
     from surface_potential_analysis.basis.basis import (
+        FundamentalBasis,
         FundamentalPositionBasis,
     )
     from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
@@ -110,7 +113,7 @@ def plot_kernel_sparsity(
 ) -> tuple[Figure, Axes]:
     fig, ax = get_figure(ax)
 
-    operators = get_single_factorized_noise_operators(kernel)
+    operators = get_noise_operators(kernel)
 
     data = get_measured_data(operators["eigenvalue"], measure)
     bins = np.logspace(
@@ -138,7 +141,7 @@ def plot_kernel_truncation_error(
 ) -> tuple[Figure, Axes]:
     fig, ax = get_figure(ax)
 
-    operators = get_single_factorized_noise_operators(kernel)
+    operators = get_noise_operators(kernel)
     sorted_eigenvalues = np.sort(np.abs(operators["eigenvalue"]))
     cumulative = np.empty(sorted_eigenvalues.size + 1)
     cumulative[0] = 0
@@ -164,7 +167,7 @@ def plot_diagonal_kernel_truncation_error(
 ) -> tuple[Figure, Axes]:
     fig, ax = get_figure(ax)
 
-    operators = get_single_factorized_noise_operators_diagonal(kernel)
+    operators = get_noise_operators_diagonal(kernel)
     eigenvalues = np.sort(np.abs(operators["eigenvalue"]))
     cumulative = np.empty(eigenvalues.size + 1)
     cumulative[0] = 0
@@ -178,8 +181,9 @@ def plot_diagonal_kernel_truncation_error(
     return fig, ax
 
 
-def plot_effective_potential_single_sample(
-    kernel: SingleBasisDiagonalNoiseKernel[
+def plot_diagonal_noise_operators_single_sample(
+    operators: SingleBasisDiagonalNoiseOperatorList[
+        FundamentalBasis[int],
         TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]],
     ],
     truncation: int | None = None,
@@ -190,17 +194,36 @@ def plot_effective_potential_single_sample(
     scale: Scale = "linear",
     measure: Measure = "real",
 ) -> tuple[Figure, Axes, Line2D]:
-    truncation = kernel["basis"][0].n if truncation is None else truncation
-    operators = get_single_factorized_noise_operators_diagonal(kernel)
+    """
+    Plot a single sample of the noise operators.
 
+    Parameters
+    ----------
+    operators : SingleBasisDiagonalNoiseOperatorList[ FundamentalBasis[int], TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]], ]
+    axes : tuple[int], optional
+        axis to plot, by default (0,)
+    idx : SingleStackedIndexLike | None, optional
+        index to plot, by default None
+    ax : Axes | None, optional
+        plot axis, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+    measure : Measure, optional
+        measure, by default "real"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
     rng = np.random.default_rng()
     factors = (1 / np.sqrt(2)) * (
-        rng.normal(size=truncation) + 1j * rng.normal(size=truncation)
+        rng.normal(size=operators["eigenvalue"].size)
+        + 1j * rng.normal(size=operators["eigenvalue"].size)
     )
 
     measured_potential = np.zeros(operators["basis"][1][0].n, dtype=np.complex128)
     args = np.argsort(np.abs(operators["eigenvalue"]))[::-1]
-    for i, factor in zip(args[: truncation - 1], factors):
+    for i, factor in itertools.islice(zip(args, factors), truncation):
         operator = select_operator_diagonal(
             operators,
             idx=i,
@@ -222,3 +245,95 @@ def plot_effective_potential_single_sample(
         scale=scale,
         measure=measure,
     )
+
+
+def plot_noise_kernel_single_sample(
+    kernel: SingleBasisDiagonalNoiseKernel[
+        TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]],
+    ],
+    truncation: int | None = None,
+    axes: tuple[int] = (0,),
+    idx: SingleStackedIndexLike | None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "real",
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot a singel sample form a noise kernel.
+
+    Parameters
+    ----------
+    kernel : SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]], ]
+    truncation : int | None, optional
+        truncation, by default None
+    axes : tuple[int], optional
+        axes, by default (0,)
+    idx : SingleStackedIndexLike | None, optional
+        idx, by default None
+    ax : Axes | None, optional
+        plot axis, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+    measure : Measure, optional
+        measure, by default "real"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    operators = get_noise_operators_diagonal(kernel)
+
+    return plot_diagonal_noise_operators_single_sample(
+        operators,
+        truncation,
+        axes,
+        idx,
+        ax=ax,
+        scale=scale,
+        measure=measure,
+    )
+
+
+def plot_diagonal_noise_operators_eigenvalues(
+    operators: SingleBasisDiagonalNoiseOperatorList[
+        FundamentalBasis[int],
+        TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]],
+    ],
+    truncation: int | None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "real",
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot a single sample of the noise operators.
+
+    Parameters
+    ----------
+    operators : SingleBasisDiagonalNoiseOperatorList[ FundamentalBasis[int], TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]], ]
+    axes : tuple[int], optional
+        axis to plot, by default (0,)
+    idx : SingleStackedIndexLike | None, optional
+        index to plot, by default None
+    ax : Axes | None, optional
+        plot axis, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+    measure : Measure, optional
+        measure, by default "real"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    fig, ax = get_figure(ax)
+
+    eigenvalues = get_measured_data(operators["eigenvalue"], measure)
+    args = np.argsort(eigenvalues)[:truncation:-1]
+
+    (line,) = ax.plot(eigenvalues[args])
+    ax.set_ylabel("Eigenvalue")
+    ax.set_yscale(scale)
+
+    return fig, ax, line

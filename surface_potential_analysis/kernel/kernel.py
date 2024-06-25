@@ -1,21 +1,27 @@
 from __future__ import annotations
 
-from typing import Any, Generic, TypedDict, TypeVar
+from typing import Any, Generic, TypedDict, TypeVar, TypeVarTuple
 
 import numpy as np
 
 from surface_potential_analysis.basis.basis import FundamentalBasis
-from surface_potential_analysis.basis.basis_like import BasisLike, BasisWithLengthLike
+from surface_potential_analysis.basis.basis_like import BasisLike
 from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
     TupleBasisLike,
 )
-from surface_potential_analysis.operator.conversion import sample_operator_list
-from surface_potential_analysis.operator.operator import DiagonalOperator, Operator
+from surface_potential_analysis.basis.util import BasisUtil
+from surface_potential_analysis.operator.operator import (
+    DiagonalOperator,
+    Operator,
+)
 from surface_potential_analysis.operator.operator_list import (
     DiagonalOperatorList,
     OperatorList,
+    as_diagonal_operator_list,
+    as_operator_list,
 )
+from surface_potential_analysis.state_vector.eigenstate_collection import ValueList
 
 _B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
 _B1_co = TypeVar("_B1_co", bound=BasisLike[Any, Any], covariant=True)
@@ -78,6 +84,20 @@ class DiagonalNoiseKernel(TypedDict, Generic[_B0_co, _B1_co, _B2_co, _B3_co]):
 
 
 SingleBasisDiagonalNoiseKernel = DiagonalNoiseKernel[_B0, _B0, _B0, _B0]
+
+
+class IsotropicNoiseKernel(TypedDict, Generic[_B0_co]):
+    r"""
+    Represents a noise kernel which is isotropic.
+
+    In this case, the correllation between any pair of states depends only on
+    the difference between the two states. We therefore store the kernel
+    relating to only a single state.
+    """
+
+    basis: _B0_co
+    """The basis of the underlying noise operator"""
+    data: np.ndarray[tuple[int], np.dtype[np.complex128]]
 
 
 class EigenOperator(Operator[_B0_co, _B1_co], TypedDict):
@@ -168,7 +188,127 @@ def as_diagonal_kernel(
     return {"basis": kernel["basis"], "data": diagonal.ravel()}
 
 
-def get_single_factorized_noise_operators(
+def as_isotropic_kernel(
+    kernel: DiagonalNoiseKernel[_B0, _B0, _B0, _B0],
+) -> IsotropicNoiseKernel[_B0]:
+    """
+    Convert a diagonal kernel into an isotropic kernel.
+
+    By convention, we take the kernel corresponding to state 0
+
+    Parameters
+    ----------
+    kernel : DiagonalNoiseKernel[_B0, _B0, _B0, _B0]
+
+    Returns
+    -------
+    IsotropicNoiseKernel[_B0]
+    """
+    data = kernel["data"].reshape(kernel["basis"].shape)[0]
+
+    return {"basis": kernel["basis"][0][0], "data": data}
+
+
+def as_diagonal_kernel_from_isotropic(
+    kernel: IsotropicNoiseKernel[_B0],
+) -> DiagonalNoiseKernel[_B0, _B0, _B0, _B0]:
+    """
+    Convert an isotropic kernel into a diagonal kernel.
+
+    By convention, we take the kernel corresponding to state 0.
+    We fill the diagonal elements by finding the corresponding value for each given displacement
+
+    Parameters
+    ----------
+    kernel : DiagonalNoiseKernel[_B0, _B0, _B0, _B0]
+
+    Returns
+    -------
+    IsotropicNoiseKernel[_B0]
+    """
+    old_data = kernel["data"].ravel()
+
+    indices = BasisUtil(kernel["basis"]).nx_points
+    displacement_matrix = np.mod(indices[:, None] - indices[None, :], old_data.size)
+    data = old_data[displacement_matrix]
+
+    return {
+        "basis": TupleBasis(
+            TupleBasis(kernel["basis"], kernel["basis"]),
+            TupleBasis(kernel["basis"], kernel["basis"]),
+        ),
+        "data": data.ravel(),
+    }
+
+
+_B0s = TypeVarTuple("_B0s")
+
+
+def as_diagonal_kernel_from_isotropic_stacked(
+    kernel: IsotropicNoiseKernel[TupleBasisLike[*_B0s]],
+) -> SingleBasisDiagonalNoiseKernel[TupleBasisLike[*_B0s]]:
+    """
+    Convert an isotropic kernel into a diagonal kernel.
+
+    By convention, we take the kernel corresponding to state 0.
+    We fill the diagonal elements by finding the corresponding value for each given displacement.
+    For a Stacked Basis, this displacement should be calculated axes-wise
+
+    Parameters
+    ----------
+    kernel : DiagonalNoiseKernel[_B0, _B0, _B0, _B0]
+
+    Returns
+    -------
+    IsotropicNoiseKernel[_B0]
+    """
+    old_data = kernel["data"].reshape(*kernel["basis"].shape)
+
+    util = BasisUtil(kernel["basis"])
+    # Calculate the displacement on each axis seperately
+    displacement_matrix = tuple(
+        np.mod(indices[:, None] - indices[None, :], n)
+        for (indices, n) in zip(
+            util.stacked_nx_points,
+            util.shape,
+            strict=True,
+        )
+    )
+
+    data = old_data[displacement_matrix]
+
+    return {
+        "basis": TupleBasis(
+            TupleBasis(kernel["basis"], kernel["basis"]),
+            TupleBasis(kernel["basis"], kernel["basis"]),
+        ),
+        "data": data.ravel(),
+    }
+
+
+def as_diagonal_noise_operators(
+    operators: NoiseOperatorList[_B0, _B1, _B2],
+) -> DiagonalNoiseOperatorList[_B0, _B1, _B2]:
+    operators_diagonal = as_diagonal_operator_list(operators)
+    return {
+        "basis": operators["basis"],
+        "data": operators_diagonal["data"],
+        "eigenvalue": operators["eigenvalue"],
+    }
+
+
+def as_noise_operators(
+    operators: DiagonalNoiseOperatorList[_B0, _B1, _B2],
+) -> NoiseOperatorList[_B0, _B1, _B2]:
+    operators_full = as_operator_list(operators)
+    return {
+        "basis": operators["basis"],
+        "data": operators_full["data"],
+        "eigenvalue": operators["eigenvalue"],
+    }
+
+
+def get_noise_operators(
     kernel: NoiseKernel[_B0, _B1, _B0, _B1],
 ) -> NoiseOperatorList[FundamentalBasis[int], _B0, _B1]:
     r"""
@@ -235,7 +375,7 @@ def get_noise_kernel(
     }
 
 
-def get_single_factorized_noise_operators_diagonal(
+def get_noise_operators_diagonal(
     kernel: DiagonalNoiseKernel[_B0, _B1, _B0, _B1],
 ) -> DiagonalNoiseOperatorList[FundamentalBasis[int], _B0, _B1]:
     r"""
@@ -287,6 +427,38 @@ def get_single_factorized_noise_operators_diagonal(
     }
 
 
+IsotropicNoiseOperatorList = ValueList[_B0]
+
+
+def isotropic_noise_operators_as_diagonal(
+    isotropic: IsotropicNoiseOperatorList[_B0],
+) -> SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[int], _B0]:
+    """
+    Get operators corresponding to an IsotropicNoiseOperatorList.
+
+    Given a set of isotropic noise operators (ie noise which is like |n><n| in some basis n),
+    get the noise operators as an operator list.
+
+    Parameters
+    ----------
+    isotropic : IsotropicNoiseOperatorList[_B0]
+        _description_
+
+    Returns
+    -------
+    SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[int], _B0]
+        _description_
+    """
+    return {
+        "basis": TupleBasis(
+            FundamentalBasis(isotropic["basis"].n),
+            TupleBasis(isotropic["basis"], isotropic["basis"]),
+        ),
+        "data": np.eye(isotropic["basis"].n, dtype=np.complex128),
+        "eigenvalue": isotropic["data"],
+    }
+
+
 def get_diagonal_noise_kernel(
     operators: DiagonalNoiseOperatorList[FundamentalBasis[int], _B0, _B1],
 ) -> DiagonalNoiseKernel[_B0, _B1, _B0, _B1]:
@@ -306,7 +478,19 @@ def get_diagonal_noise_kernel(
 def truncate_diagonal_noise_kernel(
     kernel: DiagonalNoiseKernel[_B0, _B1, _B0, _B1], *, n: int | slice
 ) -> DiagonalNoiseKernel[_B0, _B1, _B0, _B1]:
-    operators = get_single_factorized_noise_operators_diagonal(kernel)
+    """
+    Given a noise kernel, retain only the first n noise operators.
+
+    Parameters
+    ----------
+    kernel : NoiseKernel[_B0, _B1, _B0, _B1]
+    n : int
+
+    Returns
+    -------
+    NoiseKernel[_B0, _B1, _B0, _B1]
+    """
+    operators = get_noise_operators_diagonal(kernel)
 
     arg_sort = np.argsort(np.abs(operators["eigenvalue"]))
     args = arg_sort[-n::] if isinstance(n, int) else arg_sort[::-1][n]
@@ -324,7 +508,19 @@ def truncate_diagonal_noise_kernel(
 def truncate_noise_kernel(
     kernel: NoiseKernel[_B0, _B1, _B0, _B1], *, n: int
 ) -> NoiseKernel[_B0, _B1, _B0, _B1]:
-    operators = get_single_factorized_noise_operators(kernel)
+    """
+    Given a noise kernel, retain only the first n noise operators.
+
+    Parameters
+    ----------
+    kernel : NoiseKernel[_B0, _B1, _B0, _B1]
+    n : int
+
+    Returns
+    -------
+    NoiseKernel[_B0, _B1, _B0, _B1]
+    """
+    operators = get_noise_operators(kernel)
 
     arg_sort = np.argsort(np.abs(operators["eigenvalue"]))
     args = arg_sort[-n::]
@@ -337,36 +533,3 @@ def truncate_noise_kernel(
             "eigenvalue": operators["eigenvalue"][args],
         }
     )
-
-
-def get_noise_operators_sampled(
-    operators: SingleBasisNoiseOperatorList[
-        _B0, TupleBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]]
-    ],
-    *,
-    n: int | None = None,
-) -> SingleBasisNoiseOperatorList[_B0, Any]:
-    """
-    Given a set of noise operators, get the equivalent operators in a sampled basis.
-
-    This is useful to remove the periodicity in momentum space.
-    For example by removing any scattering between neighboring k from +k_n/2 to -k_n/2.
-
-    This is because these states are far apart in the large (over sampled) basis.
-
-
-    Returns
-    -------
-    SingleBasisNoiseOperatorList[_B0, _SB0]
-
-    """
-    sampled = sample_operator_list(
-        operators,
-        sample=(operators["basis"][1][0].fundamental_n // 2 if n is None else n,),
-    )
-
-    return {
-        "basis": sampled["basis"],
-        "data": sampled["data"],
-        "eigenvalue": operators["eigenvalue"],
-    }

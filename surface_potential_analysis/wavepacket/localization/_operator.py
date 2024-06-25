@@ -7,7 +7,10 @@ import numpy as np
 from surface_potential_analysis.basis.basis import (
     FundamentalBasis,
 )
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
+from surface_potential_analysis.basis.stacked_basis import (
+    TupleBasis,
+    TupleBasisWithLengthLike,
+)
 from surface_potential_analysis.basis.util import (
     BasisUtil,
 )
@@ -134,7 +137,8 @@ def localize_position_operator(
 def localize_position_operator_many_band(
     wavepackets: list[
         BlochWavefunctionListWithEigenvalues[
-            TupleBasisLike[*tuple[_B0, ...]], TupleBasisLike[*tuple[_BL0, ...]]
+            TupleBasisLike[*tuple[_B0, ...]],
+            TupleBasisWithLengthLike[*tuple[_BL0, ...]],
         ]
     ],
 ) -> list[StateVector[Any]]:

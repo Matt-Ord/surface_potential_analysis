@@ -23,6 +23,7 @@ from surface_potential_analysis.basis.evenly_spaced_basis import (
 from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
     TupleBasisLike,
+    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import (
     BasisUtil,
@@ -156,9 +157,9 @@ class UnfurledBasis(TupleBasis[_B0, BasisWithLengthLike[_L0Inv, _L1Inv, _ND0Inv]
 
 def get_unfurled_basis(
     basis: BlochWavefunctionListBasis[
-        TupleBasisLike[*tuple[_B0, ...]], TupleBasisLike[*tuple[_BL0, ...]]
+        TupleBasisLike[*tuple[_B0, ...]], TupleBasisWithLengthLike[*tuple[_BL0, ...]]
     ],
-) -> TupleBasisLike[*tuple[UnfurledBasis[Any, Any, Any, Any], ...]]:
+) -> TupleBasisWithLengthLike[*tuple[UnfurledBasis[Any, Any, Any, Any], ...]]:
     """
     Given the basis for a wavepacket, get the basis for the unfurled wavepacket.
 
@@ -201,7 +202,7 @@ def get_furled_basis(
 
 
 def get_wavepacket_sample_fractions(
-    list_basis: TupleBasisLike[*tuple[_B0, ...]],
+    list_basis: TupleBasisWithLengthLike[*tuple[_B0, ...]],
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     """
     Get the frequencies of the samples in a wavepacket, as a fraction of dk.

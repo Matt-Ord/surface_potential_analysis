@@ -25,6 +25,7 @@ from surface_potential_analysis.state_vector.eigenvalue_list_plot import (
 from surface_potential_analysis.util.plot import (
     Scale,
     get_figure,
+    plot_data_2d,
 )
 from surface_potential_analysis.util.util import (
     Measure,
@@ -267,6 +268,7 @@ def plot_operator_2d(
     operator: SingleBasisOperator[BasisLike[Any, Any]],
     *,
     ax: Axes | None = None,
+    scale: Scale = "linear",
     measure: Measure = "abs",
 ) -> tuple[Figure, Axes, QuadMesh]:
     """
@@ -285,11 +287,8 @@ def plot_operator_2d(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    fig, ax = get_figure(ax)
     data = operator["data"].reshape(operator["basis"].shape)
-    mesh = ax.pcolormesh(get_measured_data(data, measure))
-    fig.colorbar(mesh, ax=ax, format="%4.1e")
-    return fig, ax, mesh
+    return plot_data_2d(data, ax=ax, scale=scale, measure=measure)
 
 
 def plot_operator_2d_diagonal(

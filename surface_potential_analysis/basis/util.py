@@ -152,23 +152,23 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @property
     def shape(
-        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*_TS]],
     ) -> tuple[int, ...]:
         return self._basis.shape
 
     @property
-    def ndim(self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]]) -> int:
+    def ndim(self: BasisUtil[TupleBasisLike[*_TS]]) -> int:
         return self._basis.ndim
 
     @property
     def fundamental_shape(
-        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*_TS]],
     ) -> tuple[int, ...]:
         return self._basis.fundamental_shape
 
     @property
     def stacked_nk_points(
-        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*_TS]],
     ) -> ArrayStackedIndexLike[tuple[int]]:
         nk_mesh = np.meshgrid(
             *[BasisUtil(xi_basis).nk_points for xi_basis in self],
@@ -178,7 +178,7 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @property
     def fundamental_stacked_nk_points(
-        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*_TS]],
     ) -> ArrayStackedIndexLike[tuple[int]]:
         nk_mesh = np.meshgrid(
             *[BasisUtil(xi_basis).fundamental_nk_points for xi_basis in self],
@@ -188,7 +188,7 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @property
     def stacked_nx_points(
-        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*_TS]],
     ) -> ArrayStackedIndexLike[tuple[int]]:
         nx_mesh = np.meshgrid(
             *[BasisUtil(xi_basis).nx_points for xi_basis in self],
@@ -198,7 +198,7 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @property
     def fundamental_stacked_nx_points(
-        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*_TS]],
     ) -> ArrayStackedIndexLike[tuple[int]]:
         nx_mesh = np.meshgrid(
             *[BasisUtil(xi_basis).fundamental_nx_points for xi_basis in self],
@@ -208,7 +208,7 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @overload
     def get_flat_index(
-        self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
+        self: BasisUtil[TupleBasisLike[*_TS]],
         idx: SingleStackedIndexLike,
         *,
         mode: Literal["raise", "wrap", "clip"] = "raise",

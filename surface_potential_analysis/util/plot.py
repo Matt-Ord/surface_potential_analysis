@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, overload
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -219,6 +219,56 @@ def plot_data_1d_x(
     return fig, ax, line
 
 
+@overload
+def plot_data_2d(
+    data: np.ndarray[tuple[int], np.dtype[np.complex128]],
+    coordinates: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "abs",
+) -> tuple[Figure, Axes, QuadMesh]:
+    ...
+
+
+@overload
+def plot_data_2d(
+    data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
+    coordinates: None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "abs",
+) -> tuple[Figure, Axes, QuadMesh]:
+    ...
+
+
+def plot_data_2d(
+    data: np.ndarray[Any, np.dtype[np.complex128]],
+    coordinates: np.ndarray[tuple[int, int], np.dtype[np.float64]] | None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "abs",
+) -> tuple[Figure, Axes, QuadMesh]:
+    fig, ax = get_figure(ax)
+
+    measured_data = get_measured_data(data, measure)
+
+    mesh = (
+        ax.pcolormesh(measured_data)
+        if coordinates is None
+        else ax.pcolormesh(*coordinates, measured_data, shading="nearest")
+    )
+    clim = _get_lim((None, None), measure, data)
+    norm = _get_norm_with_lim(scale, clim)
+    mesh.set_norm(norm)
+    mesh.set_clim(*clim)
+    ax.set_aspect("equal", adjustable="box")
+    fig.colorbar(mesh, ax=ax, format="%4.1e")
+    return fig, ax, mesh
+
+
 def plot_data_2d_k(
     basis: TupleBasisLike[*tuple[Any, ...]],
     data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
@@ -251,23 +301,17 @@ def plot_data_2d_k(
     -------
     tuple[Figure, Axes, QuadMesh]
     """
-    fig, ax = get_figure(ax)
     idx = get_max_idx(basis, data, axes) if idx is None else idx
 
     coordinates = get_k_coordinates_in_axes(basis, axes, idx)
     data_in_axis = get_data_in_axes(data.reshape(basis.shape), axes, idx)
-    measured_data = get_measured_data(data_in_axis, measure)
 
-    shifted_data = np.fft.fftshift(measured_data)
+    shifted_data = np.fft.fftshift(data_in_axis)
     shifted_coordinates = np.fft.fftshift(coordinates, axes=(1, 2))
 
-    mesh = ax.pcolormesh(*shifted_coordinates, shifted_data, shading="nearest")
-    clim = _get_lim((None, None), measure, shifted_data)
-    norm = _get_norm_with_lim(scale, clim)
-    mesh.set_norm(norm)
-    mesh.set_clim(*clim)
-    ax.set_aspect("equal", adjustable="box")
-    fig.colorbar(mesh, ax=ax, format="%4.1e")
+    fig, ax, mesh = plot_data_2d(
+        shifted_data, shifted_coordinates, ax=ax, scale=scale, measure=measure
+    )
 
     ax.set_xlabel(f"k{axes[0]} axis")
     ax.set_ylabel(f"k{axes[1]} axis")
@@ -321,15 +365,14 @@ def plot_data_2d_x(
 
     coordinates = get_x_coordinates_in_axes(basis, axes, idx)
     data_in_axis = get_data_in_axes(data.reshape(basis.shape), axes, idx)
-    measured_data = get_measured_data(data_in_axis, measure)
 
-    mesh = ax.pcolormesh(*coordinates, measured_data, shading="nearest")
-    clim = _get_lim((None, None), measure, measured_data)
-    norm = _get_norm_with_lim(scale, clim)
-    mesh.set_norm(norm)
-    mesh.set_clim(*clim)
-    ax.set_aspect("equal", adjustable="box")
-    fig.colorbar(mesh, ax=ax, format="%4.1e")
+    fig, ax, mesh = plot_data_2d(
+        cast(np.ndarray[tuple[int], np.dtype[np.complex128]], data_in_axis),
+        coordinates,
+        ax=ax,
+        scale=scale,
+        measure=measure,
+    )
 
     ax.set_xlabel(f"x{axes[0]} axis")
     ax.set_ylabel(f"x{axes[1]} axis")

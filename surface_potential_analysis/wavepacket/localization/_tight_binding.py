@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
     from surface_potential_analysis.basis.stacked_basis import (
         TupleBasisLike,
+        TupleBasisWithLengthLike,
     )
     from surface_potential_analysis.types import (
         ArrayIndexLike,
@@ -46,7 +47,7 @@ if TYPE_CHECKING:
     _FB1 = TypeVar("_FB1", bound=FundamentalBasis[Any])
 
     _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
-    _SB1 = TypeVar("_SB1", bound=TupleBasisLike[*tuple[Any, ...]])
+    _SB1 = TypeVar("_SB1", bound=TupleBasisWithLengthLike[*tuple[Any, ...]])
 
     _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Literal[3]])
     _BL1 = TypeVar("_BL1", bound=BasisWithLengthLike[Any, Any, Literal[3]])

@@ -122,6 +122,30 @@ def as_operator_list(
     }
 
 
+def as_diagonal_operator_list(
+    operators: OperatorList[_B0, _B1, _B2],
+) -> DiagonalOperatorList[_B0, _B1, _B2]:
+    """
+    Get a single state vector from a list of states.
+
+    Parameters
+    ----------
+    list : EigenstateList[_B0Inv]
+    idx : SingleFlatIndexLike
+
+    Returns
+    -------
+    Eigenstate[_B0Inv]
+    """
+    n = operators["basis"][1].shape[0]
+    data = np.einsum("ijj->ij", operators["data"].reshape(-1, n, n))
+
+    return {
+        "basis": operators["basis"],
+        "data": data.ravel(),
+    }
+
+
 def operator_list_from_iter(
     iters: Iterable[Operator[_B1, _B2]],
 ) -> OperatorList[FundamentalBasis[int], _B1, _B2]:

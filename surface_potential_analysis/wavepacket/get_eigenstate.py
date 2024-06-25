@@ -16,6 +16,7 @@ from surface_potential_analysis.basis.explicit_basis import (
 )
 from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
+    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.operator.conversion import convert_operator_to_basis
@@ -94,7 +95,7 @@ if TYPE_CHECKING:
     _FTB0 = TypeVar("_FTB0", bound=FundamentalTransformedPositionBasis[Any, Any])
     _B0Inv = TypeVar("_B0Inv", bound=BasisLike[Any, Any])
     _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
-    _SB1 = TypeVar("_SB1", bound=TupleBasisLike[*tuple[Any, ...]])
+    _SB1 = TypeVar("_SB1", bound=TupleBasisWithLengthLike[*tuple[Any, ...]])
 
     _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
     _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])

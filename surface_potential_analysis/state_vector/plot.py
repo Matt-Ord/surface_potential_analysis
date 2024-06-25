@@ -10,6 +10,7 @@ from matplotlib.animation import ArtistAnimation
 from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
     TupleBasisLike,
+    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.time_basis_like import (
     BasisWithTimeLike,
@@ -128,7 +129,7 @@ def plot_state_1d_k(
 
 
 def plot_state_1d_x(
-    state: StateVector[TupleBasisLike[*tuple[Any, ...]]],
+    state: StateVector[TupleBasisWithLengthLike[*tuple[Any, ...]]],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -174,7 +175,9 @@ def plot_state_1d_x(
 
 
 def animate_state_over_list_1d_x(
-    states: StateVectorList[BasisLike[Any, Any], TupleBasisLike[*tuple[Any, ...]]],
+    states: StateVectorList[
+        BasisLike[Any, Any], TupleBasisWithLengthLike[*tuple[Any, ...]]
+    ],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -221,7 +224,9 @@ def animate_state_over_list_1d_x(
 
 
 def animate_state_over_list_1d_k(
-    states: StateVectorList[BasisLike[Any, Any], TupleBasisLike[*tuple[Any, ...]]],
+    states: StateVectorList[
+        BasisLike[Any, Any], TupleBasisWithLengthLike[*tuple[Any, ...]]
+    ],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -311,8 +316,8 @@ def plot_state_2d_k(
 
 
 def plot_state_difference_2d_k(
-    state_0: StateVector[TupleBasisLike[*tuple[Any, ...]]],
-    state_1: StateVector[TupleBasisLike[*tuple[Any, ...]]],
+    state_0: StateVector[TupleBasisWithLengthLike[*tuple[Any, ...]]],
+    state_1: StateVector[TupleBasisWithLengthLike[*tuple[Any, ...]]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -398,8 +403,8 @@ def plot_state_2d_x(
 
 
 def plot_state_difference_1d_k(
-    state_0: StateVector[TupleBasisLike[*tuple[Any, ...]]],
-    state_1: StateVector[TupleBasisLike[*tuple[Any, ...]]],
+    state_0: StateVector[TupleBasisWithLengthLike[*tuple[Any, ...]]],
+    state_1: StateVector[TupleBasisWithLengthLike[*tuple[Any, ...]]],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -442,8 +447,8 @@ def plot_state_difference_1d_k(
 
 
 def plot_state_difference_2d_x(
-    state_0: StateVector[TupleBasisLike[*tuple[Any, ...]]],
-    state_1: StateVector[TupleBasisLike[*tuple[Any, ...]]],
+    state_0: StateVector[TupleBasisWithLengthLike[*tuple[Any, ...]]],
+    state_1: StateVector[TupleBasisWithLengthLike[*tuple[Any, ...]]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -747,7 +752,7 @@ def plot_average_band_occupation(
     return fig, ax, line
 
 
-_SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any]])
+_SB0 = TypeVar("_SB0", bound=TupleBasisWithLengthLike[*tuple[Any]])
 
 
 def _get_periodic_x_operator(basis: _SB0, axis: int) -> SingleBasisOperator[_SB0]:

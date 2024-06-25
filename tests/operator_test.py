@@ -10,7 +10,7 @@ from surface_potential_analysis.basis.basis import (
     FundamentalTransformedBasis,
 )
 from surface_potential_analysis.basis.explicit_basis import ExplicitBasis
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
+from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.operator.conversion import (
     convert_operator_list_to_basis,
     convert_operator_to_basis,
@@ -49,9 +49,9 @@ class OperatorTest(unittest.TestCase):
         diagonal_list: DiagonalOperatorList[
             FundamentalBasis[int], FundamentalBasis[int], FundamentalBasis[int]
         ] = {
-            "basis": StackedBasis(
+            "basis": TupleBasis(
                 FundamentalBasis(n),
-                StackedBasis(FundamentalBasis(m), FundamentalBasis(m)),
+                TupleBasis(FundamentalBasis(m), FundamentalBasis(m)),
             ),
             "data": diagonal.reshape(-1),
         }
@@ -67,20 +67,20 @@ class OperatorTest(unittest.TestCase):
         op_list: OperatorList[
             FundamentalBasis[int], FundamentalBasis[int], FundamentalBasis[int]
         ] = {
-            "basis": StackedBasis(
+            "basis": TupleBasis(
                 FundamentalBasis(n),
-                StackedBasis(FundamentalBasis(m), FundamentalBasis(m)),
+                TupleBasis(FundamentalBasis(m), FundamentalBasis(m)),
             ),
             "data": data.reshape(-1),
         }
 
         new_basis = ExplicitBasis[Any, Any].from_state_vectors(
             {
-                "basis": StackedBasis(FundamentalBasis(m), op_list["basis"][1][0]),
+                "basis": TupleBasis(FundamentalBasis(m), op_list["basis"][1][0]),
                 "data": _random_orthonormal(m).ravel(),
             }
         )
-        basis = StackedBasis(new_basis, new_basis)
+        basis = TupleBasis(new_basis, new_basis)
 
         actual = convert_operator_list_to_basis(op_list, basis)
         expected = operator_list_from_iter(
@@ -100,12 +100,12 @@ class OperatorTest(unittest.TestCase):
         data = rng.random((m, m)).astype(np.complex128)
 
         operator: Operator[FundamentalBasis[int], FundamentalBasis[int]] = {
-            "basis": StackedBasis(FundamentalBasis(m), FundamentalBasis(m)),
+            "basis": TupleBasis(FundamentalBasis(m), FundamentalBasis(m)),
             "data": data.reshape(-1),
         }
 
         new_basis = FundamentalTransformedBasis(m)
-        basis = StackedBasis(new_basis, new_basis)
+        basis = TupleBasis(new_basis, new_basis)
 
         actual = convert_operator_to_basis(operator, basis)
 
@@ -118,12 +118,14 @@ class OperatorTest(unittest.TestCase):
         data = rng.random((m, m)).astype(np.complex128)
 
         operator: Operator[FundamentalBasis[int], FundamentalBasis[int]] = {
-            "basis": StackedBasis(FundamentalBasis(m), FundamentalBasis(m)),
+            "basis": TupleBasis(FundamentalBasis(m), FundamentalBasis(m)),
             "data": data.reshape(-1),
         }
 
-        new_basis = ExplicitBasis.from_basis(FundamentalTransformedBasis(m))
-        basis = StackedBasis(new_basis, new_basis)
+        new_basis = ExplicitBasis[FundamentalBasis[int], Any].from_basis(
+            FundamentalTransformedBasis(m)
+        )
+        basis = TupleBasis(new_basis, new_basis)
 
         actual = convert_operator_to_basis(operator, basis)
         converted_back = convert_operator_to_basis(actual, operator["basis"])
@@ -131,13 +133,13 @@ class OperatorTest(unittest.TestCase):
 
         new_basis_1 = ExplicitBasis[Any, Any].from_state_vectors(
             {
-                "basis": StackedBasis(
+                "basis": TupleBasis(
                     FundamentalBasis(m), FundamentalTransformedBasis(m)
                 ),
                 "data": np.eye(m, dtype=np.complex128).ravel(),
             }
         )
-        basis_1 = StackedBasis(new_basis_1, new_basis_1)
+        basis_1 = TupleBasis(new_basis_1, new_basis_1)
 
         actual_1 = convert_operator_to_basis(operator, basis_1)
         np.testing.assert_array_almost_equal(actual["data"], actual_1["data"])
@@ -146,13 +148,13 @@ class OperatorTest(unittest.TestCase):
 
         new_basis_2 = ExplicitBasis[Any, Any].from_state_vectors(
             {
-                "basis": StackedBasis(
+                "basis": TupleBasis(
                     FundamentalBasis(m), FundamentalTransformedBasis(m)
                 ),
                 "data": _random_orthonormal(m).ravel(),
             }
         )
-        basis_2 = StackedBasis(new_basis_2, new_basis_2)
+        basis_2 = TupleBasis(new_basis_2, new_basis_2)
 
         actual_2 = convert_operator_to_basis(operator, basis_2)
         converted_back_2 = convert_operator_to_basis(actual_2, operator["basis"])

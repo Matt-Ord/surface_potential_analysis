@@ -7,8 +7,8 @@ from surface_potential_analysis.kernel.kernel import (
     DiagonalNoiseOperatorList,
     NoiseKernel,
     get_noise_kernel,
-    get_single_factorized_noise_operators,
-    get_single_factorized_noise_operators_diagonal,
+    get_noise_operators,
+    get_noise_operators_diagonal,
 )
 from surface_potential_analysis.operator.conversion import (
     convert_diagonal_operator_list_to_basis,
@@ -90,7 +90,7 @@ def convert_kernel_to_basis(
     -------
     NoiseKernel[_B0, _B1, _B0, _B1]
     """
-    operators = get_single_factorized_noise_operators(kernel)
+    operators = get_noise_operators(kernel)
     converted = convert_noise_operator_list_to_basis(operators, basis)
     return get_noise_kernel(converted)
 
@@ -110,6 +110,6 @@ def convert_diagonal_kernel_to_basis(
     -------
     NoiseKernel[_B0, _B1, _B0, _B1]
     """
-    operators = get_single_factorized_noise_operators_diagonal(kernel)
+    operators = get_noise_operators_diagonal(kernel)
     converted = convert_diagonal_noise_operator_list_to_basis(operators, basis)
     return get_noise_kernel(converted)

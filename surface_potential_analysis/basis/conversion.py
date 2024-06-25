@@ -10,6 +10,8 @@ from surface_potential_analysis.basis.basis import (
 )
 
 if TYPE_CHECKING:
+    import numpy as np
+
     from .basis_like import (
         BasisLike,
         BasisWithLengthLike,
@@ -92,8 +94,8 @@ def basis_as_fundamental_basis(
 
 
 def basis_as_n_point_basis(
-    axis: BasisWithLengthLike[_NF0Inv, _N0Inv, _NDInv], *, n: _N1Inv
-) -> FundamentalPositionBasis[_N1Inv, _NDInv]:
+    delta_x: np.ndarray[tuple[int], np.dtype[np.float64]], *, n: _N1Inv
+) -> FundamentalPositionBasis[_N1Inv, int]:
     """
     Get the corresponding n point axis for a given axis.
 
@@ -106,7 +108,7 @@ def basis_as_n_point_basis(
     -------
     FundamentalPositionBasis[_N1Inv, _NDInv]
     """
-    return FundamentalPositionBasis(axis.delta_x, n)
+    return FundamentalPositionBasis[_N1Inv, int](delta_x, n)
 
 
 def basis_as_single_point_basis(

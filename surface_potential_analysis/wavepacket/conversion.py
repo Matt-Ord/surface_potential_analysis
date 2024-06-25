@@ -9,7 +9,10 @@ from surface_potential_analysis.basis.basis_like import (
     BasisWithLengthLike,
     convert_vector,
 )
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
+from surface_potential_analysis.basis.stacked_basis import (
+    TupleBasis,
+    TupleBasisWithLengthLike,
+)
 from surface_potential_analysis.stacked_basis.build import (
     fundamental_stacked_basis_from_shape,
 )
@@ -110,7 +113,9 @@ def convert_wavepacket_to_basis(
 
 
 def convert_wavepacket_to_position_basis(
-    wavepacket: BlochWavefunctionList[_B0Inv, TupleBasisLike[*tuple[_BL0, ...]]],
+    wavepacket: BlochWavefunctionList[
+        _B0Inv, TupleBasisWithLengthLike[*tuple[_BL0, ...]]
+    ],
 ) -> BlochWavefunctionList[
     _B0Inv, TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
 ]:
@@ -125,7 +130,6 @@ def convert_wavepacket_to_position_basis(
     -------
     Wavepacket[_NS0Inv, _NS1Inv, TupleBasisLike[tuple[PositionBasis[int], PositionBasis[int], PositionBasis[int]]]
     """
-    stacked_basis_as_fundamental_position_basis(wavepacket["basis"][1])
     return convert_wavepacket_to_basis(
         wavepacket,
         basis=stacked_basis_as_fundamental_position_basis(wavepacket["basis"][1]),
@@ -157,7 +161,9 @@ def convert_wavepacket_to_fundamental_momentum_basis(
 
 
 def convert_wavepacket_to_fundamental_momentum_basis(
-    wavepacket: BlochWavefunctionList[_B0Inv, TupleBasisLike[*tuple[_BL0, ...]]],
+    wavepacket: BlochWavefunctionList[
+        _B0Inv, TupleBasisWithLengthLike[*tuple[_BL0, ...]]
+    ],
     *,
     list_basis: TupleBasisLike[*tuple[Any, ...]] | None = None,
 ) -> Any:

@@ -5,7 +5,10 @@ from typing import TYPE_CHECKING, Any, TypeVar
 import numpy as np
 from scipy.constants import hbar
 
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
+from surface_potential_analysis.basis.stacked_basis import (
+    TupleBasis,
+    TupleBasisWithLengthLike,
+)
 from surface_potential_analysis.basis.util import (
     BasisUtil,
 )
@@ -31,7 +34,7 @@ if TYPE_CHECKING:
     from surface_potential_analysis.potential.potential import Potential
 
     _L0 = TypeVar("_L0", bound=int)
-    _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
+    _SB0 = TypeVar("_SB0", bound=TupleBasisWithLengthLike[*tuple[Any, ...]])
 
 
 def hamiltonian_from_potential(
@@ -62,7 +65,7 @@ def hamiltonian_from_potential(
 
 
 def hamiltonian_from_mass(
-    basis: TupleBasisLike[*tuple[Any, ...]],
+    basis: TupleBasisWithLengthLike[*tuple[Any, ...]],
     mass: float,
     bloch_fraction: np.ndarray[tuple[_L0], np.dtype[np.float64]] | None = None,
 ) -> DiagonalOperator[

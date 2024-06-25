@@ -11,11 +11,8 @@ from surface_potential_analysis.basis.basis_like import (
 )
 from surface_potential_analysis.basis.conversion import basis_as_fundamental_basis
 from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasisLike,
-    TupleBasisLike,
-)
-from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_position_basis,
+    StackedBasisWithVolumeLike,
+    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.state_vector.conversion import (
     convert_state_vector_list_to_basis,
@@ -28,7 +25,6 @@ from surface_potential_analysis.state_vector.state_vector_list import (
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis import (
         FundamentalBasis,
-        FundamentalPositionBasis,
     )
 
 
@@ -38,7 +34,7 @@ _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
 _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
 _BL1 = TypeVar("_BL1", bound=BasisWithLengthLike[Any, Any, Any])
 
-_SBL1 = TypeVar("_SBL1", bound=TupleBasisLike[*tuple[Any, ...]])
+_SBL1 = TypeVar("_SBL1", bound=TupleBasisWithLengthLike[*tuple[Any, ...]])
 
 
 class ExplicitBasis(BasisLike[Any, Any], Generic[_B0, _B1]):
@@ -216,7 +212,7 @@ class ExplicitBasisWithLength(
 
 class ExplicitStackedBasisWithLength(
     ExplicitBasis[_B0, _SBL1],
-    StackedBasisLike[Any, Any, Any],
+    StackedBasisWithVolumeLike[Any, Any, Any],
     Generic[_B0, _SBL1],
 ):
     """An basis with vectors given as explicit states."""
@@ -226,6 +222,12 @@ class ExplicitStackedBasisWithLength(
         vectors: StateVectorList[_B0, _SBL1],
     ) -> None:
         super().__init__(vectors)
+
+    @property
+    def delta_x_stacked(
+        self,
+    ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
+        return self._vectors["basis"][1].delta_x_stacked
 
     @property
     def shape(self) -> tuple[int, ...]:
@@ -248,16 +250,3 @@ class ExplicitStackedBasisWithLength(
         basis: _SBL1,
     ) -> ExplicitStackedBasisWithLength[FundamentalBasis[int], _SBL1]:
         return cls.from_state_vectors(get_basis_states(basis))
-
-
-def explicit_stacked_basis_as_fundamental(
-    basis: ExplicitStackedBasisWithLength[Any, TupleBasisLike[*tuple[Any, ...]]],
-) -> TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]:
-    """
-    Get the fundamental basis for a given explicit stacked basis.
-
-    Returns
-    -------
-    TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
-    """
-    return stacked_basis_as_fundamental_position_basis(basis.vectors["basis"][1])
