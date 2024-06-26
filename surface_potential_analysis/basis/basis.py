@@ -153,18 +153,18 @@ class TransformedBasis(
     def __as_transformed__(
         self,
         vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
-        basis: int = -1,
+        axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         casted = vectors.astype(np.complex128, copy=False)
-        return pad_ft_points(casted, s=(self.fundamental_n,), axes=(basis,))
+        return pad_ft_points(casted, s=(self.fundamental_n,), axes=(axis,))
 
     def __from_transformed__(
         self,
         vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
-        basis: int = -1,
+        axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         casted = vectors.astype(np.complex128, copy=False)
-        return pad_ft_points(casted, s=(self.n,), axes=(basis,))
+        return pad_ft_points(casted, s=(self.n,), axes=(axis,))
 
 
 class FundamentalTransformedBasis(TransformedBasis[_NF0_co, _NF0_co]):
@@ -176,14 +176,14 @@ class FundamentalTransformedBasis(TransformedBasis[_NF0_co, _NF0_co]):
     def __as_transformed__(  # type: ignore[override]
         self,
         vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
-        basis: int = -1,
+        axis: int = -1,
     ) -> np.ndarray[_S0Inv, np.dtype[np.complex128]]:
         return vectors.astype(np.complex128, copy=False)  # type: ignore[no-any-return]
 
     def __from_transformed__(  # type: ignore[override]
         self,
         vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
-        basis: int = -1,
+        axis: int = -1,
     ) -> np.ndarray[_S0Inv, np.dtype[np.complex128]]:
         return vectors.astype(np.complex128, copy=False)  # type: ignore[no-any-return]
 
