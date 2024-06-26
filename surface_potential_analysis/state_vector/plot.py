@@ -755,7 +755,10 @@ def plot_average_band_occupation(
 _SB0 = TypeVar("_SB0", bound=TupleBasisWithLengthLike[*tuple[Any]])
 
 
-def _get_periodic_x_operator(basis: _SB0, axis: int) -> SingleBasisOperator[_SB0]:
+def _get_periodic_x_operator(
+    basis: _SB0,
+    axis: int,
+) -> SingleBasisOperator[_SB0]:
     """
     Generate operator for e^(2pi*x / delta_x).
 
@@ -770,6 +773,40 @@ def _get_periodic_x_operator(basis: _SB0, axis: int) -> SingleBasisOperator[_SB0
     basis_x = stacked_basis_as_fundamental_position_basis(basis)
     util = BasisUtil(basis_x)
     phi = 2 * np.pi * util.stacked_nx_points[axis] / util.shape[axis]
+    return convert_diagonal_operator_to_basis(
+        {"basis": TupleBasis(basis_x, basis_x), "data": np.exp(1j * phi)},
+        TupleBasis(basis, basis),
+    )
+
+
+def get_periodic_x_operator_general(
+    basis: _SB0,
+    direction: tuple[int, ...] = (1,),
+) -> SingleBasisOperator[_SB0]:
+    """
+    Generate operator for e^(2npi*x / delta_x).
+
+    Parameters
+    ----------
+    basis : _SB0
+
+    Returns
+    -------
+    SingleBasisOperator[_SB0]
+    """
+    basis_x = stacked_basis_as_fundamental_position_basis(basis)
+    util = BasisUtil(basis_x)
+    dk = tuple(n / f for (n, f) in zip(direction, util.shape))
+
+    phi = (
+        2
+        * np.pi
+        * np.einsum(
+            "ij,i -> j",
+            util.stacked_nx_points,
+            dk,
+        )
+    )
     return convert_diagonal_operator_to_basis(
         {"basis": TupleBasis(basis_x, basis_x), "data": np.exp(1j * phi)},
         TupleBasis(basis, basis),
