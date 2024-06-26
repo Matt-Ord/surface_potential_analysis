@@ -410,7 +410,7 @@ def get_noise_operators_diagonal(
     # For isotropic noise, it is always possible to force this to be true
     # As long as we have evenly spaced k (we have to take symmetric and antisymmetric combinations)
     np.testing.assert_allclose(
-        data, np.conj(np.transpose(data)), msg="kernel non kermitian"
+        data, np.conj(np.transpose(data)), err_msg="kernel non hermitian"
     )
     res = np.linalg.eigh(data)
 
