@@ -7,6 +7,7 @@ import numpy as np
 from surface_potential_analysis.basis.basis import TransformedPositionBasis
 from surface_potential_analysis.basis.basis_like import (
     BasisLike,
+    BasisWithLengthLike,
     convert_dual_vector,
     convert_vector,
 )
@@ -14,7 +15,9 @@ from surface_potential_analysis.basis.conversion import (
     basis_as_fundamental_momentum_basis,
 )
 from surface_potential_analysis.basis.stacked_basis import (
+    StackedBasisWithVolumeLike,
     TupleBasis,
+    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_momentum_basis,
@@ -26,9 +29,8 @@ if TYPE_CHECKING:
         FundamentalPositionBasis,
         FundamentalTransformedPositionBasis,
     )
-    from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
     from surface_potential_analysis.basis.stacked_basis import (
-        TupleBasisLike,
+        TupleBasisWithLengthLike,
     )
     from surface_potential_analysis.state_vector.state_vector import (
         StateDualVector,
@@ -41,8 +43,6 @@ if TYPE_CHECKING:
     _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
     _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
     _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
-
-    _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
 
 
 def convert_state_vector_to_basis(
@@ -104,8 +104,10 @@ def convert_state_dual_vector_to_basis(
 
 
 def convert_state_vector_to_position_basis(
-    state_vector: StateVector[TupleBasisLike[*tuple[_BL0, ...]]],
-) -> StateVector[TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]]:
+    state_vector: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
+) -> StateVector[
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
+]:
     """
     Given an state vector, calculate the vector in position basis.
 
@@ -124,9 +126,9 @@ def convert_state_vector_to_position_basis(
 
 
 def convert_state_vector_to_momentum_basis(
-    state_vector: StateVector[TupleBasisLike[*tuple[_BL0, ...]]],
+    state_vector: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
 ) -> StateVector[
-    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
+    TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
 ]:
     """
     Given a state vector, calculate the vector in the given basis.
@@ -146,8 +148,10 @@ def convert_state_vector_to_momentum_basis(
 
 
 def convert_state_dual_vector_to_position_basis(
-    state_vector: StateDualVector[TupleBasisLike[*tuple[_BL0, ...]]],
-) -> StateDualVector[TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]]:
+    state_vector: StateDualVector[StackedBasisWithVolumeLike[Any, Any, Any]],
+) -> StateDualVector[
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
+]:
     """
     Given an state vector, calculate the vector in position basis.
 
@@ -166,9 +170,9 @@ def convert_state_dual_vector_to_position_basis(
 
 
 def convert_state_dual_vector_to_momentum_basis(
-    state_vector: StateDualVector[TupleBasisLike[*tuple[_BL0, ...]]],
+    state_vector: StateDualVector[StackedBasisWithVolumeLike[Any, Any, Any]],
 ) -> StateDualVector[
-    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
+    TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
 ]:
     """
     Given a state vector, calculate the vector in the given basis.
@@ -188,10 +192,12 @@ def convert_state_dual_vector_to_momentum_basis(
 
 
 def interpolate_state_vector_momentum(
-    state_vector: StateVector[TupleBasisLike[*tuple[_BL0, ...]]],
+    state_vector: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
     shape: tuple[int, ...],
     axes: tuple[int, ...],
-) -> StateVector[TupleBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]]]:
+) -> StateVector[
+    TupleBasisWithLengthLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]]
+]:
     """
     Given a state vector, get the equivalent vector in as a truncated vector in a larger basis.
 
@@ -205,7 +211,7 @@ def interpolate_state_vector_momentum(
     -------
     StateVector[tuple[MomentumBasis[Any, Any, Any], ...]]
     """
-    converted_basis = TupleBasis[Any](
+    converted_basis = TupleBasis[*tuple[BasisWithLengthLike[Any, Any, Any], ...]](
         *tuple(
             basis_as_fundamental_momentum_basis(ax) if iax in axes else ax
             for (iax, ax) in enumerate(state_vector["basis"])
@@ -213,7 +219,7 @@ def interpolate_state_vector_momentum(
     )
     converted = convert_state_vector_to_basis(state_vector, converted_basis)
 
-    final_basis = TupleBasis[Any](
+    final_basis = TupleBasis[*tuple[BasisWithLengthLike[Any, Any, Any], ...]](
         *tuple(
             TransformedPositionBasis(ax.delta_x, ax.n, shape[idx])
             if (

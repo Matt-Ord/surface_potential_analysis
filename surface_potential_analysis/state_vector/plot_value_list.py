@@ -3,10 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from surface_potential_analysis.basis.time_basis_like import EvenlySpacedTimeBasis
-from surface_potential_analysis.util.plot import Scale, _get_scale_with_lim, get_figure
-from surface_potential_analysis.util.util import (
-    Measure,
-    get_measured_data,
+from surface_potential_analysis.util.plot import (
+    Scale,
+    plot_data_1d,
 )
 
 if TYPE_CHECKING:
@@ -15,6 +14,9 @@ if TYPE_CHECKING:
     from matplotlib.lines import Line2D
 
     from surface_potential_analysis.state_vector.eigenstate_collection import ValueList
+    from surface_potential_analysis.util.util import (
+        Measure,
+    )
 
 _AX0Inv = TypeVar("_AX0Inv", bound=EvenlySpacedTimeBasis[Any, Any, Any])
 
@@ -48,13 +50,9 @@ def plot_value_list_against_time(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    data = values["data"]
-    fig, ax = get_figure(ax)
+    fig, ax, line = plot_data_1d(
+        values["data"], values["basis"].times, scale=scale, measure=measure, ax=ax
+    )
 
-    measured_data = get_measured_data(data, measure)
-
-    (line,) = ax.plot(values["basis"].times, measured_data)
-    if measure == "abs":
-        ax.set_ylim(0, ax.get_ylim()[1])
-    ax.set_yscale(_get_scale_with_lim(scale, ax.get_ylim()))
+    ax.set_xlabel("Times /s")
     return fig, ax, line

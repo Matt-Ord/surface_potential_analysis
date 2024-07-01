@@ -17,11 +17,10 @@ from surface_potential_analysis.operator.operator_list import (
 )
 from surface_potential_analysis.util.plot import (
     Scale,
-    _get_lim,
-    _get_norm_with_lim,
-    _get_scale_with_lim,
     get_figure,
+    plot_data_1d,
     plot_data_1d_x,
+    plot_data_2d,
 )
 from surface_potential_analysis.util.util import Measure, get_measured_data
 
@@ -68,19 +67,10 @@ def plot_diagonal_kernel(
     tuple[Figure, Axes, QuadMesh]
 
     """
-    fig, ax = get_figure(ax)
     n_states = kernel["basis"][0].shape[0]
     data = kernel["data"].reshape(n_states, n_states)
-    measured_data = get_measured_data(data, measure)
 
-    mesh = ax.pcolormesh(measured_data)
-    clim = _get_lim((None, None), measure, measured_data)
-    norm = _get_norm_with_lim(scale, clim)
-    mesh.set_norm(norm)
-    mesh.set_clim(*clim)
-    ax.set_aspect("equal", adjustable="box")
-    fig.colorbar(mesh, ax=ax, format="%4.1e")
-    return fig, ax, mesh
+    return plot_data_2d(data, ax=ax, scale=scale, measure=measure)
 
 
 def plot_kernel(
@@ -90,18 +80,8 @@ def plot_kernel(
     measure: Measure = "abs",
     scale: Scale = "linear",
 ) -> tuple[Figure, Axes, QuadMesh]:
-    fig, ax = get_figure(ax)
     data = kernel["data"].reshape(kernel["basis"].shape)
-    measured_data = get_measured_data(data, measure)
-
-    mesh = ax.pcolormesh(measured_data)
-    clim = _get_lim((None, None), measure, measured_data)
-    norm = _get_norm_with_lim(scale, clim)
-    mesh.set_norm(norm)
-    mesh.set_clim(*clim)
-    ax.set_aspect("equal", adjustable="box")
-    fig.colorbar(mesh, ax=ax, format="%4.1e")
-    return fig, ax, mesh
+    return plot_data_2d(data, ax=ax, scale=scale, measure=measure)
 
 
 def plot_kernel_sparsity(
@@ -164,8 +144,8 @@ def plot_diagonal_kernel_truncation_error(
     *,
     ax: Axes | None = None,
     scale: Scale = "linear",
-) -> tuple[Figure, Axes]:
-    fig, ax = get_figure(ax)
+) -> tuple[Figure, Axes, Line2D]:
+    _fig, ax = get_figure(ax)
 
     operators = get_noise_operators_diagonal(kernel)
     eigenvalues = np.sort(np.abs(operators["eigenvalue"]))
@@ -175,10 +155,12 @@ def plot_diagonal_kernel_truncation_error(
 
     truncations = np.arange(cumulative.size)
 
-    ax.plot(truncations, cumulative)
-    ax.set_yscale(_get_scale_with_lim(scale, ax.get_ylim()))
-
-    return fig, ax
+    return plot_data_1d(
+        cumulative.astype(np.complex128),
+        truncations.astype(np.complex128),
+        ax=ax,
+        scale=scale,
+    )
 
 
 def plot_diagonal_noise_operators_single_sample(

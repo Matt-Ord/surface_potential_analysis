@@ -8,9 +8,9 @@ import scipy.signal
 from matplotlib.animation import ArtistAnimation
 
 from surface_potential_analysis.basis.stacked_basis import (
+    StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisLike,
-    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.time_basis_like import (
     BasisWithTimeLike,
@@ -129,7 +129,7 @@ def plot_state_1d_k(
 
 
 def plot_state_1d_x(
-    state: StateVector[TupleBasisWithLengthLike[*tuple[Any, ...]]],
+    state: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -176,7 +176,7 @@ def plot_state_1d_x(
 
 def animate_state_over_list_1d_x(
     states: StateVectorList[
-        BasisLike[Any, Any], TupleBasisWithLengthLike[*tuple[Any, ...]]
+        BasisLike[Any, Any], StackedBasisWithVolumeLike[Any, Any, Any]
     ],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -225,7 +225,7 @@ def animate_state_over_list_1d_x(
 
 def animate_state_over_list_1d_k(
     states: StateVectorList[
-        BasisLike[Any, Any], TupleBasisWithLengthLike[*tuple[Any, ...]]
+        BasisLike[Any, Any], StackedBasisWithVolumeLike[Any, Any, Any]
     ],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -273,7 +273,7 @@ def animate_state_over_list_1d_k(
 
 
 def plot_state_2d_k(
-    state: StateVector[TupleBasisLike[*tuple[Any, ...]]],
+    state: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -316,8 +316,8 @@ def plot_state_2d_k(
 
 
 def plot_state_difference_2d_k(
-    state_0: StateVector[TupleBasisWithLengthLike[*tuple[Any, ...]]],
-    state_1: StateVector[TupleBasisWithLengthLike[*tuple[Any, ...]]],
+    state_0: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
+    state_1: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -360,7 +360,7 @@ def plot_state_difference_2d_k(
 
 
 def plot_state_2d_x(
-    state: StateVector[TupleBasisLike[*tuple[Any, ...]]],
+    state: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -403,8 +403,8 @@ def plot_state_2d_x(
 
 
 def plot_state_difference_1d_k(
-    state_0: StateVector[TupleBasisWithLengthLike[*tuple[Any, ...]]],
-    state_1: StateVector[TupleBasisWithLengthLike[*tuple[Any, ...]]],
+    state_0: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
+    state_1: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -447,8 +447,8 @@ def plot_state_difference_1d_k(
 
 
 def plot_state_difference_2d_x(
-    state_0: StateVector[TupleBasisWithLengthLike[*tuple[Any, ...]]],
-    state_1: StateVector[TupleBasisWithLengthLike[*tuple[Any, ...]]],
+    state_0: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
+    state_1: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -491,7 +491,7 @@ def plot_state_difference_2d_x(
 
 
 def animate_state_3d_x(
-    state: StateVector[TupleBasisLike[*tuple[Any, ...]]],
+    state: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
     axes: tuple[int, int, int] = (0, 1, 2),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -536,7 +536,7 @@ def animate_state_3d_x(
 
 
 def plot_state_along_path(
-    state: StateVector[TupleBasisLike[*tuple[Any, ...]]],
+    state: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
     path: np.ndarray[tuple[int, int], np.dtype[np.int_]],
     *,
     wrap_distances: bool = False,
@@ -752,41 +752,12 @@ def plot_average_band_occupation(
     return fig, ax, line
 
 
-_SB0 = TypeVar("_SB0", bound=TupleBasisWithLengthLike[*tuple[Any]])
-
-
-def _get_periodic_x_operator(
-    basis: _SB0,
-) -> SingleBasisOperator[_SB0]:
-    """
-    Generate operator for e^(2pi*x / delta_x).
-
-    Parameters
-    ----------
-    basis : _SB0
-
-    Returns
-    -------
-    SingleBasisOperator[_SB0]
-    """
-    basis_x = stacked_basis_as_fundamental_position_basis(basis)
-    util = BasisUtil(basis_x)
-    dk = tuple(1 / f for f in util.shape)
-
-    phi = (2 * np.pi) * np.einsum(
-        "ij,i -> j",
-        util.stacked_nx_points,
-        dk,
-    )
-    return convert_diagonal_operator_to_basis(
-        {"basis": TupleBasis(basis_x, basis_x), "data": np.exp(1j * phi)},
-        TupleBasis(basis, basis),
-    )
+_SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
 
 def get_periodic_x_operator(
     basis: _SB0,
-    direction: tuple[int, ...] = (1,),
+    direction: tuple[int, ...] | None = None,
 ) -> SingleBasisOperator[_SB0]:
     """
     Generate operator for e^(2npi*x / delta_x).
@@ -799,18 +770,15 @@ def get_periodic_x_operator(
     -------
     SingleBasisOperator[_SB0]
     """
+    direction = tuple(1 for _ in range(basis.ndim))
     basis_x = stacked_basis_as_fundamental_position_basis(basis)
     util = BasisUtil(basis_x)
     dk = tuple(n / f for (n, f) in zip(direction, util.shape))
 
-    phi = (
-        2
-        * np.pi
-        * np.einsum(
-            "ij,i -> j",
-            util.stacked_nx_points,
-            dk,
-        )
+    phi = (2 * np.pi) * np.einsum(
+        "ij,i -> j",
+        util.stacked_nx_points,
+        dk,
     )
     return convert_diagonal_operator_to_basis(
         {"basis": TupleBasis(basis_x, basis_x), "data": np.exp(1j * phi)},
@@ -821,7 +789,7 @@ def get_periodic_x_operator(
 def _get_periodic_x(
     states: StateVectorList[
         _B0Inv,
-        TupleBasisLike[*tuple[Any, ...]],
+        StackedBasisWithVolumeLike[Any, Any, Any],
     ],
 ) -> ValueList[_B0Inv]:
     """
@@ -835,7 +803,7 @@ def _get_periodic_x(
     -------
     SingleBasisOperator[_SB0]
     """
-    operator = _get_periodic_x_operator(states["basis"][1])
+    operator = get_periodic_x_operator(states["basis"][1])
 
     return calculate_expectation_list(operator, states)
 
@@ -846,7 +814,7 @@ _BT0 = TypeVar("_BT0", bound=BasisWithTimeLike[Any, Any])
 def _get_restored_x(
     states: StateVectorList[
         TupleBasisLike[Any, _BT0],
-        TupleBasisLike[*tuple[Any, ...]],
+        StackedBasisWithVolumeLike[Any, Any, Any],
     ],
     axis: int,
 ) -> ValueList[TupleBasisLike[Any, _BT0]]:
@@ -857,14 +825,16 @@ def _get_restored_x(
 
     return {
         "basis": periodic_x["basis"],
-        "data": (unravelled * states["basis"][1][axis].delta_x / (2 * np.pi)).ravel(),
+        "data": (
+            unravelled * states["basis"][1].delta_x_stacked[axis] / (2 * np.pi)
+        ).ravel(),
     }
 
 
 def plot_periodic_averaged_occupation_1d_x(
     states: StateVectorList[
         TupleBasisLike[Any, _BT0],
-        TupleBasisLike[*tuple[Any, ...]],
+        StackedBasisWithVolumeLike[Any, Any, Any],
     ],
     axes: tuple[int] = (0,),
     *,
@@ -927,7 +897,7 @@ def _get_x_operator(basis: _SB0, axis: int) -> SingleBasisOperator[_SB0]:
 def _get_average_x(
     states: StateVectorList[
         _B0Inv,
-        TupleBasisLike[*tuple[Any, ...]],
+        StackedBasisWithVolumeLike[Any, Any, Any],
     ],
     axis: int,
 ) -> ValueList[_B0Inv]:
@@ -950,7 +920,7 @@ def _get_average_x(
 def plot_averaged_occupation_1d_x(
     states: StateVectorList[
         TupleBasisLike[Any, _BT0],
-        TupleBasisLike[*tuple[Any, ...]],
+        StackedBasisWithVolumeLike[Any, Any, Any],
     ],
     axes: tuple[int] = (0,),
     *,
@@ -986,7 +956,7 @@ def plot_averaged_occupation_1d_x(
 
 
 def _get_average_displacements(
-    positions: ValueList[TupleBasisLike[_B0Inv, EvenlySpacedTimeBasis[Any, Any, Any]]],
+    positions: ValueList[TupleBasisLike[_B0Inv, _BT0]],
 ) -> ValueList[TupleBasisLike[_B0Inv, EvenlySpacedTimeBasis[Any, Any, Any]]]:
     basis = positions["basis"]
     stacked = positions["data"].reshape(basis.shape)
@@ -1011,7 +981,7 @@ def _get_average_displacements(
 def plot_average_displacement_1d_x(
     states: StateVectorList[
         TupleBasisLike[Any, _BT0],
-        TupleBasisLike[*tuple[Any, ...]],
+        StackedBasisWithVolumeLike[Any, Any, Any],
     ],
     axes: tuple[int] = (0,),
     *,
