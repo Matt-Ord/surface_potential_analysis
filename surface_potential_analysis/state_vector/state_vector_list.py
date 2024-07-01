@@ -157,9 +157,6 @@ def as_state_vector_list(
     }
 
 
-_B2Inv = TypeVar("_B2Inv", bound=BasisLike[Any, Any])
-
-
 def calculate_inner_products(
     state_0: StateVectorList[_B0, _B2],
     state_1: StateVectorList[_B1, _B3],
@@ -215,8 +212,8 @@ def calculate_inner_products_elementwise(
 
 
 def calculate_inner_products_eigenvalues(
-    state_0: EigenstateList[_B0, _B2Inv],
-    state_1: EigenstateList[_B1, _B2Inv],
+    state_0: EigenstateList[_B0, _B2],
+    state_1: EigenstateList[_B1, _B2],
 ) -> Operator[_B0, _B1]:
     """
     Calculate the inner product of two states.

@@ -757,7 +757,6 @@ _SB0 = TypeVar("_SB0", bound=TupleBasisWithLengthLike[*tuple[Any]])
 
 def _get_periodic_x_operator(
     basis: _SB0,
-    axis: int,
 ) -> SingleBasisOperator[_SB0]:
     """
     Generate operator for e^(2pi*x / delta_x).
@@ -772,14 +771,20 @@ def _get_periodic_x_operator(
     """
     basis_x = stacked_basis_as_fundamental_position_basis(basis)
     util = BasisUtil(basis_x)
-    phi = 2 * np.pi * util.stacked_nx_points[axis] / util.shape[axis]
+    dk = tuple(1 / f for f in util.shape)
+
+    phi = (2 * np.pi) * np.einsum(
+        "ij,i -> j",
+        util.stacked_nx_points,
+        dk,
+    )
     return convert_diagonal_operator_to_basis(
         {"basis": TupleBasis(basis_x, basis_x), "data": np.exp(1j * phi)},
         TupleBasis(basis, basis),
     )
 
 
-def get_periodic_x_operator_general(
+def get_periodic_x_operator(
     basis: _SB0,
     direction: tuple[int, ...] = (1,),
 ) -> SingleBasisOperator[_SB0]:
@@ -818,7 +823,6 @@ def _get_periodic_x(
         _B0Inv,
         TupleBasisLike[*tuple[Any, ...]],
     ],
-    axis: int,
 ) -> ValueList[_B0Inv]:
     """
     Calculate expectation of e^(2pi*x / delta_x).
@@ -831,7 +835,7 @@ def _get_periodic_x(
     -------
     SingleBasisOperator[_SB0]
     """
-    operator = _get_periodic_x_operator(states["basis"][1], axis)
+    operator = _get_periodic_x_operator(states["basis"][1])
 
     return calculate_expectation_list(operator, states)
 
@@ -846,7 +850,7 @@ def _get_restored_x(
     ],
     axis: int,
 ) -> ValueList[TupleBasisLike[Any, _BT0]]:
-    periodic_x = _get_periodic_x(states, axis)
+    periodic_x = _get_periodic_x(states)
     unravelled = np.unwrap(
         np.angle(periodic_x["data"].reshape(states["basis"][0].shape)), axis=1
     )
