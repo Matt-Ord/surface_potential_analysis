@@ -7,6 +7,7 @@ import scipy
 import scipy.signal
 from matplotlib.animation import ArtistAnimation
 
+from surface_potential_analysis.basis.basis import BasisLike
 from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisWithVolumeLike,
     TupleBasis,
@@ -64,7 +65,7 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
     from matplotlib.lines import Line2D
 
-    from surface_potential_analysis.basis.basis import BasisLike, FundamentalBasis
+    from surface_potential_analysis.basis.basis import FundamentalBasis
     from surface_potential_analysis.operator.operator import (
         Operator,
         SingleBasisOperator,
@@ -175,9 +176,7 @@ def plot_state_1d_x(
 
 
 def animate_state_over_list_1d_x(
-    states: StateVectorList[
-        BasisLike[Any, Any], StackedBasisWithVolumeLike[Any, Any, Any]
-    ],
+    states: StateVectorList[_B0, _SB0],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -753,6 +752,7 @@ def plot_average_band_occupation(
 
 
 _SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+_B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
 
 
 def get_periodic_x_operator(

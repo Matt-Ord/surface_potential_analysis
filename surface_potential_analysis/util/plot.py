@@ -25,7 +25,10 @@ if TYPE_CHECKING:
     from matplotlib.image import AxesImage
     from matplotlib.lines import Line2D
 
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
+    from surface_potential_analysis.basis.stacked_basis import (
+        StackedBasisWithVolumeLike,
+        TupleBasisLike,
+    )
     from surface_potential_analysis.types import SingleStackedIndexLike
 
 
@@ -472,7 +475,7 @@ _L0Inv = TypeVar("_L0Inv", bound=int)
 
 
 def animate_data_through_surface_x(
-    basis: TupleBasisLike[*tuple[Any, ...]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
     axes: tuple[int, int, int] = (0, 1, 2),
     idx: SingleStackedIndexLike | None = None,

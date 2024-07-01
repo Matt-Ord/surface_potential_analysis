@@ -19,8 +19,10 @@ from surface_potential_analysis.basis.basis import (
     FundamentalPositionBasis3d,
 )
 from surface_potential_analysis.basis.stacked_basis import (
+    StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisLike,
+    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.util.interpolation import (
@@ -45,13 +47,16 @@ _L1Inv = TypeVar("_L1Inv", bound=int)
 _L2Inv = TypeVar("_L2Inv", bound=int)
 
 # TODO: report bug in pylance - not possible to use TupleBasisLike[*tuple[Any, ...]]
-_SB0 = TypeVar("_SB0", bound=TupleBasisLike)  # type: ignore use TupleBasisLike[*tuple[Any, ...]]
+_SB0_co = TypeVar(
+    "_SB0_co", bound=StackedBasisWithVolumeLike[Any, Any, Any], covariant=True
+)
+_SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
 
-class Potential(TypedDict, Generic[_SB0]):
+class Potential(TypedDict, Generic[_SB0_co]):
     """Represents a potential in an evenly spaced grid of points."""
 
-    basis: _SB0
+    basis: _SB0_co
     data: np.ndarray[tuple[int], np.dtype[np.complex128]]
 
 
@@ -74,7 +79,7 @@ def load_potential(path: Path) -> Potential[Any]:
 def load_potential_grid_json(
     path: Path,
 ) -> Potential[
-    TupleBasisLike[
+    TupleBasisWithLengthLike[
         BasisWithLengthLike[Any, Any, Literal[3]],
         BasisWithLengthLike[Any, Any, Literal[3]],
         BasisWithLengthLike[Any, Any, Literal[3]],
@@ -231,7 +236,7 @@ def undo_truncate_potential(
 def interpolate_uneven_potential(
     data: UnevenPotential3d[int, int, int], shape: tuple[_L0Inv, _L1Inv, _L2Inv]
 ) -> Potential[
-    TupleBasisLike[
+    TupleBasisWithLengthLike[
         FundamentalPositionBasis3d[_L0Inv],
         FundamentalPositionBasis3d[_L1Inv],
         FundamentalPositionBasis3d[_L2Inv],
@@ -276,7 +281,7 @@ def interpolate_uneven_potential(
 def mock_even_potential(
     uneven: UnevenPotential3d[_L0Inv, _L1Inv, _L2Inv],
 ) -> Potential[
-    TupleBasisLike[
+    TupleBasisWithLengthLike[
         FundamentalPositionBasis3d[_L0Inv],
         FundamentalPositionBasis3d[_L1Inv],
         FundamentalPositionBasis3d[_L2Inv],
