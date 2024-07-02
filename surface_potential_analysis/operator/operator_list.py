@@ -12,7 +12,6 @@ if TYPE_CHECKING:
     from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.operator.operator import (
         SingleBasisDiagonalOperator,
-        SingleBasisOperator,
     )
     from surface_potential_analysis.types import SingleFlatIndexLike
 
@@ -23,7 +22,7 @@ if TYPE_CHECKING:
 _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
 _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
 _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
-_B3 = TypeVar("_B3", bound=BasisLike[Any, Any])
+
 
 _B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
 _B1_co = TypeVar("_B1_co", bound=BasisLike[Any, Any], covariant=True)
@@ -272,145 +271,3 @@ def sum_diagonal_operator_list_over_axes(
             axis=tuple(1 + np.array(axes, dtype=np.int_)),
         ).reshape(states["data"].shape[0], -1),
     }
-
-
-def matmul_operator_list(
-    lhs: Operator[_B0, _B1], rhs: OperatorList[_B3, _B1, _B2]
-) -> OperatorList[_B3, _B0, _B2]:
-    """
-    Multiply each operator in rhs by lhs.
-
-    Aij Bjk = Mik
-
-    Parameters
-    ----------
-    lhs : Operator[_B0, _B1]
-    rhs : OperatorList[_B3, _B1, _B2]
-
-    Returns
-    -------
-    OperatorList[_B3, _B0, _B2]
-    """
-    data = np.einsum(
-        "ik,mkj->mij",
-        lhs["data"].reshape(lhs["basis"].shape),
-        rhs["data"].reshape(-1, *rhs["basis"][1].shape),
-    ).reshape(-1)
-    return {
-        "basis": TupleBasis(
-            rhs["basis"][0], TupleBasis(lhs["basis"][0], rhs["basis"][1][1])
-        ),
-        "data": data,
-    }
-
-
-def matmul_list_operator(
-    lhs: OperatorList[_B3, _B0, _B1], rhs: Operator[_B1, _B2]
-) -> OperatorList[_B3, _B0, _B2]:
-    """
-    Multiply each operator in rhs by lhs.
-
-    Aij Bjk = Mik
-
-    Parameters
-    ----------
-    lhs : OperatorList[_B3, _B0, _B1]
-    rhs : Operator[_B1, _B2]
-
-    Returns
-    -------
-    OperatorList[_B3, _B0, _B2]
-    """
-    data = np.tensordot(
-        lhs["data"].reshape(-1, *lhs["basis"][1].shape),
-        rhs["data"].reshape(rhs["basis"].shape),
-        axes=(2, 0),
-    ).reshape(-1)
-    return {
-        "basis": TupleBasis(
-            lhs["basis"][0], TupleBasis(lhs["basis"][1][0], rhs["basis"][1])
-        ),
-        "data": data,
-    }
-
-
-def scale_operator_list(
-    factor: complex, operator: OperatorList[_B3, _B0, _B1]
-) -> OperatorList[_B3, _B0, _B1]:
-    """
-    Scale the operator list.
-
-    Equivalent to multiplying each operator by factor
-
-    Returns
-    -------
-    OperatorList[_B3, _B0, _B1]
-    """
-    return {
-        "basis": operator["basis"],
-        "data": operator["data"] * factor,
-    }
-
-
-def add_list_list(
-    lhs: OperatorList[_B3, _B0, _B1], rhs: OperatorList[_B3, _B0, _B1]
-) -> OperatorList[_B3, _B0, _B1]:
-    """
-    Add two operator list lhs+rhs.
-
-    Parameters
-    ----------
-    lhs : OperatorList[_B3, _B0, _B1]
-    rhs : OperatorList[_B3, _B0, _B1]
-
-    Returns
-    -------
-    OperatorList[_B3, _B0, _B1]
-    """
-    return {
-        "basis": lhs["basis"],
-        "data": lhs["data"] + rhs["data"],
-    }
-
-
-def subtract_list_list(
-    lhs: OperatorList[_B3, _B0, _B1], rhs: OperatorList[_B3, _B0, _B1]
-) -> OperatorList[_B3, _B0, _B1]:
-    """
-    Subtract two operator list lhs-rhs.
-
-    Parameters
-    ----------
-    lhs : OperatorList[_B3, _B0, _B1]
-    rhs : OperatorList[_B3, _B0, _B1]
-
-    Returns
-    -------
-    OperatorList[_B3, _B0, _B1]
-    """
-    return {
-        "basis": lhs["basis"],
-        "data": lhs["data"] - rhs["data"],
-    }
-
-
-def get_commutator_operator_list(
-    lhs: SingleBasisOperator[_B0], rhs: SingleBasisOperatorList[_B1, _B0]
-) -> SingleBasisOperatorList[_B1, _B0]:
-    """
-    Given two operators lhs, rhs, calculate the commutator.
-
-    This is equivalent to lhs rhs - rhs lhs
-
-    Parameters
-    ----------
-    lhs : SingleBasisOperator[_B0]
-    rhs : SingleBasisOperator[_B0]
-
-    Returns
-    -------
-    SingleBasisOperator[_B0]
-    """
-    lhs_rhs = matmul_operator_list(lhs, rhs)
-    rhs_lhs = matmul_list_operator(rhs, lhs)
-    return subtract_list_list(lhs_rhs, rhs_lhs)

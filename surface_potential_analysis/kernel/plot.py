@@ -1,19 +1,32 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, TypeVarTuple
 
 import numpy as np
 from scipy.constants import hbar
 
+from surface_potential_analysis.basis.stacked_basis import (
+    TupleBasis,
+    TupleBasisWithLengthLike,
+)
+from surface_potential_analysis.kernel.conversion import (
+    convert_noise_operator_list_to_basis,
+)
 from surface_potential_analysis.kernel.kernel import (
+    DiagonalNoiseOperatorList,
+    NoiseOperatorList,
     SingleBasisDiagonalNoiseKernel,
     SingleBasisDiagonalNoiseOperatorList,
+    as_diagonal_noise_operators,
     get_noise_operators,
     get_noise_operators_diagonal,
 )
 from surface_potential_analysis.operator.operator_list import (
     select_operator_diagonal,
+)
+from surface_potential_analysis.stacked_basis.conversion import (
+    stacked_basis_as_fundamental_position_basis,
 )
 from surface_potential_analysis.util.plot import (
     Scale,
@@ -35,12 +48,17 @@ if TYPE_CHECKING:
         FundamentalBasis,
         FundamentalPositionBasis,
     )
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
+    from surface_potential_analysis.basis.stacked_basis import (
+        StackedBasisWithVolumeLike,
+        TupleBasisLike,
+    )
     from surface_potential_analysis.kernel.kernel import (
         DiagonalNoiseKernel,
         NoiseKernel,
     )
     from surface_potential_analysis.types import SingleStackedIndexLike
+
+    _B0s = TypeVarTuple("_B0s")
 
 
 def plot_diagonal_kernel(
@@ -182,9 +200,10 @@ def plot_diagonal_kernel_truncation_error(
 
 
 def plot_diagonal_noise_operators_single_sample(
-    operators: SingleBasisDiagonalNoiseOperatorList[
+    operators: DiagonalNoiseOperatorList[
         FundamentalBasis[int],
-        TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]],
+        TupleBasisWithLengthLike[*_B0s],
+        TupleBasisWithLengthLike[*_B0s],
     ],
     truncation: int | None = None,
     axes: tuple[int] = (0,),
@@ -234,6 +253,8 @@ def plot_diagonal_noise_operators_single_sample(
             * operator["data"]
         )
 
+    measured_potential -= measured_potential[0]
+
     ax.set_ylabel("Energy /J")
 
     return plot_data_1d_x(
@@ -241,6 +262,56 @@ def plot_diagonal_noise_operators_single_sample(
         measured_potential,
         axes,
         idx,
+        ax=ax,
+        scale=scale,
+        measure=measure,
+    )
+
+
+def plot_noise_operators_single_sample_x(
+    operators: NoiseOperatorList[
+        FundamentalBasis[int],
+        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ],
+    truncation: int | None = None,
+    axes: tuple[int] = (0,),
+    idx: SingleStackedIndexLike | None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "real",
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot a single sample of the noise operators.
+
+    Parameters
+    ----------
+    operators : SingleBasisDiagonalNoiseOperatorList[ FundamentalBasis[int], TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]], ]
+    axes : tuple[int], optional
+        axis to plot, by default (0,)
+    idx : SingleStackedIndexLike | None, optional
+        index to plot, by default None
+    ax : Axes | None, optional
+        plot axis, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+    measure : Measure, optional
+        measure, by default "real"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    basis_x = stacked_basis_as_fundamental_position_basis(operators["basis"][1][0])
+    converted = convert_noise_operator_list_to_basis(
+        operators, TupleBasis(basis_x, basis_x)
+    )
+    return plot_diagonal_noise_operators_single_sample(
+        as_diagonal_noise_operators(converted),
+        truncation=truncation,
+        axes=axes,
+        idx=idx,
         ax=ax,
         scale=scale,
         measure=measure,
@@ -298,7 +369,7 @@ def plot_noise_kernel_single_sample(
 def plot_diagonal_noise_operators_eigenvalues(
     operators: SingleBasisDiagonalNoiseOperatorList[
         FundamentalBasis[int],
-        TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]],
+        Any,
     ],
     truncation: int | None = None,
     *,

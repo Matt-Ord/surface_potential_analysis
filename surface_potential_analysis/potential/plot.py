@@ -39,7 +39,10 @@ if TYPE_CHECKING:
 
     from surface_potential_analysis.basis.basis import FundamentalPositionBasis3d
     from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
+    from surface_potential_analysis.basis.stacked_basis import (
+        StackedBasisWithVolumeLike,
+        TupleBasisLike,
+    )
     from surface_potential_analysis.potential.potential import Potential
     from surface_potential_analysis.types import (
         SingleStackedIndexLike,
@@ -57,7 +60,7 @@ if TYPE_CHECKING:
 
 
 def plot_potential_1d_x(
-    potential: Potential[TupleBasisLike[*tuple[_BL0, ...]]],
+    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -97,7 +100,7 @@ def plot_potential_1d_x(
 
 
 def plot_potential_1d_comparison(
-    potential: Potential[TupleBasisLike[*tuple[_BL0, ...]]],
+    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
     comparison_points: Mapping[
         str, tuple[tuple[int, int], Literal[0, 1, 2, -1, -2, -3]]
     ],
@@ -215,7 +218,7 @@ def plot_potential_1d_x2_comparison_100(
 
 
 def plot_potential_2d_x(
-    potential: Potential[TupleBasisLike[*tuple[_BL0, ...]]],
+    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -255,8 +258,8 @@ def plot_potential_2d_x(
 
 
 def plot_potential_difference_2d_x(
-    potential0: Potential[TupleBasisLike[*tuple[_BL0, ...]]],
-    potential1: Potential[TupleBasisLike[*tuple[_BL1, ...]]],
+    potential0: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
+    potential1: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -292,7 +295,7 @@ def plot_potential_difference_2d_x(
 
 
 def animate_potential_3d_x(
-    potential: Potential[TupleBasisLike[*tuple[_BL0, ...]]],
+    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
     axes: tuple[int, int, int] = (0, 1, 2),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -338,8 +341,8 @@ def animate_potential_3d_x(
 
 
 def animate_potential_difference_3d_x(
-    potential0: Potential[TupleBasisLike[*tuple[_BL0, ...]]],
-    potential1: Potential[TupleBasisLike[*tuple[_BL1, ...]]],
+    potential0: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
+    potential1: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
     axes: tuple[int, int, int] = (0, 1, 2),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -368,7 +371,7 @@ def animate_potential_difference_3d_x(
     tuple[Figure, Axes, QuadMesh]
     """
     converted_1 = convert_potential_to_basis(potential1, potential0["basis"])
-    potential: Potential[TupleBasisLike[*tuple[_BL0, ...]]] = {
+    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]] = {
         "basis": potential0["basis"],
         "data": np.abs((potential0["data"] - converted_1["data"]) / potential0["data"]),
     }
@@ -376,7 +379,7 @@ def animate_potential_difference_3d_x(
 
 
 def plot_potential_along_path(
-    potential: Potential[TupleBasisLike[*tuple[_BL0, ...]]],
+    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
     path: np.ndarray[tuple[int, int], np.dtype[np.int_]],
     *,
     wrap_distances: bool = False,
@@ -424,7 +427,7 @@ def plot_potential_along_path(
 
 
 def get_minimum_path(
-    potential: Potential[TupleBasisLike[*tuple[_BL0, ...]]],
+    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
     path: np.ndarray[tuple[int, int], np.dtype[np.int_]],
     axis: int = 0,
 ) -> np.ndarray[tuple[int, int], np.dtype[np.int_]]:
@@ -452,7 +455,7 @@ def get_minimum_path(
 
 
 def plot_potential_minimum_along_path(
-    potential: Potential[TupleBasisLike[*tuple[_BL0, ...]]],
+    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
     path: np.ndarray[tuple[int, int], np.dtype[np.int_]],
     axis: int = 0,
     *,

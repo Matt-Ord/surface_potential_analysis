@@ -297,25 +297,3 @@ def apply_operator_to_state(
     )
     norm = np.linalg.norm(data).astype(np.complex128)
     return {"basis": lhs["basis"][0], "data": data / norm, "eigenvalue": norm}
-
-
-def get_commutator(
-    lhs: SingleBasisOperator[_B0], rhs: SingleBasisOperator[_B0]
-) -> SingleBasisOperator[_B0]:
-    """
-    Given two operators lhs, rhs, calculate the commutator.
-
-    This is equivalent to ths rhs - rhs lhs
-
-    Parameters
-    ----------
-    lhs : SingleBasisOperator[_B0]
-    rhs : SingleBasisOperator[_B0]
-
-    Returns
-    -------
-    SingleBasisOperator[_B0]
-    """
-    lhs_rhs = matmul_operator(lhs, rhs)
-    rhs_lhs = matmul_operator(rhs, lhs)
-    return subtract_operator(lhs_rhs, rhs_lhs)

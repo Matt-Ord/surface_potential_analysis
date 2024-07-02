@@ -19,6 +19,10 @@ from surface_potential_analysis.dynamics.tunnelling_basis import (
     get_basis_from_shape,
 )
 from surface_potential_analysis.dynamics.util import build_hop_operator, get_hop_shift
+from surface_potential_analysis.operator.conversion import convert_operator_to_basis
+from surface_potential_analysis.state_vector.conversion import (
+    convert_state_vector_to_basis,
+)
 from surface_potential_analysis.state_vector.eigenstate_calculation import (
     calculate_eigenvectors_hermitian,
 )
@@ -30,7 +34,7 @@ from surface_potential_analysis.state_vector.state_vector_list import (
 )
 
 try:
-    from sse_solver_py import SimulationConfig, solve_sse, solve_sse_banded
+    from sse_solver_py import SimulationConfig, SSEMethod, solve_sse, solve_sse_banded
 except ImportError:
     # if sse_solver_py is not installed, create a dummy functions
 
@@ -54,18 +58,6 @@ except ImportError:
         msg = "sse_solver_py not installed, add sse_solver_py feature"
         raise NotImplementedError(msg)
 
-    class SimulationConfig:
-        def __init__(  # noqa: PLR0913
-            self: SimulationConfig,
-            *,
-            n: int,
-            step: int,
-            dt: float,
-            n_trajectories: int = 1,
-            method: SSEMethod,
-        ) -> None:
-            ...
-
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -81,6 +73,7 @@ if TYPE_CHECKING:
         TunnellingSimulationBasis,
     )
     from surface_potential_analysis.operator.operator import (
+        Operator,
         SingleBasisOperator,
     )
     from surface_potential_analysis.state_vector import (
@@ -90,9 +83,11 @@ if TYPE_CHECKING:
         StateVectorList,
     )
 
-    _B0Inv = TypeVar("_B0Inv", bound=TunnellingSimulationBasis[Any, Any, Any])
-    _B1Inv = TypeVar("_B1Inv", bound=BasisLike[Any, Any])
-    _B2Inv = TypeVar("_B2Inv", bound=BasisLike[Any, Any])
+    _B0 = TypeVar("_B0", bound=TunnellingSimulationBasis[Any, Any, Any])
+    _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
+    _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
+    _B3 = TypeVar("_B3", bound=BasisLike[Any, Any])
+    _B4 = TypeVar("_B4", bound=BasisLike[Any, Any])
     _L0Inv = TypeVar("_L0Inv", bound=int)
     _L1Inv = TypeVar("_L1Inv", bound=int)
     _L2Inv = TypeVar("_L2Inv", bound=int)
@@ -100,8 +95,8 @@ if TYPE_CHECKING:
 
 
 def get_collapse_operators_from_a_matrix(
-    matrix: TunnellingAMatrix[_B0Inv],
-) -> list[SingleBasisOperator[_B0Inv]]:
+    matrix: TunnellingAMatrix[_B0],
+) -> list[SingleBasisOperator[_B0]]:
     """
     Given a function which produces the collapse operators S_{i,j} calculate the relevant collapse operators.
 
@@ -133,8 +128,8 @@ def get_collapse_operators_from_a_matrix(
 
 
 def get_simplified_collapse_operators_from_a_matrix(
-    matrix: TunnellingAMatrix[_B0Inv], *, factor: float = 1
-) -> list[SingleBasisOperator[_B0Inv]]:
+    matrix: TunnellingAMatrix[_B0], *, factor: float = 1
+) -> list[SingleBasisOperator[_B0]]:
     """
     Given a function which produces the collapse operators S_{i,j} calculate the relevant collapse operators.
 
@@ -151,7 +146,7 @@ def get_simplified_collapse_operators_from_a_matrix(
     util = BasisUtil(matrix["basis"][0])
     (n_x1, n_x2, n_bands) = util.shape
     jump_array = matrix["data"].reshape(*util.shape, *util.shape)[0, 0]
-    out: list[SingleBasisOperator[_B0Inv]] = []
+    out: list[SingleBasisOperator[_B0]] = []
     for n_0 in range(n_bands):
         for n_1 in range(n_bands):
             if n_0 == n_1:
@@ -239,38 +234,38 @@ def get_collapse_operators_from_function(
 
 @overload
 def solve_stochastic_schrodinger_equation(
-    initial_state: StateVector[_B1Inv],
+    initial_state: StateVector[_B1],
     times: _AX0Inv,
-    hamiltonian: SingleBasisOperator[_B1Inv],
-    collapse_operators: list[SingleBasisOperator[_B1Inv]] | None = None,
+    hamiltonian: SingleBasisOperator[_B1],
+    collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: _L1Inv,
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]:
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1]:
     ...
 
 
 @overload
 def solve_stochastic_schrodinger_equation(
-    initial_state: StateVector[_B1Inv],
+    initial_state: StateVector[_B1],
     times: _AX0Inv,
-    hamiltonian: SingleBasisOperator[_B1Inv],
-    collapse_operators: list[SingleBasisOperator[_B1Inv]] | None = None,
+    hamiltonian: SingleBasisOperator[_B1],
+    collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: Literal[1] = 1,
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]:
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1]:
     ...
 
 
 def solve_stochastic_schrodinger_equation(  # type: ignore bad overload
-    initial_state: StateVector[_B1Inv],
+    initial_state: StateVector[_B1],
     times: _AX0Inv,
-    hamiltonian: SingleBasisOperator[_B1Inv],
-    collapse_operators: list[SingleBasisOperator[_B1Inv]] | None = None,
+    hamiltonian: SingleBasisOperator[_B1],
+    collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: _L1Inv | Literal[1] = 1,
 ) -> (
-    StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]
-    | StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]
+    StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1]
+    | StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1]
 ):
     """
     Given an initial state, use the stochastic schrodinger equation to solve the dynamics of the system.
@@ -332,39 +327,36 @@ def solve_stochastic_schrodinger_equation(  # type: ignore bad overload
 
 @overload
 def solve_stochastic_schrodinger_equation_rust(
-    initial_state: StateVector[_B1Inv],
+    initial_state: StateVector[_B1],
     times: _AX0Inv,
-    hamiltonian: SingleBasisOperator[_B1Inv],
-    collapse_operators: list[SingleBasisOperator[_B1Inv]] | None = None,
+    hamiltonian: SingleBasisOperator[_B1],
+    collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: _L1Inv,
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]:
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1]:
     ...
 
 
 @overload
 def solve_stochastic_schrodinger_equation_rust(
-    initial_state: StateVector[_B1Inv],
+    initial_state: StateVector[_B1],
     times: _AX0Inv,
-    hamiltonian: SingleBasisOperator[_B1Inv],
-    collapse_operators: list[SingleBasisOperator[_B1Inv]] | None = None,
+    hamiltonian: SingleBasisOperator[_B1],
+    collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: Literal[1] = 1,
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]:
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1]:
     ...
 
 
 def solve_stochastic_schrodinger_equation_rust(  # type: ignore bad overload
-    initial_state: StateVector[_B1Inv],
+    initial_state: StateVector[_B1],
     times: _AX0Inv,
-    hamiltonian: SingleBasisOperator[_B1Inv],
-    collapse_operators: list[SingleBasisOperator[_B1Inv]] | None = None,
+    hamiltonian: SingleBasisOperator[_B1],
+    collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: _L1Inv | Literal[1] = 1,
-) -> (
-    StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]
-    | StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]
-):
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[Any], _AX0Inv], _B1]:
     """
     Given an initial state, use the stochastic schrodinger equation to solve the dynamics of the system.
 
@@ -445,45 +437,42 @@ def _get_banded_operators(
 
 @overload
 def solve_stochastic_schrodinger_equation_rust_banded(
-    initial_state: StateVector[_B1Inv],
+    initial_state: StateVector[_B2],
     times: _AX0Inv,
-    hamiltonian: SingleBasisOperator[_B1Inv],
-    collapse_operators: list[SingleBasisOperator[_B1Inv]] | None = None,
+    hamiltonian: SingleBasisOperator[_B1],
+    collapse_operators: list[SingleBasisOperator[_B3]] | None = None,
     *,
     n_trajectories: _L1Inv,
     r_threshold: float = 1e-8,
-    method: SSEMethod = "euler",
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]:
+    method: SSEMethod = "Euler",
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1]:
     ...
 
 
 @overload
 def solve_stochastic_schrodinger_equation_rust_banded(
-    initial_state: StateVector[_B1Inv],
+    initial_state: StateVector[_B2],
     times: _AX0Inv,
-    hamiltonian: SingleBasisOperator[_B1Inv],
-    collapse_operators: list[SingleBasisOperator[_B1Inv]] | None = None,
+    hamiltonian: SingleBasisOperator[_B1],
+    collapse_operators: list[SingleBasisOperator[_B3]] | None = None,
     *,
     n_trajectories: Literal[1] = 1,
     r_threshold: float = 1e-8,
-    method: SSEMethod = "euler",
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]:
+    method: SSEMethod = "Euler",
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1]:
     ...
 
 
 def solve_stochastic_schrodinger_equation_rust_banded(  # type: ignore bad overload
-    initial_state: StateVector[_B1Inv],
+    initial_state: StateVector[_B2],
     times: _AX0Inv,
-    hamiltonian: SingleBasisOperator[_B1Inv],
-    collapse_operators: list[SingleBasisOperator[_B1Inv]] | None = None,
+    hamiltonian: SingleBasisOperator[_B1],
+    collapse_operators: list[Operator[_B3, _B4]] | None = None,
     *,
     n_trajectories: _L1Inv | Literal[1] = 1,
     r_threshold: float = 1e-8,
     method: SSEMethod = "Euler",
-) -> (
-    StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]
-    | StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]
-):
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[Any], _AX0Inv], _B1]:
     """
     Given an initial state, use the stochastic schrodinger equation to solve the dynamics of the system.
 
@@ -513,7 +502,12 @@ def solve_stochastic_schrodinger_equation_rust_banded(  # type: ignore bad overl
 
     banded_collapse = _get_banded_operators(
         [
-            [list(x / max_norm) for x in o["data"].reshape(o["basis"].shape)]
+            [
+                list(x / max_norm)
+                for x in convert_operator_to_basis(o, hamiltonian["basis"])[
+                    "data"
+                ].reshape(hamiltonian["basis"].shape)
+            ]
             for o in collapse_operators
         ],
         r_threshold / dt,
@@ -526,8 +520,11 @@ def solve_stochastic_schrodinger_equation_rust_banded(  # type: ignore bad overl
         ],
         r_threshold / dt,
     )
+    initial_state_converted = convert_state_vector_to_basis(
+        initial_state, hamiltonian["basis"][0]
+    )
     data = solve_sse_banded(
-        list(initial_state["data"]),
+        list(initial_state_converted["data"]),
         banded_h[0],
         banded_h[1],
         [b[0] for b in banded_collapse],
@@ -554,8 +551,8 @@ rng = np.random.default_rng()
 
 
 def _select_random_localized_state(
-    states: StateVectorList[_B2Inv, _B1Inv],
-) -> StateVector[_B1Inv]:
+    states: StateVectorList[_B2, _B1],
+) -> StateVector[_B1]:
     """
     Select a random state built from states.
 
@@ -588,40 +585,37 @@ def _select_random_localized_state(
 
 @overload
 def solve_stochastic_schrodinger_equation_localized(
-    initial_state: StateVector[_B1Inv],
+    initial_state: StateVector[_B1],
     times: _AX0Inv,
-    hamiltonian: SingleBasisOperator[_B1Inv],
-    collapse_operators: list[SingleBasisOperator[_B1Inv]] | None = None,
+    hamiltonian: SingleBasisOperator[_B1],
+    collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: _L1Inv,
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]:
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1]:
     ...
 
 
 @overload
 def solve_stochastic_schrodinger_equation_localized(
-    initial_state: StateVector[_B1Inv],
+    initial_state: StateVector[_B1],
     times: _AX0Inv,
-    hamiltonian: SingleBasisOperator[_B1Inv],
-    collapse_operators: list[SingleBasisOperator[_B1Inv]] | None = None,
+    hamiltonian: SingleBasisOperator[_B1],
+    collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: Literal[1] = 1,
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]:
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1]:
     ...
 
 
 def solve_stochastic_schrodinger_equation_localized(  # type: ignore bad overload
-    initial_state: StateVector[_B1Inv],
+    initial_state: StateVector[_B1],
     times: _AX0Inv,
-    hamiltonian: SingleBasisOperator[_B1Inv],
-    collapse_operators: list[SingleBasisOperator[_B1Inv]] | None = None,
+    hamiltonian: SingleBasisOperator[_B1],
+    collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: _L1Inv | Literal[1] = 1,
     n_realizations: int = 2,
-) -> (
-    StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]
-    | StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]
-):
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[Any], _AX0Inv], _B1]:
     """
     Find the quantum trajectores, using the localized stochastic schrodinger approach.
 

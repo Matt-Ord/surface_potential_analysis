@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from surface_potential_analysis.basis.basis_like import (
-    BasisWithLengthLike,
     convert_vector,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
@@ -12,13 +11,15 @@ from surface_potential_analysis.stacked_basis.conversion import (
 
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis import FundamentalPositionBasis
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
+    from surface_potential_analysis.basis.stacked_basis import (
+        StackedBasisLike,
+        StackedBasisWithVolumeLike,
+        TupleBasisLike,
+    )
     from surface_potential_analysis.potential.potential import Potential
 
-    _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
-    _SB1 = TypeVar("_SB1", bound=TupleBasisLike[*tuple[Any, ...]])
-
-    _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
+    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
+    _SB1 = TypeVar("_SB1", bound=StackedBasisLike[Any, Any, Any])
 
 
 def convert_potential_to_basis(
@@ -41,7 +42,7 @@ def convert_potential_to_basis(
 
 
 def convert_potential_to_position_basis(
-    potential: Potential[TupleBasisLike[*tuple[_BL0, ...]]],
+    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
 ) -> Potential[TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]]:
     """
     Given an potential, convert to the fundamental position basis.

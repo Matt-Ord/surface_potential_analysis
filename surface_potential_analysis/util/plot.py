@@ -260,7 +260,7 @@ def plot_data_2d(
         if coordinates is None
         else ax.pcolormesh(*coordinates, measured_data, shading="nearest")
     )
-    clim = _get_lim((None, None), measure, data)
+    clim = _get_lim((None, None), measure, measured_data)
     norm = _get_norm_with_lim(scale, clim)
     mesh.set_norm(norm)
     mesh.set_clim(*clim)
