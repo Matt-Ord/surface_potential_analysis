@@ -30,6 +30,7 @@ if TYPE_CHECKING:
         BasisWithLengthLike,
     )
     from surface_potential_analysis.basis.stacked_basis import (
+        StackedBasisWithVolumeLike,
         TupleBasisLike,
     )
     from surface_potential_analysis.types import (
@@ -180,7 +181,7 @@ def get_fundamental_stacked_x_points_projected_along_axes(
 
 
 def get_x_coordinates_in_axes(
-    basis: TupleBasisLike[Unpack[tuple[_BL0Inv, ...]]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     axes: tuple[int, ...],
     idx: SingleStackedIndexLike | None,
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:

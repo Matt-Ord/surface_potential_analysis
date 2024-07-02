@@ -38,19 +38,15 @@ if TYPE_CHECKING:
     from matplotlib.lines import Line2D
 
     from surface_potential_analysis.basis.basis import FundamentalPositionBasis3d
-    from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
     from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisWithVolumeLike,
-        TupleBasisLike,
+        TupleBasisWithLengthLike,
     )
     from surface_potential_analysis.potential.potential import Potential
     from surface_potential_analysis.types import (
         SingleStackedIndexLike,
     )
     from surface_potential_analysis.util.plot import Scale
-
-    _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
-    _BL1 = TypeVar("_BL1", bound=BasisWithLengthLike[Any, Any, Any])
 
     _L0Inv = TypeVar("_L0Inv", bound=int)
     _L1Inv = TypeVar("_L1Inv", bound=int)
@@ -137,7 +133,7 @@ def plot_potential_1d_comparison(
 
 def plot_potential_1d_x2_comparison_111(
     potential: Potential[
-        TupleBasisLike[
+        TupleBasisWithLengthLike[
             FundamentalPositionBasis3d[_L0Inv],
             FundamentalPositionBasis3d[_L1Inv],
             FundamentalPositionBasis3d[_L2Inv],
@@ -178,7 +174,7 @@ def plot_potential_1d_x2_comparison_111(
 
 def plot_potential_1d_x2_comparison_100(
     potential: Potential[
-        TupleBasisLike[
+        TupleBasisWithLengthLike[
             FundamentalPositionBasis3d[_L0Inv],
             FundamentalPositionBasis3d[_L1Inv],
             FundamentalPositionBasis3d[_L2Inv],
@@ -287,7 +283,7 @@ def plot_potential_difference_2d_x(
     tuple[Figure, Axes, QuadMesh]
     """
     converted_1 = convert_potential_to_basis(potential1, potential0["basis"])
-    potential: Potential[TupleBasisLike[*tuple[_BL0, ...]]] = {
+    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]] = {
         "basis": potential0["basis"],
         "data": potential0["data"] - converted_1["data"],
     }

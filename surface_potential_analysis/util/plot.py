@@ -25,7 +25,10 @@ if TYPE_CHECKING:
     from matplotlib.image import AxesImage
     from matplotlib.lines import Line2D
 
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
+    from surface_potential_analysis.basis.stacked_basis import (
+        StackedBasisWithVolumeLike,
+        TupleBasisLike,
+    )
     from surface_potential_analysis.types import SingleStackedIndexLike
 
 
@@ -118,6 +121,45 @@ def _set_ymargin(ax: Axes, bottom: float = 0.0, top: float = 0.3) -> None:
     ax.set_ylim(bottom, top)
 
 
+def plot_data_1d(
+    data: np.ndarray[tuple[int], np.dtype[np.complex128]],
+    coordinates: np.ndarray[tuple[int], np.dtype[np.float64]],
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "abs",
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot data in 1d.
+
+    Parameters
+    ----------
+    data : np.ndarray[tuple[int], np.dtype[np.complex128]]
+    coordinates : np.ndarray[tuple[int], np.dtype[np.float64]]
+    ax : Axes | None, optional
+        ax, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+    measure : Measure, optional
+        measure, by default "abs"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    fig, ax = get_figure(ax)
+
+    measured_data = get_measured_data(data, measure)
+
+    (line,) = ax.plot(coordinates, measured_data)
+    ax.set_xmargin(0)
+    _set_ymargin(ax, 0, 0.05)
+    if measure == "abs":
+        ax.set_ylim(0, ax.get_ylim()[1])
+    ax.set_yscale(_get_scale_with_lim(scale, ax.get_ylim()))
+    return fig, ax, line
+
+
 def plot_data_1d_k(
     basis: TupleBasisLike[*tuple[Any, ...]],
     data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
@@ -150,23 +192,19 @@ def plot_data_1d_k(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    fig, ax = get_figure(ax)
     idx = get_max_idx(basis, data, axes) if idx is None else idx
 
     coordinates = get_k_coordinates_in_axes(basis, axes, idx)
     data_in_axis = get_data_in_axes(data.reshape(basis.shape), axes, idx)
-    measured_data = get_measured_data(data_in_axis, measure)
 
-    shifted_data = np.fft.fftshift(measured_data)
+    shifted_data = np.fft.fftshift(data_in_axis)
     shifted_coordinates = np.fft.fftshift(coordinates)
 
-    (line,) = ax.plot(shifted_coordinates[0], shifted_data)
+    fig, ax, line = plot_data_1d(
+        shifted_data, shifted_coordinates[0], ax=ax, scale=scale, measure=measure
+    )
+
     ax.set_xlabel(f"k{(axes[0] % 3)} axis")
-    ax.set_xmargin(0)
-    _set_ymargin(ax, 0, 0.05)
-    if measure == "abs":
-        ax.set_ylim(0, ax.get_ylim()[1])
-    ax.set_yscale(_get_scale_with_lim(scale, ax.get_ylim()))
     return fig, ax, line
 
 
@@ -207,15 +245,13 @@ def plot_data_1d_x(
 
     coordinates = get_x_coordinates_in_axes(basis, axes, idx)
     data_in_axis = get_data_in_axes(data.reshape(basis.shape), axes, idx)
-    measured_data = get_measured_data(data_in_axis, measure)
 
-    (line,) = ax.plot(coordinates[0], measured_data)
+    fig, ax, line = plot_data_1d(
+        data_in_axis, coordinates[0], ax=ax, scale=scale, measure=measure
+    )
+
     ax.set_xlabel(f"x{(axes[0] % 3)} axis")
-    ax.set_xmargin(0)
-    _set_ymargin(ax, 0, 0.05)
-    if measure == "abs":
-        ax.set_ylim(0, ax.get_ylim()[1])
-    ax.set_yscale(_get_scale_with_lim(scale, ax.get_ylim()))
+
     return fig, ax, line
 
 
@@ -439,7 +475,7 @@ _L0Inv = TypeVar("_L0Inv", bound=int)
 
 
 def animate_data_through_surface_x(
-    basis: TupleBasisLike[*tuple[Any, ...]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
     axes: tuple[int, int, int] = (0, 1, 2),
     idx: SingleStackedIndexLike | None = None,

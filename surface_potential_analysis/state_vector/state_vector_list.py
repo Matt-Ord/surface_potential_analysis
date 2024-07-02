@@ -9,6 +9,9 @@ from surface_potential_analysis.basis.basis_like import (
     BasisLike,
 )
 from surface_potential_analysis.basis.stacked_basis import TupleBasis
+from surface_potential_analysis.state_vector.conversion import (
+    convert_state_vector_list_to_basis,
+)
 from surface_potential_analysis.types import (
     SingleFlatIndexLike,
 )
@@ -19,6 +22,10 @@ if TYPE_CHECKING:
 
     from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.operator.operator import Operator
+    from surface_potential_analysis.state_vector.eigenstate_collection import (
+        EigenstateList,
+        ValueList,
+    )
     from surface_potential_analysis.state_vector.state_vector import (
         StateDualVector,
         StateVector,
@@ -30,7 +37,8 @@ if TYPE_CHECKING:
 
     _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
     _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
-
+    _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
+    _B3 = TypeVar("_B3", bound=BasisLike[Any, Any])
     _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
 
 _B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
@@ -149,12 +157,63 @@ def as_state_vector_list(
     }
 
 
-_B2Inv = TypeVar("_B2Inv", bound=BasisLike[Any, Any])
-
-
 def calculate_inner_products(
-    state_0: StateVectorList[_B0, _B2Inv],
-    state_1: StateVectorList[_B1, _B2Inv],
+    state_0: StateVectorList[_B0, _B2],
+    state_1: StateVectorList[_B1, _B3],
+) -> Operator[_B0, _B1]:
+    """
+    Calculate the inner product of two states.
+
+    Parameters
+    ----------
+    state_0 : StateVector[_B0Inv]
+    state_1 : StateDualVector[_B0Inv]
+
+    Returns
+    -------
+    np.complex_
+    """
+    converted = convert_state_vector_list_to_basis(state_1, state_0["basis"][1])
+    return {
+        "basis": TupleBasis(state_0["basis"][0], state_1["basis"][0]),
+        "data": np.einsum(
+            "ik, jk -> ij",
+            np.conj(state_0["data"]).reshape(state_0["basis"].shape),
+            converted["data"].reshape(converted["basis"].shape),
+        ).reshape(-1),
+    }
+
+
+def calculate_inner_products_elementwise(
+    state_0: StateVectorList[_B0, _B2],
+    state_1: StateVectorList[_B0, _B3],
+) -> ValueList[_B0]:
+    """
+    Calculate the inner product of two states elementwise.
+
+    Parameters
+    ----------
+    state_0 : StateVector[_B0Inv]
+    state_1 : StateDualVector[_B0Inv]
+
+    Returns
+    -------
+    np.complex_
+    """
+    converted = convert_state_vector_list_to_basis(state_1, state_0["basis"][1])
+    return {
+        "basis": state_0["basis"][0],
+        "data": np.einsum(
+            "ik, ik -> i",
+            np.conj(state_0["data"]).reshape(state_0["basis"].shape),
+            converted["data"].reshape(converted["basis"].shape),
+        ).reshape(-1),
+    }
+
+
+def calculate_inner_products_eigenvalues(
+    state_0: EigenstateList[_B0, _B2],
+    state_1: EigenstateList[_B1, _B2],
 ) -> Operator[_B0, _B1]:
     """
     Calculate the inner product of two states.
@@ -170,10 +229,12 @@ def calculate_inner_products(
     """
     return {
         "basis": TupleBasis(state_0["basis"][0], state_1["basis"][0]),
-        "data": np.tensordot(
+        "data": np.einsum(
+            "ik, jk, i, j -> ij",
             np.conj(state_0["data"]).reshape(state_0["basis"].shape),
             state_1["data"].reshape(state_1["basis"].shape),
-            axes=(1, 1),
+            np.conj(state_0["eigenvalue"]),
+            state_1["eigenvalue"],
         ).reshape(-1),
     }
 

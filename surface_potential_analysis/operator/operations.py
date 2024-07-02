@@ -15,6 +15,9 @@ from surface_potential_analysis.operator.operator import (
     subtract_operator,
 )
 from surface_potential_analysis.operator.operator_list import OperatorList
+from surface_potential_analysis.state_vector.conversion import (
+    convert_state_vector_list_to_basis,
+)
 
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis_like import BasisLike
@@ -25,6 +28,12 @@ if TYPE_CHECKING:
     from surface_potential_analysis.operator.operator_list import (
         OperatorList,
         SingleBasisOperatorList,
+    )
+    from surface_potential_analysis.state_vector.eigenstate_collection import (
+        EigenstateList,
+    )
+    from surface_potential_analysis.state_vector.state_vector_list import (
+        StateVectorList,
     )
 
     _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
@@ -183,6 +192,35 @@ def scale_operator_list(
     return {
         "basis": operator["basis"],
         "data": operator["data"] * factor,
+    }
+
+
+def apply_operator_to_states(
+    lhs: Operator[_B0, _B1], states: StateVectorList[_B2, _B3]
+) -> EigenstateList[_B2, _B0]:
+    """
+    Apply an operator to all states in a state vector list.
+
+    Parameters
+    ----------
+    a : Operator[_B0Inv]
+    b : state vector list[_B0Inv]
+
+    Returns
+    -------
+    Operator[_B0Inv]
+    """
+    converted = convert_state_vector_list_to_basis(states, lhs["basis"][1])
+    data = np.einsum(
+        "ik,jk->ji",
+        lhs["data"].reshape(lhs["basis"].shape),
+        converted["data"].reshape(converted["basis"].shape),
+    )
+    norm = np.sqrt(np.sum(np.abs(np.square(data)), axis=1))
+    return {
+        "basis": TupleBasis(converted["basis"][0], lhs["basis"][0]),
+        "data": data / norm.reshape(norm.size, 1),
+        "eigenvalue": norm,
     }
 
 

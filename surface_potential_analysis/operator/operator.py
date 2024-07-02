@@ -14,12 +14,17 @@ from surface_potential_analysis.basis.stacked_basis import (
 from surface_potential_analysis.basis.util import (
     BasisUtil,
 )
+from surface_potential_analysis.state_vector.conversion import (
+    convert_state_vector_to_basis,
+)
 
 if TYPE_CHECKING:
     from surface_potential_analysis.operator.operator_list import (
         SingleBasisDiagonalOperatorList,
     )
-    from surface_potential_analysis.state_vector.eigenstate_collection import Eigenstate
+    from surface_potential_analysis.state_vector.eigenstate_collection import (
+        Eigenstate,
+    )
     from surface_potential_analysis.state_vector.state_vector import StateVector
     from surface_potential_analysis.types import SingleFlatIndexLike
 
@@ -276,7 +281,7 @@ def subtract_operator(
 
 
 def apply_operator_to_state(
-    lhs: Operator[_B0, _B1], state: StateVector[_B1]
+    lhs: Operator[_B0, _B1], state: StateVector[_B2]
 ) -> Eigenstate[_B0]:
     """
     Add together two operators.
@@ -290,10 +295,11 @@ def apply_operator_to_state(
     -------
     Operator[_B0Inv]
     """
-    data = np.tensordot(
+    converted = convert_state_vector_to_basis(state, lhs["basis"][1])
+    data = np.einsum(
+        "ik,k->i",
         lhs["data"].reshape(lhs["basis"].shape),
-        state["data"].reshape(state["basis"].n),
-        axes=(1, 0),
+        converted["data"].reshape(converted["basis"].n),
     )
-    norm = np.linalg.norm(data).astype(np.complex128)
+    norm = np.sqrt(np.sum(np.abs(np.square(data))))
     return {"basis": lhs["basis"][0], "data": data / norm, "eigenvalue": norm}
