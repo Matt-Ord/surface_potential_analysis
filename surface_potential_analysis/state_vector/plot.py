@@ -748,7 +748,7 @@ def plot_average_band_occupation(
     ax.set_yscale(scale)
     ax.set_xlabel("Occupation")
     ax.set_xlabel("Energy /J")
-    # ax.set_title("Plot of Average Occupation against Energy")
+
     return fig, ax, line
 
 
@@ -804,11 +804,11 @@ _BT0 = TypeVar("_BT0", bound=BasisWithTimeLike[Any, Any])
 
 def _get_restored_x(
     states: StateVectorList[
-        TupleBasisLike[Any, _BT0],
+        TupleBasisLike[_B0Inv, _BT0],
         TupleBasisLike[*tuple[Any, ...]],
     ],
     axis: int,
-) -> ValueList[TupleBasisLike[Any, _BT0]]:
+) -> ValueList[TupleBasisLike[_B0Inv, _BT0]]:
     periodic_x = _get_periodic_x(states, axis)
     unravelled = np.unwrap(
         np.angle(periodic_x["data"].reshape(states["basis"][0].shape)), axis=1
@@ -945,23 +945,19 @@ def plot_averaged_occupation_1d_x(
 
 
 def _get_average_displacements(
-    positions: ValueList[TupleBasisLike[_B0Inv, EvenlySpacedTimeBasis[Any, Any, Any]]],
+    positions: ValueList[TupleBasisLike[_B0Inv, _BT0]],
 ) -> ValueList[TupleBasisLike[_B0Inv, EvenlySpacedTimeBasis[Any, Any, Any]]]:
     basis = positions["basis"]
     stacked = positions["data"].reshape(basis.shape)
     squared_positions = np.square(stacked)
     total = np.cumsum(squared_positions + squared_positions[:, ::-1], axis=1)[:, ::-1]
-    x_fft = np.fft.fftn(squared_positions, s=(2 * basis.shape[1],), axes=(1,))
-    x_conj_fft = np.conjugate(x_fft)
-    np.fft.ifftn(x_fft * x_conj_fft, axes=(1,))
 
     convolution = np.apply_along_axis(
         lambda m: scipy.signal.correlate(m, m, mode="full")[basis.shape[1] - 1 :],
         axis=1,
         arr=stacked,
-    )
-    # np.testing.assert_array_almost_equal(correlation, convolution)
-    # TODO: average...
+    ).astype(np.float64)
+
     squared_diff = (total - 2 * convolution) / (1 + np.arange(basis[1].n))[::-1]
     out_basis = EvenlySpacedTimeBasis(basis[1].n, 1, 0, basis[1].dt * (basis[1].n))
     return {"basis": TupleBasis(basis[0], out_basis), "data": squared_diff.ravel()}
@@ -969,39 +965,52 @@ def _get_average_displacements(
 
 def plot_average_displacement_1d_x(
     states: StateVectorList[
-        TupleBasisLike[Any, _BT0],
+        TupleBasisLike[_B0Inv, _BT0],
         TupleBasisLike[*tuple[Any, ...]],
     ],
     axes: tuple[int] = (0,),
     *,
     ax: Axes | None = None,
-) -> tuple[Figure, Axes]:
+    measure: Measure = "abs",
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot the average displacement in 1d.
+
+    Parameters
+    ----------
+    states : StateVectorList[ TupleBasisLike[_B0Inv, _BT0], TupleBasisLike[
+    axes : tuple[int], optional
+        plot axes, by default (0,)
+    ax : Axes | None, optional
+        ax, by default None
+    measure : Measure, optional
+        measure, by default "abs"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
     fig, ax = get_figure(ax)
 
     restored_x = _get_restored_x(states, axes[0])
     displacements = _get_average_displacements(restored_x)
 
-    # !ax.errorbar(
-    # !    displacements["basis"][1].times,
-    # !    y=np.average(
-    # !        np.abs(displacements["data"].reshape(displacements["basis"].shape)), axis=0
-    # !    ),
-    # !    yerr=np.std(
-    # !        np.abs(displacements["data"].reshape(displacements["basis"].shape)), axis=0
-    # !    )
-    # !    / np.sqrt(displacements["basis"].shape[0]),
-    # !)
-    ax.plot(
-        displacements["basis"][1].times,
-        np.average(
-            np.abs(displacements["data"].reshape(displacements["basis"].shape)), axis=0
-        ),
+    measured_data = get_measured_data(displacements["data"], measure).reshape(
+        displacements["basis"].shape
     )
-    # for i in range(displacements["basis"].shape[0]):
-    #     ax.plot(
-    #         displacements["basis"][1].times,
-    #         np.abs(displacements["data"].reshape(displacements["basis"].shape))[i],
-    #     )
+    average_data = np.average(measured_data, axis=0)
+    (line,) = ax.plot(
+        displacements["basis"][1].times,
+        average_data,
+    )
+    std_data = np.std(measured_data, axis=0) / np.sqrt(displacements["basis"].shape[0])
+    ax.fill_between(
+        displacements["basis"][1].times,
+        average_data - std_data,
+        average_data + std_data,
+        alpha=0.2,
+    )
+
     ax.set_xlabel("Times /s")
     ax.set_ylabel("Distance /m")
-    return fig, ax
+    return fig, ax, line
