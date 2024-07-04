@@ -40,6 +40,11 @@ from surface_potential_analysis.state_vector.eigenstate_calculation import (
     calculate_eigenvectors_hermitian,
     calculate_expectation_list,
 )
+from surface_potential_analysis.state_vector.plot_value_list import (
+    plot_all_value_list_against_time,
+    plot_average_value_list_against_time,
+    plot_value_list_distribution,
+)
 from surface_potential_analysis.state_vector.state_vector_list import (
     as_state_vector_list,
     calculate_inner_products,
@@ -85,7 +90,7 @@ if TYPE_CHECKING:
 
 # ruff: noqa: PLR0913
 def plot_state_1d_k(
-    state: StateVector[TupleBasisLike[*tuple[Any, ...]]],
+    state: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -589,7 +594,7 @@ def _get_band_occupation(
     Operator[BasisLike[Any, Any], FundamentalBasis[int]],
 ]:
     eigenstates = calculate_eigenvectors_hermitian(hamiltonian)
-    energies = eigenstates["eigenvalue"]
+    energies = eigenstates["eigenvalue"].astype(np.float64)
     energies -= np.min(energies)
     occupations = calculate_inner_products(states, eigenstates)
     return (energies, occupations)
@@ -776,7 +781,7 @@ def get_periodic_x_operator(
     dk = tuple(n / f for (n, f) in zip(direction, util.shape))
 
     phi = (2 * np.pi) * np.einsum(
-        "ij,i -> j",
+        "ij,i->j",
         util.stacked_nx_points,
         dk,
     )
@@ -791,6 +796,7 @@ def _get_periodic_x(
         _B0Inv,
         StackedBasisWithVolumeLike[Any, Any, Any],
     ],
+    direction: tuple[int, ...] | None = None,
 ) -> ValueList[_B0Inv]:
     """
     Calculate expectation of e^(2pi*x / delta_x).
@@ -803,8 +809,7 @@ def _get_periodic_x(
     -------
     SingleBasisOperator[_SB0]
     """
-    operator = get_periodic_x_operator(states["basis"][1])
-
+    operator = get_periodic_x_operator(states["basis"][1], direction)
     return calculate_expectation_list(operator, states)
 
 
@@ -818,7 +823,8 @@ def _get_restored_x(
     ],
     axis: int,
 ) -> ValueList[TupleBasisLike[Any, _BT0]]:
-    periodic_x = _get_periodic_x(states)
+    direction = tuple(1 if i == axis else 0 for i in range(states["basis"][1].ndim))
+    periodic_x = _get_periodic_x(states, direction)
     unravelled = np.unwrap(
         np.angle(periodic_x["data"].reshape(states["basis"][0].shape)), axis=1
     )
@@ -839,6 +845,7 @@ def plot_periodic_averaged_occupation_1d_x(
     axes: tuple[int] = (0,),
     *,
     ax: Axes | None = None,
+    measure: Measure = "real",
 ) -> tuple[Figure, Axes]:
     """
     Plot the max occupation against time in 1d for each trajectory against time.
@@ -857,14 +864,8 @@ def plot_periodic_averaged_occupation_1d_x(
     -------
     tuple[Figure, Axes]
     """
-    fig, ax = get_figure(ax)
-
     occupation_x = _get_restored_x(states, axes[0])
-
-    for x_points in occupation_x["data"].reshape(occupation_x["basis"].shape):
-        ax.plot(occupation_x["basis"][1].times, x_points)
-
-    ax.set_xlabel("Times /s")
+    fig, ax = plot_all_value_list_against_time(occupation_x, ax=ax, measure=measure)
     ax.set_ylabel("Distance /m")
     return fig, ax
 
@@ -886,9 +887,7 @@ def _get_x_operator(basis: _SB0, axis: int) -> SingleBasisOperator[_SB0]:
     return convert_diagonal_operator_to_basis(
         {
             "basis": TupleBasis(basis_x, basis_x),
-            "data": util.delta_x_stacked[axis]
-            * util.stacked_nx_points[axis]
-            / util.shape[axis],
+            "data": util.dx_stacked[axis] * util.stacked_nx_points[axis],
         },
         TupleBasis(basis, basis),
     )
@@ -925,6 +924,7 @@ def plot_averaged_occupation_1d_x(
     axes: tuple[int] = (0,),
     *,
     ax: Axes | None = None,
+    measure: Measure = "real",
 ) -> tuple[Figure, Axes]:
     """
     Plot the max occupation against time in 1d for each trajectory against time.
@@ -943,15 +943,234 @@ def plot_averaged_occupation_1d_x(
     -------
     tuple[Figure, Axes]
     """
+    occupation_x = _get_average_x(states, axes[0])
+    fig, ax = plot_all_value_list_against_time(occupation_x, ax=ax, measure=measure)
+    ax.set_ylabel("Distance /m")
+    return fig, ax
+
+
+def _get_x_spread(
+    states: StateVectorList[
+        TupleBasisLike[Any, _BT0],
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ],
+    axis: int,
+) -> ValueList[TupleBasisLike[Any, _BT0]]:
+    r"""
+    Calculate the spread, \sigma_0 using the periodic x operator.
+
+    For a gaussian wavepacket
+
+    \ket{\psi} = A \exp{(-\frac{{(x - x_0)}^2}{2 \sigma_0} + ik_0(x-x_0))} \ket{x}
+
+    the expectation is given by
+
+    \braket{e^{iqx}} = e^{iq.x_0}\exp{(-\sigma_0^2q^2 / 4)}
+
+    Parameters
+    ----------
+    states : StateVectorList[TupleBasisLike[Any, _BT0], StackedBasisWithVolumeLike[Any, Any, Any]]
+    axis : int
+
+    Returns
+    -------
+    ValueList[TupleBasisLike[Any, _BT0]]
+    """
+    direction = tuple(1 if i == axis else 0 for i in range(states["basis"][1].ndim))
+    periodic_x = _get_periodic_x(states, direction)
+    norm = np.abs(periodic_x["data"].reshape(states["basis"][0].shape))
+    q = 2 * np.pi / np.linalg.norm(states["basis"][1].delta_x_stacked[axis])
+    sigma_0 = np.sqrt(-(4 / q**2) * np.log(norm))
+
+    return {"basis": periodic_x["basis"], "data": sigma_0.ravel()}
+
+
+def plot_spread_1d_x(
+    states: StateVectorList[
+        TupleBasisLike[Any, _BT0],
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ],
+    axes: tuple[int] = (0,),
+    *,
+    ax: Axes | None = None,
+    measure: Measure = "real",
+) -> tuple[Figure, Axes]:
+    """
+    Plot the change in sigma_0 over time.
+
+    Parameters
+    ----------
+    states : StateVectorList[
+        TupleBasisLike[Any, _BT0],
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ]
+    axes : tuple[int], optional
+        direction to plot along, by default (0,)
+    ax : Axes | None, optional
+        plot axis, by default None
+
+    Returns
+    -------
+    tuple[Figure, Axes]
+    """
+    spread_x = _get_x_spread(states, axes[0])
+    fig, ax = plot_all_value_list_against_time(spread_x, ax=ax, measure=measure)
+
+    ax.set_ylabel("Distance /m")
+    return fig, ax
+
+
+def plot_spread_distribution_1d_x(
+    states: StateVectorList[
+        TupleBasisLike[Any, _BT0],
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ],
+    axes: tuple[int] = (0,),
+    *,
+    ax: Axes | None = None,
+    measure: Measure = "real",
+) -> tuple[Figure, Axes]:
+    """
+    Plot the distribution of sigma_0.
+
+    Parameters
+    ----------
+    states : StateVectorList[
+        TupleBasisLike[Any, _BT0],
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ]
+    axes : tuple[int], optional
+        direction to plot along, by default (0,)
+    ax : Axes | None, optional
+        plot axis, by default None
+
+    Returns
+    -------
+    tuple[Figure, Axes]
+    """
+    spread_x = _get_x_spread(states, axes[0])
+    fig, ax = plot_value_list_distribution(spread_x, ax=ax, measure=measure)
+
+    ax.set_xlabel("Distance /m")
+    return fig, ax
+
+
+def _get_k_operator(basis: _SB0, axis: int) -> SingleBasisOperator[_SB0]:
+    """
+    Generate operator for e^(2pi*x / delta_x).
+
+    Parameters
+    ----------
+    basis : _SB0
+
+    Returns
+    -------
+    SingleBasisOperator[_SB0]
+    """
+    basis_k = stacked_basis_as_fundamental_momentum_basis(basis)
+    util = BasisUtil(basis_k)
+    return convert_diagonal_operator_to_basis(
+        {
+            "basis": TupleBasis(basis_k, basis_k),
+            "data": util.dk_stacked[axis] * util.stacked_nk_points[axis],
+        },
+        TupleBasis(basis, basis),
+    )
+
+
+def _get_average_k(
+    states: StateVectorList[
+        _B0Inv,
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ],
+    axis: int,
+) -> ValueList[_B0Inv]:
+    """
+    Calculate expectation of e^(2pi*x / delta_x).
+
+    Parameters
+    ----------
+    basis : _SB0
+
+    Returns
+    -------
+    SingleBasisOperator[_SB0]
+    """
+    operator = _get_k_operator(states["basis"][1], axis)
+    return calculate_expectation_list(operator, states)
+
+
+def plot_spread_against_k(
+    states: StateVectorList[
+        TupleBasisLike[Any, _BT0],
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ],
+    axes: tuple[int] = (0,),
+    *,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes]:
+    """
+    Plot the distribution of sigma_0.
+
+    Parameters
+    ----------
+    states : StateVectorList[
+        TupleBasisLike[Any, _BT0],
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ]
+    axes : tuple[int], optional
+        direction to plot along, by default (0,)
+    ax : Axes | None, optional
+        plot axis, by default None
+
+    Returns
+    -------
+    tuple[Figure, Axes]
+    """
     fig, ax = get_figure(ax)
 
-    occupation_x = _get_average_x(states, axes[0])
+    spread_x = _get_x_spread(states, axes[0])
+    k = _get_average_k(states, axes[0])
 
-    for x_points in occupation_x["data"].reshape(occupation_x["basis"].shape):
-        ax.plot(occupation_x["basis"][1].times, x_points)
+    ax.plot(k["data"], spread_x["data"])
 
-    ax.set_xlabel("Times /s")
-    ax.set_ylabel("Distance /m")
+    ax.set_xlabel("Momentum /$m^-1$")
+    ax.set_ylabel("Spread /m")
+    return fig, ax
+
+
+def plot_k_distribution(
+    states: StateVectorList[
+        TupleBasisLike[Any, _BT0],
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ],
+    axes: tuple[int] = (0,),
+    *,
+    ax: Axes | None = None,
+    measure: Measure = "real",
+) -> tuple[Figure, Axes]:
+    """
+    Plot the distribution of sigma_0.
+
+    Parameters
+    ----------
+    states : StateVectorList[
+        TupleBasisLike[Any, _BT0],
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ]
+    axes : tuple[int], optional
+        direction to plot along, by default (0,)
+    ax : Axes | None, optional
+        plot axis, by default None
+
+    Returns
+    -------
+    tuple[Figure, Axes]
+    """
+    k_values = _get_average_k(states, axes[0])
+    fig, ax = plot_value_list_distribution(k_values, ax=ax, measure=measure)
+
+    ax.set_xlabel("Momentum /$m^-1$")
     return fig, ax
 
 
@@ -983,6 +1202,7 @@ def plot_average_displacement_1d_x(
     *,
     ax: Axes | None = None,
     measure: Measure = "abs",
+    scale: Scale = "linear",
 ) -> tuple[Figure, Axes, Line2D]:
     """
     Plot the average displacement in 1d.
@@ -1001,27 +1221,9 @@ def plot_average_displacement_1d_x(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    fig, ax = get_figure(ax)
-
     restored_x = _get_restored_x(states, axes[0])
     displacements = _get_average_displacements(restored_x)
 
-    measured_data = get_measured_data(displacements["data"], measure).reshape(
-        displacements["basis"].shape
+    return plot_average_value_list_against_time(
+        displacements, ax=ax, measure=measure, scale=scale
     )
-    average_data = np.average(measured_data, axis=0)
-    (line,) = ax.plot(
-        displacements["basis"][1].times,
-        average_data,
-    )
-    std_data = np.std(measured_data, axis=0) / np.sqrt(displacements["basis"].shape[0])
-    ax.fill_between(
-        displacements["basis"][1].times,
-        average_data - std_data,
-        average_data + std_data,
-        alpha=0.2,
-    )
-
-    ax.set_xlabel("Times /s")
-    ax.set_ylabel("Distance /m")
-    return fig, ax, line
