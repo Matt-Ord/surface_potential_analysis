@@ -15,11 +15,19 @@ from typing import (
 
 import numpy as np
 
+from surface_potential_analysis.stacked_basis.conversion import (
+    stacked_basis_as_fundamental_basis,
+)
+
 from .basis_like import AxisVector, BasisLike, BasisWithLengthLike
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
+    from surface_potential_analysis.basis.stacked_basis import (
+        StackedBasisLike,
+        StackedBasisWithVolumeLike,
+    )
     from surface_potential_analysis.types import (
         ArrayFlatIndexLike,
         ArrayIndexLike,
@@ -162,7 +170,7 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @property
     def fundamental_shape(
-        self: BasisUtil[TupleBasisLike[*_TS]],
+        self: BasisUtil[StackedBasisLike[Any, Any, Any]],
     ) -> tuple[int, ...]:
         return self._basis.fundamental_shape
 
@@ -178,10 +186,11 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @property
     def fundamental_stacked_nk_points(
-        self: BasisUtil[TupleBasisLike[*_TS]],
+        self: BasisUtil[StackedBasisLike[Any, Any, Any]],
     ) -> ArrayStackedIndexLike[tuple[int]]:
+        fundamental = stacked_basis_as_fundamental_basis(self._basis)
         nk_mesh = np.meshgrid(
-            *[BasisUtil(xi_basis).fundamental_nk_points for xi_basis in self],
+            *[BasisUtil(xi_basis).fundamental_nk_points for xi_basis in fundamental],
             indexing="ij",
         )
         return tuple(nki.ravel() for nki in nk_mesh)
@@ -198,10 +207,11 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @property
     def fundamental_stacked_nx_points(
-        self: BasisUtil[TupleBasisLike[*_TS]],
+        self: BasisUtil[StackedBasisLike[Any, Any, Any]],
     ) -> ArrayStackedIndexLike[tuple[int]]:
+        fundamental = stacked_basis_as_fundamental_basis(self._basis)
         nx_mesh = np.meshgrid(
-            *[BasisUtil(xi_basis).fundamental_nx_points for xi_basis in self],
+            *[BasisUtil(xi_basis).fundamental_nx_points for xi_basis in fundamental],
             indexing="ij",
         )
         return tuple(nxi.ravel() for nxi in nx_mesh)
@@ -379,9 +389,9 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @property
     def delta_x_stacked(
-        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
+        self: BasisUtil[StackedBasisWithVolumeLike[Any, Any, Any]],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
-        return np.array([axi.delta_x for axi in self])
+        return self._basis.delta_x_stacked
 
     @property
     def fundamental_delta_x_stacked(

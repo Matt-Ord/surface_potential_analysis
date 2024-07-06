@@ -85,7 +85,7 @@ if TYPE_CHECKING:
 
 # ruff: noqa: PLR0913
 def plot_state_1d_k(
-    state: StateVector[TupleBasisLike[*tuple[Any, ...]]],
+    state: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
