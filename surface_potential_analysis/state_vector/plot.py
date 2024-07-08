@@ -232,9 +232,7 @@ def animate_state_over_list_1d_x(
 
 
 def animate_state_over_list_1d_k(
-    states: StateVectorList[
-        BasisLike[Any, Any], StackedBasisWithVolumeLike[Any, Any, Any]
-    ],
+    states: StateVectorList[_B0, _SB0],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -281,7 +279,7 @@ def animate_state_over_list_1d_k(
 
 
 def plot_state_2d_k(
-    state: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
+    state: StateVector[_SB0],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
