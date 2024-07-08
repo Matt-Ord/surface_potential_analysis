@@ -15,13 +15,10 @@ from typing import (
 
 import numpy as np
 
-<< << << < HEAD
 from surface_potential_analysis.basis.basis import FundamentalBasis
-== == == =
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_basis,
 )
->> >> >> > origin / main
 
 from .basis_like import AxisVector, BasisLike, BasisWithLengthLike
 
@@ -439,6 +436,28 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
         self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         return self.dk_stacked
+
+
+def get_total_nx(
+    basis: StackedBasisLike[Any, Any, Any],
+) -> tuple[np.ndarray[tuple[int, int], np.dtype[np.int_]], ...]:
+    """
+    Get a matrix of average nx, taken in a periodic fashion.
+
+    Parameters
+    ----------
+    basis : StackedBasisLike[Any, Any, Any]
+
+    Returns
+    -------
+    np.ndarray[tuple[int, int], np.dtype[np.int_]]
+        _description_
+    """
+    util = BasisUtil(basis)
+    return tuple(
+        (n_x_points[:, np.newaxis] + n_x_points[np.newaxis, :])
+        for n_x_points in util.fundamental_stacked_nx_points
+    )
 
 
 def get_displacements_nx(
