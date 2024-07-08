@@ -438,11 +438,45 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
         return self.dk_stacked
 
 
-def get_total_nx(
+def _get_average_angles(
+    angles: np.ndarray[Any, np.dtype[np.float64]], axis: int = -1
+) -> np.ndarray[Any, np.dtype[np.float64]]:
+    """
+    Get the angles, averaged in a periodic sense.
+
+    Parameters
+    ----------
+    angles : np.ndarray[Any, np.dtype[np.float64]]
+    axis : int, optional
+        axis, by default -1
+
+    Returns
+    -------
+    np.ndarray[Any, np.dtype[np.float64]]
+    """
+    # Convert angles to unit circle coordinates
+    x = np.cos(angles)
+    y = np.sin(angles)
+
+    # Compute the average of these coordinates
+    avg_x = np.mean(x, axis=axis)
+    avg_y = np.mean(y, axis=axis)
+
+    # Convert the average coordinates back to an angle
+    return np.where(
+        np.logical_and(np.isclose(avg_x, 0), np.isclose(avg_y, 0)),
+        np.nan,
+        np.arctan2(avg_y, avg_x),
+    )
+
+
+def get_twice_average_nx(
     basis: StackedBasisLike[Any, Any, Any],
 ) -> tuple[np.ndarray[tuple[int, int], np.dtype[np.int_]], ...]:
     """
-    Get a matrix of average nx, taken in a periodic fashion.
+    Get a matrix of twice the average nx, taken in a periodic fashion.
+
+    This should map 1 + (N-1) to 0, but (N//2 + N//2) to N //2
 
     Parameters
     ----------
@@ -454,9 +488,31 @@ def get_total_nx(
         _description_
     """
     util = BasisUtil(basis)
+    # Interpret each x point as an angle
+    angles = tuple(
+        np.array(np.meshgrid(2 * np.pi * n_x_points / n, 2 * np.pi * n_x_points / n))
+        for (n_x_points, n) in zip(
+            util.fundamental_stacked_nx_points,
+            util.fundamental_shape,
+            strict=True,
+        )
+    )
+    # Average each pair of angles
+    average_angles = tuple(_get_average_angles(angle, axis=0) for angle in angles)
+    # In this case, it is safe to do a normal average
+    is_nan = np.isnan(average_angles)
+    if np.any(is_nan):
+        for i, angle in enumerate(angles):
+            average_angles[i][is_nan[i]] = np.average(angle[:, is_nan[i]], axis=0)
+
+    # Interpret this back as a coordinate. Note we multiply average by 2 here
     return tuple(
-        (n_x_points[:, np.newaxis] + n_x_points[np.newaxis, :])
-        for n_x_points in util.fundamental_stacked_nx_points
+        np.rint(average * n / np.pi).astype(np.int_) % (2 * n)
+        for (average, n) in zip(
+            average_angles,
+            util.fundamental_shape,
+            strict=True,
+        )
     )
 
 
