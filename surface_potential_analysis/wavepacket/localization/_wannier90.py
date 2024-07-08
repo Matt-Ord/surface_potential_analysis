@@ -28,6 +28,8 @@ from surface_potential_analysis.basis.conversion import (
     basis_as_fundamental_momentum_basis,
 )
 from surface_potential_analysis.basis.stacked_basis import (
+    StackedBasisLike,
+    StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisLike,
 )
@@ -74,7 +76,7 @@ if TYPE_CHECKING:
 
     _SBL0 = TypeVar(
         "_SBL0",
-        bound=TupleBasisLike[*tuple[Any, ...]],
+        bound=StackedBasisWithVolumeLike[Any, Any, Any],
     )
     _PB1Inv = TypeVar(
         "_PB1Inv",
@@ -125,7 +127,7 @@ end unit_cell_cart"""
 
 # ! cSpell:disable
 def _build_k_points_block(
-    list_basis: TupleBasisLike[*tuple[BasisLike[Any, Any], ...]],
+    list_basis: StackedBasisLike[Any, Any, Any],
 ) -> str:
     n_dim = list_basis.ndim
     fractions = get_wavepacket_sample_fractions(list_basis)

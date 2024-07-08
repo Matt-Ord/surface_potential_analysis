@@ -57,7 +57,7 @@ _B0s = TypeVarTuple("_B0s")
 
 
 def get_gaussian_noise_kernel(
-    basis: TupleBasisWithLengthLike[*_B0s],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     a: float,
     lambda_: float,
 ) -> SingleBasisDiagonalNoiseKernel[
@@ -169,7 +169,7 @@ def get_effective_gaussian_parameters(
 
 
 def get_effective_gaussian_noise_kernel(
-    basis: TupleBasisWithLengthLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     eta: float,
     temperature: float,
     *,

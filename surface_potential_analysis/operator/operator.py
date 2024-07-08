@@ -48,7 +48,7 @@ class Operator(TypedDict, Generic[_B0_co, _B1_co]):
     data: np.ndarray[tuple[int], np.dtype[np.complex128]]
 
 
-SingleBasisOperator = Operator[_B0, _B0]
+SingleBasisOperator = Operator[_B0_co, _B0_co]
 """Represents an operator where both vector and dual vector uses the same basis"""
 
 

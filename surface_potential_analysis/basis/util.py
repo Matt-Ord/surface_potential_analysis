@@ -15,7 +15,13 @@ from typing import (
 
 import numpy as np
 
+<< << << < HEAD
 from surface_potential_analysis.basis.basis import FundamentalBasis
+== == == =
+from surface_potential_analysis.stacked_basis.conversion import (
+    stacked_basis_as_fundamental_basis,
+)
+>> >> >> > origin / main
 
 from .basis_like import AxisVector, BasisLike, BasisWithLengthLike
 
@@ -184,10 +190,11 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @property
     def fundamental_stacked_nk_points(
-        self: BasisUtil[TupleBasisLike[*_TS]],
+        self: BasisUtil[StackedBasisLike[Any, Any, Any]],
     ) -> ArrayStackedIndexLike[tuple[int]]:
+        fundamental = stacked_basis_as_fundamental_basis(self._basis)
         nk_mesh = np.meshgrid(
-            *[BasisUtil(xi_basis).fundamental_nk_points for xi_basis in self],
+            *[BasisUtil(xi_basis).fundamental_nk_points for xi_basis in fundamental],
             indexing="ij",
         )
         return tuple(nki.ravel() for nki in nk_mesh)

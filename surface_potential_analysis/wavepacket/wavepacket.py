@@ -21,6 +21,7 @@ from surface_potential_analysis.basis.evenly_spaced_basis import (
     EvenlySpacedTransformedPositionBasis,
 )
 from surface_potential_analysis.basis.stacked_basis import (
+    StackedBasisLike,
     TupleBasis,
     TupleBasisLike,
     TupleBasisWithLengthLike,
@@ -62,8 +63,8 @@ _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
 _ESB0 = TypeVar("_ESB0", bound=EvenlySpacedBasis[Any, Any, Any])
 _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
 
-_SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
-_SB1 = TypeVar("_SB1", bound=TupleBasisLike[*tuple[Any, ...]])
+_SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
+_SB1 = TypeVar("_SB1", bound=StackedBasisLike[Any, Any, Any])
 
 
 BlochWavefunctionListBasis = TupleBasisLike[_SB0, _SB1]
@@ -202,7 +203,7 @@ def get_furled_basis(
 
 
 def get_wavepacket_sample_fractions(
-    list_basis: TupleBasisWithLengthLike[*tuple[_B0, ...]],
+    list_basis: StackedBasisLike[Any, Any, Any],
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     """
     Get the frequencies of the samples in a wavepacket, as a fraction of dk.
