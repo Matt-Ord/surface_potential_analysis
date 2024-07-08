@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar, TypeVarTuple, cast
+from typing import TYPE_CHECKING, Any, TypeVar, TypeVarTuple
 
 import numpy as np
 from scipy.constants import Boltzmann, hbar
 
 from surface_potential_analysis.basis.basis_like import BasisLike, BasisWithLengthLike
 from surface_potential_analysis.basis.stacked_basis import (
+    StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisLike,
     TupleBasisWithLengthLike,
 )
-from surface_potential_analysis.basis.util import BasisUtil
+from surface_potential_analysis.basis.util import BasisUtil, get_displacements_x
 from surface_potential_analysis.kernel.kernel import (
     IsotropicNoiseKernel,
     SingleBasisDiagonalNoiseKernel,
@@ -55,27 +56,6 @@ _B2 = TypeVar(
 _B0s = TypeVarTuple("_B0s")
 
 
-def _get_displacements(
-    basis: TupleBasisLike[*_B0s],
-) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
-    util = BasisUtil(
-        cast(TupleBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]], basis)
-    )
-    step = tuple(
-        (n_x_points[:, np.newaxis] - n_x_points[np.newaxis, :] + n // 2) % n - (n // 2)
-        for (n_x_points, n) in zip(
-            util.fundamental_stacked_nx_points,
-            util.fundamental_shape,
-            strict=True,
-        )
-    )
-
-    return np.linalg.norm(
-        np.tensordot(step, util.dx_stacked, axes=(0, 0)),
-        axis=2,
-    )
-
-
 def get_gaussian_noise_kernel(
     basis: TupleBasisWithLengthLike[*_B0s],
     a: float,
@@ -103,7 +83,7 @@ def get_gaussian_noise_kernel(
         _description_
     """
     basis_x = stacked_basis_as_fundamental_position_basis(basis)
-    displacements = _get_displacements(basis_x)
+    displacements = get_displacements_x(basis_x)
     correlation = (a**2) * np.exp(-(displacements**2) / (2 * lambda_**2)).astype(
         np.complex128,
     )
@@ -143,7 +123,7 @@ def get_gaussian_isotropic_noise_kernel(
     SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]] ]
         _description_
     """
-    displacements = _get_displacements(basis)[0]
+    displacements = get_displacements_x(basis)[0]
     correlation = a**2 * np.exp(-(displacements**2) / (2 * lambda_**2)).astype(
         np.complex128,
     )
@@ -156,11 +136,11 @@ def get_gaussian_isotropic_noise_kernel(
 
 
 def get_effective_gaussian_parameters(
-    basis: TupleBasisLike[*_B0s],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     eta: float,
     temperature: float,
     *,
-    lambda_factor: float = 2 * np.sqrt(2),
+    lambda_factor: float = 3 * np.sqrt(2),
 ) -> tuple[float, float]:
     """
     Generate a set of Gaussian parameters A, Lambda for a friction coefficient eta.
@@ -179,9 +159,7 @@ def get_effective_gaussian_parameters(
     tuple[float, float]
         (A, lambda_)
     """
-    util = BasisUtil(
-        cast(TupleBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]], basis)
-    )
+    util = BasisUtil(basis)
     smallest_max_displacement = np.min(np.linalg.norm(util.delta_x_stacked, axis=1)) / 2
     lambda_ = smallest_max_displacement / lambda_factor
     # mu = A / lambda

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
+import scipy.stats
 
 from surface_potential_analysis.basis.time_basis_like import BasisWithTimeLike
 from surface_potential_analysis.util.plot import (
@@ -145,6 +146,7 @@ def plot_value_list_distribution(
     *,
     ax: Axes | None = None,
     measure: Measure = "abs",
+    plot_gaussian: bool = True,
 ) -> tuple[Figure, Axes]:
     """
     Plot the distribution of values in a list.
@@ -167,10 +169,16 @@ def plot_value_list_distribution(
 
     measured_data = get_measured_data(values["data"], measure)
     std = np.std(measured_data).item()
-    x_range = (-4 * std, 4 * std)
-    n_bins = np.min(11, values["data"].size // 500)
+    average = np.average(measured_data).item()
+    x_range = (average - 4 * std, average + 4 * std)
+    n_bins = np.max([11, values["data"].size // 500]).item()
 
     ax.hist(measured_data, n_bins, x_range, density=True)
+
+    if plot_gaussian:
+        points = np.linspace(*x_range, 1000)
+        (line,) = ax.plot(points, scipy.stats.norm.pdf(points, loc=average, scale=std))
+        line.set_label("Gaussian Fit")
 
     ax.set_ylabel("Occupation")
     return fig, ax

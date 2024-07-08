@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import itertools
-from typing import TYPE_CHECKING, Any, Literal, TypeVarTuple
+from typing import TYPE_CHECKING, Any, Iterable, Literal, TypeVarTuple
 
 import numpy as np
 from scipy.constants import hbar
@@ -21,6 +20,7 @@ from surface_potential_analysis.kernel.kernel import (
     as_diagonal_noise_operators,
     get_noise_operators,
     get_noise_operators_diagonal,
+    truncate_diagonal_noise_operators,
 )
 from surface_potential_analysis.operator.operator_list import (
     select_operator_diagonal,
@@ -185,7 +185,7 @@ def plot_diagonal_noise_operators_single_sample(
         TupleBasisWithLengthLike[*_B0s],
         TupleBasisWithLengthLike[*_B0s],
     ],
-    truncation: int | None = None,
+    truncation: Iterable[int] | None = None,
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -214,15 +214,19 @@ def plot_diagonal_noise_operators_single_sample(
     -------
     tuple[Figure, Axes, Line2D]
     """
+    truncation = (
+        range(operators["eigenvalue"].size) if truncation is None else truncation
+    )
+    truncated = truncate_diagonal_noise_operators(operators, truncation)
+
     rng = np.random.default_rng()
     factors = (1 / np.sqrt(2)) * (
-        rng.normal(size=operators["eigenvalue"].size)
-        + 1j * rng.normal(size=operators["eigenvalue"].size)
+        rng.normal(size=truncated["eigenvalue"].size)
+        + 1j * rng.normal(size=truncated["eigenvalue"].size)
     )
 
-    measured_potential = np.zeros(operators["basis"][1][0].n, dtype=np.complex128)
-    args = np.argsort(np.abs(operators["eigenvalue"]))[::-1]
-    for i, factor in itertools.islice(zip(args, factors), truncation):
+    measured_potential = np.zeros(truncated["basis"][1][0].n, dtype=np.complex128)
+    for i, factor in enumerate(factors):
         operator = select_operator_diagonal(
             operators,
             idx=i,
@@ -254,7 +258,7 @@ def plot_noise_operators_single_sample_x(
         StackedBasisWithVolumeLike[Any, Any, Any],
         StackedBasisWithVolumeLike[Any, Any, Any],
     ],
-    truncation: int | None = None,
+    truncation: Iterable[int] | None = None,
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -349,7 +353,7 @@ def plot_noise_kernel_single_sample(
 def plot_diagonal_noise_operators_eigenvalues(
     operators: SingleBasisDiagonalNoiseOperatorList[
         FundamentalBasis[int],
-        TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]],
+        Any,
     ],
     truncation: int | None = None,
     *,

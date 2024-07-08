@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Generic, TypedDict, TypeVar, TypeVarTuple
+from typing import Any, Generic, Iterable, TypedDict, TypeVar, TypeVarTuple
 
 import numpy as np
 
@@ -292,6 +292,17 @@ def as_diagonal_kernel_from_isotropic_stacked(
 def as_diagonal_noise_operators(
     operators: NoiseOperatorList[_B0, _B1, _B2],
 ) -> DiagonalNoiseOperatorList[_B0, _B1, _B2]:
+    """
+    Convert noise operators to diagonal noise operators.
+
+    Parameters
+    ----------
+    operators : NoiseOperatorList[_B0, _B1, _B2]
+
+    Returns
+    -------
+    DiagonalNoiseOperatorList[_B0, _B1, _B2]
+    """
     operators_diagonal = as_diagonal_operator_list(operators)
     return {
         "basis": operators["basis"],
@@ -433,6 +444,31 @@ def get_noise_operators_diagonal(
         ),
         "data": np.conj(np.transpose(res.eigenvectors)).reshape(-1),
         "eigenvalue": res.eigenvalues,
+    }
+
+
+def truncate_diagonal_noise_operators(
+    operators: DiagonalNoiseOperatorList[FundamentalBasis[int], _B0, _B1],
+    truncation: Iterable[int],
+) -> DiagonalNoiseOperatorList[FundamentalBasis[int], _B0, _B1]:
+    """
+    Get a truncated list of diagonal operators.
+
+    Parameters
+    ----------
+    operators : DiagonalNoiseOperatorList[FundamentalBasis[int], _B0, _B1]
+    truncation : Iterable[int]
+
+    Returns
+    -------
+    DiagonalNoiseOperatorList[FundamentalBasis[int], _B0, _B1]
+    """
+    args = np.argsort(operators["eigenvalue"])[::-1][np.array(list(truncation))]
+    data = operators["data"].reshape(operators["basis"][0].n, -1)[args, :]
+    return {
+        "basis": TupleBasis(FundamentalBasis(data.shape[0]), operators["basis"][1]),
+        "data": data,
+        "eigenvalue": operators["eigenvalue"][args],
     }
 
 
