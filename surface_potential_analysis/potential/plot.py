@@ -249,7 +249,7 @@ def plot_potential_2d_x(
         idx,
         ax=ax,
         scale=scale,
-        measure="abs",
+        measure="real",
     )
 
 
