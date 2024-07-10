@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 import numpy as np
 import scipy.stats
@@ -141,12 +141,15 @@ def plot_average_value_list_against_time(
     return fig, ax, line
 
 
+Distribution = Literal["normal", "exponential normal", "skew normal"]
+
+
 def plot_value_list_distribution(
     values: ValueList[Any],
     *,
     ax: Axes | None = None,
     measure: Measure = "abs",
-    plot_gaussian: bool = True,
+    distribution: Distribution | None = None,
 ) -> tuple[Figure, Axes]:
     """
     Plot the distribution of values in a list.
@@ -172,17 +175,29 @@ def plot_value_list_distribution(
     average = np.average(measured_data).item()
     x_range = (
         (average - 4 * std, average + 4 * std)
-        if plot_gaussian
+        if distribution is not None
         else (np.min(measured_data).item(), np.max(measured_data).item())
     )
     n_bins = np.max([11, values["data"].size // 500]).item()
 
     ax.hist(measured_data, n_bins, x_range, density=True)
 
-    if plot_gaussian:
+    if distribution == "normal":
         points = np.linspace(*x_range, 1000)
         (line,) = ax.plot(points, scipy.stats.norm.pdf(points, loc=average, scale=std))
-        line.set_label("Gaussian Fit")
+        line.set_label("normal fit")
+
+    if distribution == "exponential normal":
+        points = np.linspace(*x_range, 1000)
+        fit = scipy.stats.exponnorm.fit(measured_data)
+        (line,) = ax.plot(points, scipy.stats.exponnorm.pdf(points, *fit))
+        line.set_label("exponential normal fit")
+
+    if distribution == "skew normal":
+        points = np.linspace(*x_range, 1000)
+        fit = scipy.stats.skewnorm.fit(measured_data)
+        (line,) = ax.plot(points, scipy.stats.skewnorm.pdf(points, *fit))
+        line.set_label("skew normal fit")
 
     ax.set_ylabel("Occupation")
     return fig, ax

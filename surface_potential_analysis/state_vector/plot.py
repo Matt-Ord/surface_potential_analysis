@@ -1075,7 +1075,9 @@ def plot_spread_distribution_1d(
     tuple[Figure, Axes]
     """
     spread_x = _get_x_spread(states, axes[0])
-    fig, ax = plot_value_list_distribution(spread_x, ax=ax, measure=measure)
+    fig, ax = plot_value_list_distribution(
+        spread_x, ax=ax, measure=measure, distribution="skew normal"
+    )
 
     ax.set_xlabel("Distance /m")
     return fig, ax
@@ -1233,7 +1235,9 @@ def plot_k_distribution_1d(
     tuple[Figure, Axes]
     """
     k_values = _get_average_k(states, axes[0])
-    fig, ax = plot_value_list_distribution(k_values, ax=ax, measure=measure)
+    fig, ax = plot_value_list_distribution(
+        k_values, ax=ax, measure=measure, distribution="normal"
+    )
 
     ax.set_xlabel("Momentum /$m^{-1}$")
     return fig, ax
@@ -1268,9 +1272,7 @@ def plot_x_distribution_1d(
     tuple[Figure, Axes]
     """
     x_values = _get_average_x(states, axes[0])
-    fig, ax = plot_value_list_distribution(
-        x_values, ax=ax, measure=measure, plot_gaussian=False
-    )
+    fig, ax = plot_value_list_distribution(x_values, ax=ax, measure=measure)
 
     ax.set_xlabel("Displacement /m$")
     return fig, ax
@@ -1305,9 +1307,7 @@ def plot_periodic_x_distribution_1d(
     tuple[Figure, Axes]
     """
     x_values = _get_average_x_periodic(states, axes[0])
-    fig, ax = plot_value_list_distribution(
-        x_values, ax=ax, measure=measure, plot_gaussian=False
-    )
+    fig, ax = plot_value_list_distribution(x_values, ax=ax, measure=measure)
 
     ax.set_xlabel("Displacement /m$")
     return fig, ax
