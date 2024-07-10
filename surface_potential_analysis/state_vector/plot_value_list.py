@@ -170,7 +170,11 @@ def plot_value_list_distribution(
     measured_data = get_measured_data(values["data"], measure)
     std = np.std(measured_data).item()
     average = np.average(measured_data).item()
-    x_range = (average - 4 * std, average + 4 * std)
+    x_range = (
+        (average - 4 * std, average + 4 * std)
+        if plot_gaussian
+        else (np.min(measured_data).item(), np.max(measured_data).item())
+    )
     n_bins = np.max([11, values["data"].size // 500]).item()
 
     ax.hist(measured_data, n_bins, x_range, density=True)

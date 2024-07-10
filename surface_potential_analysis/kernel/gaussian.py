@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, TypeVarTuple
 import numpy as np
 from scipy.constants import Boltzmann, hbar
 
-from surface_potential_analysis.basis.basis_like import BasisLike, BasisWithLengthLike
+from surface_potential_analysis.basis.basis_like import BasisLike
 from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisWithVolumeLike,
     TupleBasis,
@@ -140,7 +140,7 @@ def get_effective_gaussian_parameters(
     eta: float,
     temperature: float,
     *,
-    lambda_factor: float = 3 * np.sqrt(2),
+    lambda_factor: float = 2 * np.sqrt(2),
 ) -> tuple[float, float]:
     """
     Generate a set of Gaussian parameters A, Lambda for a friction coefficient eta.

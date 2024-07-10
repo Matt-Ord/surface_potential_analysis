@@ -819,6 +819,25 @@ def _get_periodic_x(
 _BT0 = TypeVar("_BT0", bound=BasisWithTimeLike[Any, Any])
 
 
+def _get_average_x_periodic(
+    states: StateVectorList[
+        TupleBasisLike[Any, _BT0],
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ],
+    axis: int,
+) -> ValueList[TupleBasisLike[Any, _BT0]]:
+    direction = tuple(1 if i == axis else 0 for i in range(states["basis"][1].ndim))
+    periodic_x = _get_periodic_x(states, direction)
+    angle = np.angle(periodic_x["data"].reshape(states["basis"][0].shape)) % (2 * np.pi)
+
+    return {
+        "basis": periodic_x["basis"],
+        "data": (
+            angle * states["basis"][1].delta_x_stacked[axis] / (2 * np.pi)
+        ).ravel(),
+    }
+
+
 def _get_restored_x(
     states: StateVectorList[
         TupleBasisLike[Any, _BT0],
@@ -915,7 +934,6 @@ def _get_average_x(
     SingleBasisOperator[_SB0]
     """
     operator = _get_x_operator(states["basis"][1], axis)
-
     return calculate_expectation_list(operator, states)
 
 
@@ -1177,7 +1195,7 @@ def plot_spread_against_x(
     fig, ax = get_figure(ax)
 
     spread_x = _get_x_spread(states, axes[0])
-    x = _get_average_x(states, axes[0])
+    x = _get_average_x_periodic(states, axes[0])
 
     ax.plot(x["data"], spread_x["data"])
 
@@ -1250,6 +1268,43 @@ def plot_x_distribution_1d(
     tuple[Figure, Axes]
     """
     x_values = _get_average_x(states, axes[0])
+    fig, ax = plot_value_list_distribution(
+        x_values, ax=ax, measure=measure, plot_gaussian=False
+    )
+
+    ax.set_xlabel("Displacement /m$")
+    return fig, ax
+
+
+def plot_periodic_x_distribution_1d(
+    states: StateVectorList[
+        TupleBasisLike[Any, _BT0],
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ],
+    axes: tuple[int] = (0,),
+    *,
+    ax: Axes | None = None,
+    measure: Measure = "real",
+) -> tuple[Figure, Axes]:
+    """
+    Plot the distribution of sigma_0.
+
+    Parameters
+    ----------
+    states : StateVectorList[
+        TupleBasisLike[Any, _BT0],
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ]
+    axes : tuple[int], optional
+        direction to plot along, by default (0,)
+    ax : Axes | None, optional
+        plot axis, by default None
+
+    Returns
+    -------
+    tuple[Figure, Axes]
+    """
+    x_values = _get_average_x_periodic(states, axes[0])
     fig, ax = plot_value_list_distribution(
         x_values, ax=ax, measure=measure, plot_gaussian=False
     )
