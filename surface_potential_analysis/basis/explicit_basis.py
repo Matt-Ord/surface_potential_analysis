@@ -12,7 +12,6 @@ from surface_potential_analysis.basis.basis_like import (
 from surface_potential_analysis.basis.conversion import basis_as_fundamental_basis
 from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisWithVolumeLike,
-    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.state_vector.conversion import (
     convert_state_vector_list_to_basis,
@@ -34,7 +33,7 @@ _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
 _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
 _BL1 = TypeVar("_BL1", bound=BasisWithLengthLike[Any, Any, Any])
 
-_SBL1 = TypeVar("_SBL1", bound=TupleBasisWithLengthLike[*tuple[Any, ...]])
+_SBL1 = TypeVar("_SBL1", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
 
 class ExplicitBasis(BasisLike[Any, Any], Generic[_B0, _B1]):
@@ -82,7 +81,7 @@ class ExplicitBasis(BasisLike[Any, Any], Generic[_B0, _B1]):
 
     @classmethod
     def from_basis(
-        cls: type[ExplicitBasis[_B0, _B1]],
+        cls: type[ExplicitBasis[FundamentalBasis[int], _B1]],
         basis: _B1,
     ) -> ExplicitBasis[FundamentalBasis[int], _B1]:
         return cls.from_state_vectors(get_basis_states(basis))

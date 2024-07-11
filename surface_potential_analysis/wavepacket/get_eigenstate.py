@@ -15,6 +15,7 @@ from surface_potential_analysis.basis.explicit_basis import (
     ExplicitStackedBasisWithLength,
 )
 from surface_potential_analysis.basis.stacked_basis import (
+    StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisWithLengthLike,
 )
@@ -96,6 +97,7 @@ if TYPE_CHECKING:
     _B0Inv = TypeVar("_B0Inv", bound=BasisLike[Any, Any])
     _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
     _SB1 = TypeVar("_SB1", bound=TupleBasisWithLengthLike[*tuple[Any, ...]])
+    _SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
     _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
     _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
@@ -364,10 +366,12 @@ def _get_compressed_bloch_states_at_bloch_idx(
 
 
 def get_bloch_states(
-    wavepackets: BlochWavefunctionListList[_B0, _SB0, _SB1],
+    wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBV1],
 ) -> StateVectorList[
     TupleBasisLike[_B0, _SB0],
-    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
+    TupleBasisWithLengthLike[
+        *tuple[FundamentalTransformedPositionBasis[Any, Any], ...]
+    ],
 ]:
     """
     Uncompress bloch wavefunction list.
@@ -440,10 +444,12 @@ def get_bloch_states(
 
 
 def get_bloch_basis(
-    wavefunctions: BlochWavefunctionListList[_B0, _SB0, _SB1],
+    wavefunctions: BlochWavefunctionListList[_B0, _SB0, _SBV1],
 ) -> ExplicitStackedBasisWithLength[
     TupleBasisLike[_B0, _SB0],
-    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
+    TupleBasisWithLengthLike[
+        *tuple[FundamentalTransformedPositionBasis[Any, Any], ...]
+    ],
 ]:
     """
     Get the basis, with the bloch wavefunctions as eigenstates.
@@ -484,11 +490,13 @@ def get_bloch_hamiltonian(
 
 
 def get_full_bloch_hamiltonian(
-    wavefunctions: BlochWavefunctionListWithEigenvaluesList[_B0, _SB0, _SB1],
+    wavefunctions: BlochWavefunctionListWithEigenvaluesList[_B0, _SB0, _SBV1],
 ) -> SingleBasisDiagonalOperator[
     ExplicitStackedBasisWithLength[
         TupleBasisLike[_B0, _SB0],
-        TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
+        TupleBasisWithLengthLike[
+            *tuple[FundamentalTransformedPositionBasis[Any, Any], ...]
+        ],
     ]
 ]:
     """
