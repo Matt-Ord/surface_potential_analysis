@@ -15,6 +15,7 @@ from surface_potential_analysis.stacked_basis.conversion import (
 )
 from surface_potential_analysis.stacked_basis.util import (
     calculate_cumulative_x_distances_along_path,
+    get_x_coordinates_in_axes,
 )
 from surface_potential_analysis.state_vector.conversion import (
     convert_state_vector_list_to_basis,
@@ -33,6 +34,7 @@ from surface_potential_analysis.util.plot import (
     animate_data_through_list_1d_k,
     animate_data_through_list_1d_x,
     animate_data_through_surface_x,
+    build_animation,
     get_figure,
     plot_data_1d_k,
     plot_data_1d_x,
@@ -41,6 +43,7 @@ from surface_potential_analysis.util.plot import (
 )
 from surface_potential_analysis.util.util import (
     Measure,
+    get_data_in_axes,
     get_measured_data,
 )
 
@@ -806,3 +809,66 @@ def plot_max_occupation_1d_x(
     ax.set_xlabel("Times /s")
     ax.set_ylabel("Distance /m")
     return fig, ax
+
+
+_L0Inv = TypeVar("_L0Inv", bound=int)
+
+
+def animate_data_2d_x(
+    basis: StackedBasisLike[*tuple[Any, ...]],
+    data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
+    axes: tuple[int, int] = (0, 1),
+    idx: SingleStackedIndexLike | None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    clim: tuple[float | None, float | None] = (None, None),
+    measure: Measure = "abs",
+) -> tuple[Figure, Axes, ArtistAnimation]:
+    idx = tuple(0 for _ in range(basis.ndim - len(axes))) if idx is None else idx
+    clim = (0.0, clim[1]) if clim[0] is None and measure == "abs" else clim
+
+    coordinates = get_x_coordinates_in_axes(basis, axes, idx)
+    data_in_axis = get_data_in_axes(data.reshape(basis.shape), axes, idx)
+    measured_data = get_measured_data(data_in_axis, measure)
+
+    fig, ax, ani = build_animation(
+        lambda i, ax: ax.pcolormesh(
+            *coordinates[:2, :, :, i],
+            measured_data[:, :, i],
+            shading="nearest",
+        ),
+        data.shape[2],
+        ax=ax,
+        scale=scale,
+        clim=clim,
+    )
+    ax.set_aspect("equal", adjustable="box")
+    fig.colorbar(ax.collections[0], ax=ax, format="%4.1e")
+
+    ax.set_xlabel(f"x{axes[0]} axis")
+    ax.set_ylabel(f"x{axes[1]} axis")
+    return fig, ax, ani
+
+
+def animate_state_2d_x(
+    state: StateVector[StackedBasisLike[*tuple[Any, ...]]],
+    axes: tuple[int, int] = (0, 1),
+    idx: SingleStackedIndexLike | None = None,
+    *,
+    ax: Axes | None = None,
+    measure: Measure = "abs",
+    scale: Scale = "linear",
+) -> tuple[Figure, Axes, ArtistAnimation]:
+    converted = convert_state_vector_list_to_basis(
+        state, stacked_basis_as_fundamental_position_basis(state["basis"])
+    )
+    return animate_data_2d_x(
+        converted["basis"],
+        converted["data"].reshape(converted["basis"].shape),
+        axes,
+        idx,
+        ax=ax,
+        scale=scale,
+        measure="real",
+    )
