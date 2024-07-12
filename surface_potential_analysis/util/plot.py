@@ -10,6 +10,7 @@ from matplotlib.colors import Normalize, SymLogNorm
 from matplotlib.figure import Figure
 from matplotlib.scale import LinearScale, ScaleBase, SymmetricalLogScale
 
+from surface_potential_analysis.basis.basis_like import BasisLike
 from surface_potential_analysis.stacked_basis.util import (
     get_k_coordinates_in_axes,
     get_max_idx,
@@ -33,6 +34,7 @@ if TYPE_CHECKING:
 
 
 Scale = Literal["symlog", "linear"]
+_B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
 
 
 def get_figure(ax: Axes | None) -> tuple[Figure, Axes]:
@@ -363,7 +365,7 @@ def plot_data_2d_k(
 
 
 def plot_data_2d_x(
-    basis: TupleBasisLike[*tuple[Any, ...]],
+    basis: TupleBasisLike[*tuple[_B0, ...]],
     data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
