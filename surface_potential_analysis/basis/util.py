@@ -18,6 +18,7 @@ import numpy as np
 from surface_potential_analysis.basis.basis import FundamentalBasis
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_basis,
+    stacked_basis_as_fundamental_position_basis,
 )
 
 from .basis_like import AxisVector, BasisLike, BasisWithLengthLike
@@ -382,7 +383,7 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @property
     def fundamental_x_points_stacked(
-        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
+        self: BasisUtil[StackedBasisWithVolumeLike[Any, Any, Any]],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         return np.tensordot(
             self.fundamental_dx_stacked, self.fundamental_stacked_nx_points, axes=(0, 0)
@@ -408,9 +409,10 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @cached_property
     def fundamental_dx_stacked(
-        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
+        self: BasisUtil[StackedBasisWithVolumeLike[Any, Any, Any]],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
-        return np.array([BasisUtil(axi).fundamental_dx for axi in self])
+        converted = stacked_basis_as_fundamental_position_basis(self._basis)
+        return np.array([BasisUtil(axi).fundamental_dx for axi in converted])
 
     @property
     def delta_k_stacked(
