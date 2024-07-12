@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar
 import numpy as np
 
 from surface_potential_analysis.basis.stacked_basis import (
+    StackedBasisLike,
+    StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisLike,
     TupleBasisWithLengthLike,
@@ -52,9 +54,10 @@ if TYPE_CHECKING:
 
     _A3d2Inv = TypeVar("_A3d2Inv", bound=BasisWithLengthLike3d[Any, Any])
 
-    _SB1 = TypeVar("_SB1", bound=TupleBasisWithLengthLike[*tuple[Any, ...]])
+    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+
     _MB0 = TypeVar("_MB0", bound=FundamentalTransformedPositionBasis[Any, Any])
-    _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
+    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
     _FB0 = TypeVar("_FB0", bound=FundamentalBasis[Any])
     _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
 
@@ -165,9 +168,9 @@ def _unfurl_momentum_basis_wavepacket(
 
 
 def unfurl_wavepacket(
-    wavepacket: BlochWavefunctionList[_SB0, _SB1],
+    wavepacket: BlochWavefunctionList[_SB0, _SBV0],
 ) -> StateVector[
-    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
+    TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
 ]:
     """
     Convert a wavepacket into an eigenstate of the irreducible unit cell.
@@ -192,9 +195,12 @@ def unfurl_wavepacket(
 
 
 def unfurl_wavepacket_list(
-    wavepackets: BlochWavefunctionListList[_B0, _SB0, _SB1],
+    wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBV0],
 ) -> StateVectorList[
-    _B0, TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
+    _B0,
+    TupleBasisWithLengthLike[
+        *tuple[FundamentalTransformedPositionBasis[Any, Any], ...]
+    ],
 ]:
     """
     Convert a wavepacket list into a StateVectorList.

@@ -22,6 +22,7 @@ from surface_potential_analysis.basis.evenly_spaced_basis import (
 )
 from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisLike,
+    StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisLike,
     TupleBasisWithLengthLike,
@@ -35,6 +36,7 @@ from surface_potential_analysis.operator.operator import (
 )
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_basis,
+    stacked_basis_as_fundamental_position_basis,
 )
 from surface_potential_analysis.state_vector.eigenstate_calculation import (
     calculate_eigenvectors_hermitian,
@@ -65,6 +67,8 @@ _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
 
 _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
 _SB1 = TypeVar("_SB1", bound=StackedBasisLike[Any, Any, Any])
+_TB0 = TypeVar("_TB0", bound=TupleBasisLike[*tuple[Any, ...]])
+_SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
 
 BlochWavefunctionListBasis = TupleBasisLike[_SB0, _SB1]
@@ -102,7 +106,7 @@ sample in the first brillouin zone
 
 
 def get_fundamental_unfurled_sample_basis_momentum(
-    basis: BlochWavefunctionListBasis[_SB0, TupleBasisLike[*tuple[_BL0, ...]]],
+    basis: BlochWavefunctionListBasis[_TB0, _SBV0],
     offsets: tuple[int, ...] | None = None,
 ) -> TupleBasis[*tuple[EvenlySpacedTransformedPositionBasis[int, int, int, int], ...]]:
     """
@@ -111,21 +115,22 @@ def get_fundamental_unfurled_sample_basis_momentum(
     This takes states from the fundamental list_basis, for the sample at offset
     """
     offsets = (0,) * basis[0].ndim if offsets is None else offsets
+    basis_x = stacked_basis_as_fundamental_position_basis(basis[1])
     return TupleBasis(
         *tuple(
-            EvenlySpacedTransformedPositionBasis(
+            EvenlySpacedTransformedPositionBasis[int, int, int, int](
                 delta_x=b1.delta_x * b0.fundamental_n,
                 n=b1.fundamental_n,
                 step=b0.fundamental_n,
                 offset=offset,
             )
-            for (b0, b1, offset) in zip(basis[0], basis[1], offsets, strict=True)
+            for (b0, b1, offset) in zip(basis[0], basis_x, offsets, strict=True)
         )
     )
 
 
 def get_sample_basis(
-    basis: BlochWavefunctionListBasis[_SB0, TupleBasisLike[*tuple[_BL0, ...]]],
+    basis: BlochWavefunctionListBasis[_TB0, _SBV0],
 ) -> TupleBasis[*tuple[BasisWithLengthLike[Any, Any, Any], ...]]:
     """
     Given the basis for a wavepacket, get the basis used to sample the packet.
@@ -140,10 +145,11 @@ def get_sample_basis(
     Basis[_ND0Inv]
     """
     # TODO: currently only supports fundamental list_basis ...
+    basis_x = stacked_basis_as_fundamental_position_basis(basis[1])
     return TupleBasis(
         *tuple(
             FundamentalPositionBasis(b1.delta_x * b0.n, b0.n)
-            for (b0, b1) in zip(basis[0], basis[1], strict=True)
+            for (b0, b1) in zip(basis[0], basis_x, strict=True)
         )
     )
 
@@ -158,7 +164,7 @@ class UnfurledBasis(TupleBasis[_B0, BasisWithLengthLike[_L0Inv, _L1Inv, _ND0Inv]
 
 def get_unfurled_basis(
     basis: BlochWavefunctionListBasis[
-        TupleBasisLike[*tuple[_B0, ...]], TupleBasisWithLengthLike[*tuple[_BL0, ...]]
+        _TB0, TupleBasisWithLengthLike[*tuple[_BL0, ...]]
     ],
 ) -> TupleBasisWithLengthLike[*tuple[UnfurledBasis[Any, Any, Any, Any], ...]]:
     """
