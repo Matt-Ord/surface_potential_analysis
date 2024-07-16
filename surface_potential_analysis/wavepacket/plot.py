@@ -10,6 +10,9 @@ from surface_potential_analysis.basis.block_fraction_basis import (
 )
 from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.basis.util import BasisUtil
+from surface_potential_analysis.stacked_basis.conversion import (
+    stacked_basis_as_fundamental_basis,
+)
 from surface_potential_analysis.state_vector.plot import (
     animate_state_3d_x,
     plot_state_1d_k,
@@ -29,6 +32,9 @@ from surface_potential_analysis.util.util import (
     Measure,
     get_data_in_axes,
     slice_ignoring_axes,
+)
+from surface_potential_analysis.wavepacket.conversion import (
+    convert_wavepacket_with_eigenvalues_to_basis,
 )
 from surface_potential_analysis.wavepacket.eigenstate_conversion import (
     unfurl_wavepacket,
@@ -275,6 +281,114 @@ def plot_wavepacket_eigenvalues_1d_k(
         measure=measure,
         scale=scale,
     )
+
+
+def plot_wavepacket_eigenvalues_1d_x(
+    wavepacket: BlochWavefunctionListWithEigenvaluesList[
+        _B0,
+        _SB0,
+        _SBV0,
+    ],
+    axes: tuple[int,] = (0,),
+    bands: list[int] | None = None,
+    *,
+    ax: Axes | None = None,
+    measure: Measure = "abs",
+    scale: Scale = "linear",
+) -> tuple[Figure, Axes]:
+    """
+    Plot the energy of the eigenstates in a wavepacket.
+
+    Parameters
+    ----------
+    wavepacket : Wavepacket[_NS0Inv, _NS1Inv, TupleBasisLike[tuple[_A3d0Inv, _A3d1Inv, _A3d2Inv]]
+    ax : Axes | None, optional
+        plot axis, by default None
+    scale : Literal[&quot;symlog&quot;, &quot;linear&quot;], optional
+        scale, by default "linear"
+
+    Returns
+    -------
+    tuple[Figure, Axes, QuadMesh]
+    """
+    converted = convert_wavepacket_with_eigenvalues_to_basis(
+        wavepacket,
+        list_basis=stacked_basis_as_fundamental_basis(wavepacket["basis"][0][1]),
+    )
+
+    bands = list(range(converted["basis"][0][0].n)) if bands is None else bands
+    data = converted["eigenvalue"].reshape(converted["basis"][0].shape)[bands, :]
+
+    fig, ax = get_figure(ax)
+    nx_points = BasisUtil(converted["basis"][0][1][axes[0]]).fundamental_nx_points
+    for band_data in data:
+        _, _, line = plot_data_1d(
+            band_data,
+            nx_points.astype(np.float64),
+            ax=ax,
+            scale=scale,
+            measure=measure,
+        )
+        line.set_linestyle("--")
+        line.set_marker("x")
+    ax.set_xlabel("Delta X")
+    ax.set_ylabel("Energy / J")
+
+    return (fig, ax)
+
+
+def plot_wavepacket_masses_1d(
+    wavepacket: BlochWavefunctionListWithEigenvaluesList[
+        _B0,
+        _SB0,
+        _SBV0,
+    ],
+    axes: tuple[int,] = (0,),
+    bands: list[int] | None = None,
+    *,
+    ax: Axes | None = None,
+    measure: Measure = "abs",
+    scale: Scale = "linear",
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot the energy of the eigenstates in a wavepacket.
+
+    Parameters
+    ----------
+    wavepacket : Wavepacket[_NS0Inv, _NS1Inv, TupleBasisLike[tuple[_A3d0Inv, _A3d1Inv, _A3d2Inv]]
+    ax : Axes | None, optional
+        plot axis, by default None
+    scale : Literal[&quot;symlog&quot;, &quot;linear&quot;], optional
+        scale, by default "linear"
+
+    Returns
+    -------
+    tuple[Figure, Axes, QuadMesh]
+    """
+    converted = convert_wavepacket_with_eigenvalues_to_basis(
+        wavepacket,
+        list_basis=stacked_basis_as_fundamental_basis(wavepacket["basis"][0][1]),
+    )
+
+    bands = list(range(converted["basis"][0][0].n)) if bands is None else bands
+    data = converted["eigenvalue"].reshape(converted["basis"][0].shape)[bands, :]
+
+    list_basis = converted["basis"][0][1]
+
+    nx_points = BasisUtil(wavepacket["basis"][0]).nx_points[bands]
+    fig, ax, line = plot_data_1d(
+        data[:, *tuple(1 if i == axes[0] else 0 for i in range(list_basis.ndim))],
+        nx_points.astype(np.float64),
+        ax=ax,
+        scale=scale,
+        measure=measure,
+    )
+    line.set_linestyle("--")
+    line.set_marker("x")
+    ax.set_xlabel("Delta X")
+    ax.set_ylabel("Energy / J")
+
+    return (fig, ax, line)
 
 
 def plot_wavepacket_eigenvalues_2d_x(

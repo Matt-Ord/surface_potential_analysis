@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     )
     from surface_potential_analysis.wavepacket.wavepacket import (
         BlochWavefunctionList,
+        BlochWavefunctionListWithEigenvaluesList,
     )
 
     _B0 = TypeVar("_B0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
@@ -40,6 +41,7 @@ if TYPE_CHECKING:
 
     _B2 = TypeVar("_B2", bound=StackedBasisLike[Any, Any, Any])
     _B3 = TypeVar("_B3", bound=StackedBasisLike[Any, Any, Any])
+    _B4 = TypeVar("_B4", bound=BasisLike[Any, Any])
 
     _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
 
@@ -112,6 +114,89 @@ def convert_wavepacket_to_basis(
     )
     vectors = convert_vector(vectors, wavepacket["basis"][1], basis, axis=1)
     return {"basis": TupleBasis(list_basis, basis), "data": vectors.reshape(-1)}
+
+
+@overload
+def convert_wavepacket_with_eigenvalues_to_basis(
+    wavepacket: BlochWavefunctionListWithEigenvaluesList[_B4, _B2, _B0],
+    *,
+    list_basis: _B3,
+    basis: None = None,
+) -> BlochWavefunctionListWithEigenvaluesList[_B4, _B3, _B0]:
+    ...
+
+
+@overload
+def convert_wavepacket_with_eigenvalues_to_basis(
+    wavepacket: BlochWavefunctionListWithEigenvaluesList[_B4, _B2, _B0],
+    *,
+    list_basis: _B3,
+    basis: _B1,
+) -> BlochWavefunctionListWithEigenvaluesList[_B4, _B3, _B1]:
+    ...
+
+
+@overload
+def convert_wavepacket_with_eigenvalues_to_basis(
+    wavepacket: BlochWavefunctionListWithEigenvaluesList[_B4, _B2, _B0],
+    *,
+    list_basis: None = None,
+    basis: _B1,
+) -> BlochWavefunctionListWithEigenvaluesList[_B4, _B2, _B1]:
+    ...
+
+
+@overload
+def convert_wavepacket_with_eigenvalues_to_basis(
+    wavepacket: BlochWavefunctionListWithEigenvaluesList[_B4, _B2, _B0],
+    *,
+    list_basis: None = None,
+    basis: None = None,
+) -> BlochWavefunctionListWithEigenvaluesList[_B4, _B2, _B0]:
+    ...
+
+
+def convert_wavepacket_with_eigenvalues_to_basis(
+    wavepacket: BlochWavefunctionListWithEigenvaluesList[_B4, _B2, _B0],
+    *,
+    list_basis: BasisLike[Any, Any] | None = None,
+    basis: BasisLike[Any, Any] | None = None,
+) -> BlochWavefunctionListWithEigenvaluesList[Any, Any, Any]:
+    """
+    Given a wavepacket convert it to the given basis.
+
+    Parameters
+    ----------
+    wavepacket : Wavepacket[_S0Inv,  _B0Inv]
+    basis : _B1Inv
+
+    Returns
+    -------
+    Wavepacket[_S0Inv, _B1Inv]
+    """
+    list_basis = wavepacket["basis"][0][1] if list_basis is None else list_basis
+    basis = wavepacket["basis"][1] if basis is None else basis
+    vectors = convert_vector(
+        wavepacket["data"].reshape(
+            *wavepacket["basis"][0].shape, wavepacket["basis"][1].n
+        ),
+        wavepacket["basis"][0][1],
+        list_basis,
+        axis=1,
+    )
+    vectors = convert_vector(vectors, wavepacket["basis"][1], basis, axis=2)
+
+    eigenvalues = convert_vector(
+        wavepacket["eigenvalue"].reshape(wavepacket["basis"][0].shape),
+        wavepacket["basis"][0][1],
+        list_basis,
+        axis=1,
+    )
+    return {
+        "basis": TupleBasis(TupleBasis(wavepacket["basis"][0][0], list_basis), basis),
+        "data": vectors.reshape(-1),
+        "eigenvalue": eigenvalues,
+    }
 
 
 def convert_wavepacket_to_position_basis(

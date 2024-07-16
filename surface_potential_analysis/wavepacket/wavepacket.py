@@ -39,8 +39,8 @@ from surface_potential_analysis.operator.operator import (
     average_eigenvalues,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_basis,
     stacked_basis_as_fundamental_position_basis,
+    stacked_basis_as_fundamental_transformed_basis,
 )
 from surface_potential_analysis.state_vector.eigenstate_calculation import (
     calculate_eigenvectors_hermitian,
@@ -231,7 +231,7 @@ def get_wavepacket_sample_fractions(
         util.fundamental_stacked_nk_points
         / np.array(util.fundamental_shape, dtype=np.int_)[:, np.newaxis]
     )
-    fundamental_basis = stacked_basis_as_fundamental_basis(list_basis)
+    fundamental_basis = stacked_basis_as_fundamental_transformed_basis(list_basis)
     with warnings.catch_warnings(
         category=np.exceptions.ComplexWarning, action="ignore"
     ):
