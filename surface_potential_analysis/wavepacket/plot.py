@@ -78,7 +78,7 @@ if TYPE_CHECKING:
     _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
     _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
     _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
-    _B2 = TypeVar("_B1", bound=BasisLike[Any, Any])
+    _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
     _BF0 = TypeVar("_BF0", bound=BasisWithBlockFractionLike[Any, Any])
 # ruff: noqa: PLR0913
 
@@ -187,7 +187,7 @@ def plot_uneven_wavepacket_eigenvalues_1d_k(
     ax: Axes | None = None,
     measure: Measure = "abs",
     scale: Scale = "linear",
-) -> tuple[Figure, Axes, Line2D]:
+) -> tuple[Figure, Axes]:
     """
     Plot the energy of the eigenstates in a wavepacket.
 
@@ -205,19 +205,26 @@ def plot_uneven_wavepacket_eigenvalues_1d_k(
     """
     direction = BasisUtil(wavepacket["basis"][1]).dk_stacked[axes[0]]
     bloch_fractions = _get_projected_bloch_phases(wavepacket, direction)
+    sorted_fractions = np.argsort(bloch_fractions)
 
     bands = list(range(wavepacket["basis"][0][0].n)) if bands is None else bands
     data = wavepacket["eigenvalue"].reshape(wavepacket["basis"][0].shape)[bands, :]
-    all_fractions = np.tile(bloch_fractions, len(bands))
 
-    fig, ax, line = plot_data_1d(
-        data, all_fractions, ax=ax, scale=scale, measure=measure
-    )
-
+    fig, ax = get_figure(ax)
+    for band_data in data:
+        _, _, line = plot_data_1d(
+            band_data[sorted_fractions],
+            bloch_fractions[sorted_fractions],
+            ax=ax,
+            scale=scale,
+            measure=measure,
+        )
+        line.set_linestyle("--")
+        line.set_marker("x")
     ax.set_xlabel("Bloch Phase")
     ax.set_ylabel("Energy / J")
 
-    return (fig, ax, line)
+    return (fig, ax)
 
 
 def plot_wavepacket_eigenvalues_1d_k(
@@ -232,7 +239,7 @@ def plot_wavepacket_eigenvalues_1d_k(
     ax: Axes | None = None,
     measure: Measure = "abs",
     scale: Scale = "linear",
-) -> tuple[Figure, Axes, Line2D]:
+) -> tuple[Figure, Axes]:
     """
     Plot the energy of the eigenstates in a wavepacket.
 
