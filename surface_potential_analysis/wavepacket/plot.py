@@ -3,7 +3,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
+from scipy.constants import Boltzmann
 
+from surface_potential_analysis.basis.block_fraction_basis import (
+    ExplicitBlockFractionBasis,
+)
+from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.state_vector.plot import (
     animate_state_3d_x,
@@ -16,6 +21,7 @@ from surface_potential_analysis.state_vector.plot import (
 )
 from surface_potential_analysis.util.plot import (
     get_figure,
+    plot_data_1d,
     plot_data_2d_k,
     plot_data_2d_x,
 )
@@ -34,7 +40,9 @@ from surface_potential_analysis.wavepacket.get_eigenstate import (
 from .wavepacket import (
     BlochWavefunctionList,
     BlochWavefunctionListWithEigenvalues,
+    BlochWavefunctionListWithEigenvaluesList,
     get_sample_basis,
+    get_wavepacket_sample_fractions,
     get_wavepacket_sample_frequencies,
 )
 
@@ -47,18 +55,31 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
     from matplotlib.lines import Line2D
 
+    from surface_potential_analysis.basis.basis_like import BasisLike
+    from surface_potential_analysis.basis.block_fraction_basis import (
+        BasisWithBlockFractionLike,
+    )
     from surface_potential_analysis.basis.stacked_basis import (
+        StackedBasisLike,
+        StackedBasisWithVolumeLike,
         TupleBasisLike,
         TupleBasisWithLengthLike,
     )
+    from surface_potential_analysis.state_vector.eigenstate_list import EigenstateList
     from surface_potential_analysis.state_vector.state_vector import StateVector
     from surface_potential_analysis.types import (
         SingleStackedIndexLike,
     )
     from surface_potential_analysis.util.plot import Scale
 
-    _B0Inv = TypeVar("_B0Inv", bound=TupleBasisLike[*tuple[Any, ...]])
-    _B1Inv = TypeVar("_B1Inv", bound=TupleBasisWithLengthLike[*tuple[Any, ...]])
+    _TB0Inv = TypeVar("_TB0Inv", bound=TupleBasisLike[*tuple[Any, ...]])
+    _TB1Inv = TypeVar("_TB1Inv", bound=TupleBasisLike[*tuple[Any, ...]])
+    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
+    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
+    _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
+    _B2 = TypeVar("_B1", bound=BasisLike[Any, Any])
+    _BF0 = TypeVar("_BF0", bound=BasisWithBlockFractionLike[Any, Any])
 # ruff: noqa: PLR0913
 
 
@@ -139,6 +160,114 @@ def plot_wavepacket_eigenvalues_2d_k(
     )
     ax.set_title("Plot of the band energies against momentum")
     return fig, ax, mesh
+
+
+def _get_projected_bloch_phases(
+    collection: EigenstateList[TupleBasisLike[_B0, _BF0], _SBV0],
+    direction: np.ndarray[tuple[int], np.dtype[np.float64]],
+) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+    util = BasisUtil(collection["basis"][1])
+    bloch_phases = np.tensordot(
+        collection["basis"][0][1].bloch_fractions,
+        util.fundamental_dk_stacked,
+        axes=(0, 0),
+    )
+    normalized_direction = direction / np.linalg.norm(direction)
+    return np.dot(bloch_phases, normalized_direction)
+
+
+def plot_uneven_wavepacket_eigenvalues_1d_k(
+    wavepacket: EigenstateList[
+        TupleBasisLike[_B0, _BF0],
+        _SBV0,
+    ],
+    axes: tuple[int,] = (0,),
+    bands: list[int] | None = None,
+    *,
+    ax: Axes | None = None,
+    measure: Measure = "abs",
+    scale: Scale = "linear",
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot the energy of the eigenstates in a wavepacket.
+
+    Parameters
+    ----------
+    wavepacket : Wavepacket[_NS0Inv, _NS1Inv, TupleBasisLike[tuple[_A3d0Inv, _A3d1Inv, _A3d2Inv]]
+    ax : Axes | None, optional
+        plot axis, by default None
+    scale : Literal[&quot;symlog&quot;, &quot;linear&quot;], optional
+        scale, by default "linear"
+
+    Returns
+    -------
+    tuple[Figure, Axes, QuadMesh]
+    """
+    direction = BasisUtil(wavepacket["basis"][1]).dk_stacked[axes[0]]
+    bloch_fractions = _get_projected_bloch_phases(wavepacket, direction)
+
+    bands = list(range(wavepacket["basis"][0][0].n)) if bands is None else bands
+    data = wavepacket["eigenvalue"].reshape(wavepacket["basis"][0].shape)[bands, :]
+    all_fractions = np.tile(bloch_fractions, len(bands))
+
+    fig, ax, line = plot_data_1d(
+        data, all_fractions, ax=ax, scale=scale, measure=measure
+    )
+
+    ax.set_xlabel("Bloch Phase")
+    ax.set_ylabel("Energy / J")
+
+    return (fig, ax, line)
+
+
+def plot_wavepacket_eigenvalues_1d_k(
+    wavepacket: BlochWavefunctionListWithEigenvaluesList[
+        _B0,
+        _SB0,
+        _SBV0,
+    ],
+    axes: tuple[int,] = (0,),
+    bands: list[int] | None = None,
+    *,
+    ax: Axes | None = None,
+    measure: Measure = "abs",
+    scale: Scale = "linear",
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot the energy of the eigenstates in a wavepacket.
+
+    Parameters
+    ----------
+    wavepacket : Wavepacket[_NS0Inv, _NS1Inv, TupleBasisLike[tuple[_A3d0Inv, _A3d1Inv, _A3d2Inv]]
+    ax : Axes | None, optional
+        plot axis, by default None
+    scale : Literal[&quot;symlog&quot;, &quot;linear&quot;], optional
+        scale, by default "linear"
+
+    Returns
+    -------
+    tuple[Figure, Axes, QuadMesh]
+    """
+    bloch_fractions = get_wavepacket_sample_fractions(wavepacket["basis"][0][1])
+
+    return plot_uneven_wavepacket_eigenvalues_1d_k(
+        {
+            "basis": TupleBasis(
+                TupleBasis(
+                    wavepacket["basis"][0][0],
+                    ExplicitBlockFractionBasis(bloch_fractions),
+                ),
+                wavepacket["basis"][1],
+            ),
+            "data": wavepacket["data"],
+            "eigenvalue": wavepacket["eigenvalue"],
+        },
+        axes,
+        bands,
+        ax=ax,
+        measure=measure,
+        scale=scale,
+    )
 
 
 def plot_wavepacket_eigenvalues_2d_x(
@@ -435,8 +564,8 @@ def plot_all_wavepacket_states_2d_x(
 
 
 def plot_wavepacket_difference_2d_x(
-    wavepacket_0: BlochWavefunctionList[_B0Inv, _B1Inv],
-    wavepacket_1: BlochWavefunctionList[_B0Inv, _B1Inv],
+    wavepacket_0: BlochWavefunctionList[_TB0Inv, _TB1Inv],
+    wavepacket_1: BlochWavefunctionList[_TB0Inv, _TB1Inv],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -539,3 +668,36 @@ def plot_wavepacket_along_path(
     """
     eigenstate: StateVector[Any] = unfurl_wavepacket(wavepacket)
     return plot_state_along_path(eigenstate, path, ax=ax, measure=measure, scale=scale)
+
+
+def plot_occupation_against_band(
+    collection: EigenstateList[TupleBasisLike[_B0, _B1], _B2],
+    temperature: float,
+    *,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot the eigenvalues in an eigenstate collection against their projected phases.
+
+    Parameters
+    ----------
+    collection : EigenstateColllection[_B0Inv, _L0Inv]
+    direction : np.ndarray[tuple[int], np.dtype[np.float_]]
+    band : int, optional
+        band to plot, by default 0
+    ax : Axes | None, optional
+        axis, by default None
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    fig, ax = get_figure(ax)
+
+    eigenvalues = collection["eigenvalue"].reshape(*collection["basis"][0].shape, -1)
+    occupations = np.exp(-eigenvalues / (temperature * Boltzmann))
+    occupation_for_band = np.sum(occupations, axis=0) / np.sum(occupations)
+    (line,) = ax.plot(occupation_for_band)
+    ax.set_xlabel("band idx")
+    ax.set_ylabel("Occupation / Au")
+    return fig, ax, line

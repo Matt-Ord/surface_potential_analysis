@@ -29,7 +29,7 @@ if TYPE_CHECKING:
         OperatorList,
         SingleBasisOperatorList,
     )
-    from surface_potential_analysis.state_vector.eigenstate_collection import (
+    from surface_potential_analysis.state_vector.eigenstate_list import (
         EigenstateList,
     )
     from surface_potential_analysis.state_vector.state_vector_list import (

@@ -75,7 +75,7 @@ if TYPE_CHECKING:
         OperatorList,
         SingleBasisDiagonalOperatorList,
     )
-    from surface_potential_analysis.state_vector.eigenstate_collection import Eigenstate
+    from surface_potential_analysis.state_vector.eigenstate_list import Eigenstate
     from surface_potential_analysis.state_vector.state_vector import StateVector
     from surface_potential_analysis.types import (
         SingleIndexLike,

@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from matplotlib.lines import Line2D
 
     from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
-    from surface_potential_analysis.state_vector.eigenstate_collection import ValueList
+    from surface_potential_analysis.state_vector.eigenstate_list import ValueList
     from surface_potential_analysis.util.util import (
         Measure,
     )

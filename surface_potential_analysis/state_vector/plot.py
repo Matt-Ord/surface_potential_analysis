@@ -79,7 +79,7 @@ if TYPE_CHECKING:
         Operator,
         SingleBasisOperator,
     )
-    from surface_potential_analysis.state_vector.eigenstate_collection import ValueList
+    from surface_potential_analysis.state_vector.eigenstate_list import ValueList
     from surface_potential_analysis.state_vector.state_vector import StateVector
     from surface_potential_analysis.state_vector.state_vector_list import (
         StateVectorList,

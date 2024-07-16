@@ -428,14 +428,14 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     @cached_property
     def dk_stacked(
-        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
+        self: BasisUtil[StackedBasisWithVolumeLike[Any, Any, Any]],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         """Get dk as a list of dk for each axis."""
         return 2 * np.pi * np.linalg.inv(self.delta_x_stacked).T
 
     @property
     def fundamental_dk_stacked(
-        self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
+        self: BasisUtil[StackedBasisWithVolumeLike[Any, Any, Any]],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         return self.dk_stacked
 
