@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
-from scipy.constants import Boltzmann
+from scipy.constants import Boltzmann, hbar
 
 from surface_potential_analysis.basis.block_fraction_basis import (
     ExplicitBlockFractionBasis,
@@ -211,7 +211,7 @@ def plot_uneven_wavepacket_eigenvalues_1d_k(
     """
     direction = BasisUtil(wavepacket["basis"][1]).dk_stacked[axes[0]]
     bloch_fractions = _get_projected_bloch_phases(wavepacket, direction)
-    sorted_fractions = np.argsort(bloch_fractions)
+    sorted_fractions = np.arange(bloch_fractions.size)
 
     bands = list(range(wavepacket["basis"][0][0].n)) if bands is None else bands
     data = wavepacket["eigenvalue"].reshape(wavepacket["basis"][0].shape)[bands, :]
@@ -337,12 +337,13 @@ def plot_wavepacket_eigenvalues_1d_x(
     return (fig, ax)
 
 
-def plot_wavepacket_masses_1d(
+def plot_wavepacket_transformed_energy_1d(
     wavepacket: BlochWavefunctionListWithEigenvaluesList[
         _B0,
         _SB0,
         _SBV0,
     ],
+    free_mass: float | None = None,
     axes: tuple[int,] = (0,),
     bands: list[int] | None = None,
     *,
@@ -385,8 +386,91 @@ def plot_wavepacket_masses_1d(
     )
     line.set_linestyle("--")
     line.set_marker("x")
-    ax.set_xlabel("Delta X")
+    line.set_label("lowest fourier componet")
+
+    ax.set_xlabel("Band Index")
     ax.set_ylabel("Energy / J")
+
+    if free_mass is not None:
+        delta_x = np.linalg.norm(wavepacket["basis"][1].delta_x_stacked[axes[0]])
+        norm = delta_x * np.sqrt(wavepacket["basis"][0][1].n) / (2 * np.pi)
+        # By integrating explicitly we find
+        # |E(\Delta x)| = (\Delta x)^{-3}(8\pi N + 4 \pi)
+        # we add an additional np.sqrt(wavepacket["basis"][0][1].n) * delta_x / (2 * np.pi)
+        # to account for the difference in fourier transform definitions
+
+        offset = norm * ((4 * np.pi * hbar**2) / (2 * free_mass * delta_x**3))
+        points = (2 * nx_points + 1) * offset
+
+        (line,) = ax.plot(nx_points, points)
+        line.set_label("free particle")
+
+    return (fig, ax, line)
+
+
+def plot_wavepacket_transformed_energy_effective_mass_1d(
+    wavepacket: BlochWavefunctionListWithEigenvaluesList[
+        _B0,
+        _SB0,
+        _SBV0,
+    ],
+    axes: tuple[int,] = (0,),
+    bands: list[int] | None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot the energy of the eigenstates in a wavepacket.
+
+    Parameters
+    ----------
+    wavepacket : Wavepacket[_NS0Inv, _NS1Inv, TupleBasisLike[tuple[_A3d0Inv, _A3d1Inv, _A3d2Inv]]
+    ax : Axes | None, optional
+        plot axis, by default None
+    scale : Literal[&quot;symlog&quot;, &quot;linear&quot;], optional
+        scale, by default "linear"
+
+    Returns
+    -------
+    tuple[Figure, Axes, QuadMesh]
+    """
+    converted = convert_wavepacket_with_eigenvalues_to_basis(
+        wavepacket,
+        list_basis=stacked_basis_as_fundamental_basis(wavepacket["basis"][0][1]),
+    )
+
+    bands = list(range(converted["basis"][0][0].n)) if bands is None else bands
+    nx_points = BasisUtil(wavepacket["basis"][0]).nx_points[bands]
+    data = converted["eigenvalue"].reshape(converted["basis"][0].shape)[bands, :]
+    list_basis = converted["basis"][0][1]
+    sliced_data = data[
+        :, *tuple(1 if i == axes[0] else 0 for i in range(list_basis.ndim))
+    ]
+
+    offset = np.abs(sliced_data) / (2 * nx_points + 1)
+    # By integrating explicitly we find
+    # |E(\Delta x)| = (\Delta x)^{-3}(8\pi N + 4 \pi)
+    # we add an additional np.sqrt(wavepacket["basis"][0][1].n) * delta_x / (2 * np.pi)
+    # to account for the difference in fourier transform definitions
+    delta_x = np.linalg.norm(wavepacket["basis"][1].delta_x_stacked[axes[0]])
+    norm = np.sqrt(wavepacket["basis"][0][1].n) * delta_x / (2 * np.pi)
+    effective_mass = norm * ((4 * np.pi * hbar**2) / (2 * offset * delta_x**3))
+
+    fig, ax, line = plot_data_1d(
+        effective_mass,
+        nx_points.astype(np.float64),
+        ax=ax,
+        scale=scale,
+        measure="real",
+    )
+    line.set_linestyle("--")
+    line.set_marker("x")
+    line.set_label("Effective Mass")
+
+    ax.set_xlabel("Band Index")
+    ax.set_ylabel("Mass / Kg")
+    ax.set_ylim([0, ax.get_ylim()[1]])
 
     return (fig, ax, line)
 
