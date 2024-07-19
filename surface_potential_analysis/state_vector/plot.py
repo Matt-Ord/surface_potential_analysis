@@ -894,7 +894,7 @@ def plot_periodic_averaged_occupation_1d_x(
 
 def _get_x_operator(basis: _SB0, axis: int) -> SingleBasisOperator[_SB0]:
     """
-    Generate operator for e^(2pi*x / delta_x).
+    Generate operator for x.
 
     Parameters
     ----------
@@ -1085,7 +1085,7 @@ def plot_spread_distribution_1d(
 
 def _get_k_operator(basis: _SB0, axis: int) -> SingleBasisOperator[_SB0]:
     """
-    Generate operator for e^(2pi*x / delta_x).
+    Generate operator for k.
 
     Parameters
     ----------

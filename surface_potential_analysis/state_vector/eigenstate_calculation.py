@@ -6,14 +6,14 @@ import numpy as np
 import scipy.linalg
 
 from surface_potential_analysis.basis.basis import FundamentalBasis
-from surface_potential_analysis.basis.basis_like import BasisLike, BasisWithLengthLike
+from surface_potential_analysis.basis.basis_like import BasisLike
 from surface_potential_analysis.basis.explicit_basis import (
     ExplicitBasis,
     ExplicitStackedBasisWithLength,
 )
 from surface_potential_analysis.basis.stacked_basis import (
+    StackedBasisWithVolumeLike,
     TupleBasis,
-    TupleBasisLike,
 )
 from surface_potential_analysis.operator.conversion import convert_operator_to_basis
 from surface_potential_analysis.util.decorators import timed
@@ -45,17 +45,17 @@ _B3 = TypeVar("_B3", bound=BasisLike[Any, Any])
 
 @timed
 def calculate_eigenvectors_hermitian(
-    hamiltonian: SingleBasisOperator[_B0],
+    operator: SingleBasisOperator[_B0],
     subset_by_index: tuple[IntLike_co, IntLike_co] | None = None,
 ) -> EigenstateList[FundamentalBasis[int], _B0]:
     """Get a list of eigenstates for a given operator, assuming it is hermitian."""
     eigenvalues, vectors = scipy.linalg.eigh(
-        hamiltonian["data"].reshape(hamiltonian["basis"].shape),
+        operator["data"].reshape(operator["basis"].shape),
         subset_by_index=subset_by_index,
     )
     return {
         "basis": TupleBasis(
-            FundamentalBasis(np.size(eigenvalues)), hamiltonian["basis"][0]
+            FundamentalBasis(np.size(eigenvalues)), operator["basis"][0]
         ),
         "data": np.transpose(vectors).reshape(-1),
         "eigenvalue": np.array(eigenvalues),
@@ -63,18 +63,34 @@ def calculate_eigenvectors_hermitian(
 
 
 def calculate_eigenvectors(
-    hamiltonian: SingleBasisOperator[_B0],
+    operator: SingleBasisOperator[_B0],
 ) -> EigenstateList[FundamentalBasis[int], _B0]:
     """Get a list of eigenstates for a given operator, assuming it is hermitian."""
     eigenvalues, vectors = np.linalg.eig(
-        hamiltonian["data"].reshape(hamiltonian["basis"].shape),
+        operator["data"].reshape(operator["basis"].shape),
     )
     return {
-        "basis": TupleBasis(
-            FundamentalBasis(eigenvalues.size), hamiltonian["basis"][0]
-        ),
+        "basis": TupleBasis(FundamentalBasis(eigenvalues.size), operator["basis"][0]),
         "data": np.transpose(vectors).reshape(-1),
         "eigenvalue": eigenvalues,
+    }
+
+
+def operator_from_eigenstates(
+    states: EigenstateList[_B1, _B0],
+) -> SingleBasisOperator[_B0]:
+    """Get an operator from eigenstates."""
+    eigenvectors = states["data"].reshape(states["basis"].shape)
+    data = np.einsum(
+        "ji,j,kj->ik",
+        eigenvectors,
+        states["eigenvalue"],
+        np.linalg.inv(eigenvectors),
+    )
+
+    return {
+        "basis": TupleBasis(states["basis"][1], states["basis"][1]),
+        "data": data.ravel(),
     }
 
 
@@ -183,9 +199,7 @@ def get_eigenstate_basis_from_hamiltonian(
     return ExplicitBasis[Any, Any].from_state_vectors(eigenvectors)
 
 
-_SB0 = TypeVar(
-    "_SB0", bound=TupleBasisLike[*tuple[BasisWithLengthLike[Any, Any, Any], ...]]
-)
+_SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
 
 def get_eigenstate_basis_stacked_from_hamiltonian(

@@ -11,12 +11,17 @@ from surface_potential_analysis.operator.conversion import (
 )
 from surface_potential_analysis.operator.operator import (
     SingleBasisOperator,
+    add_operator,
     matmul_operator,
     subtract_operator,
 )
 from surface_potential_analysis.operator.operator_list import OperatorList
 from surface_potential_analysis.state_vector.conversion import (
     convert_state_vector_list_to_basis,
+)
+from surface_potential_analysis.state_vector.eigenstate_calculation import (
+    calculate_eigenvectors,
+    operator_from_eigenstates,
 )
 
 if TYPE_CHECKING:
@@ -195,6 +200,22 @@ def scale_operator_list(
     }
 
 
+def scale_operator(factor: complex, operator: Operator[_B0, _B1]) -> Operator[_B0, _B1]:
+    """
+    Scale the operator.
+
+    Equivalent to multiplying each operator by factor
+
+    Returns
+    -------
+    OperatorList[_B3, _B0, _B1]
+    """
+    return {
+        "basis": operator["basis"],
+        "data": operator["data"] * factor,
+    }
+
+
 def apply_operator_to_states(
     lhs: Operator[_B0, _B1], states: StateVectorList[_B2, _B3]
 ) -> EigenstateList[_B2, _B0]:
@@ -244,3 +265,47 @@ def get_commutator(
     lhs_rhs = matmul_operator(lhs, rhs)
     rhs_lhs = matmul_operator(rhs, lhs)
     return subtract_operator(lhs_rhs, rhs_lhs)
+
+
+def get_anti_commutator(
+    lhs: SingleBasisOperator[_B0], rhs: SingleBasisOperator[_B0]
+) -> SingleBasisOperator[_B0]:
+    """
+    Given two operators lhs, rhs, calculate the commutator.
+
+    This is equivalent to ths rhs - rhs lhs
+
+    Parameters
+    ----------
+    lhs : SingleBasisOperator[_B0]
+    rhs : SingleBasisOperator[_B0]
+
+    Returns
+    -------
+    SingleBasisOperator[_B0]
+    """
+    lhs_rhs = matmul_operator(lhs, rhs)
+    rhs_lhs = matmul_operator(rhs, lhs)
+    return add_operator(lhs_rhs, rhs_lhs)
+
+
+def exp_operator(operator: SingleBasisOperator[_B0]) -> SingleBasisOperator[_B0]:
+    """
+    Calculate exp(A) for some operator A.
+
+    Parameters
+    ----------
+    operator : SingleBasisOperator[_B0]
+
+    Returns
+    -------
+    SingleBasisOperator[_B0]
+    """
+    eigenstates = calculate_eigenvectors(operator)
+    return operator_from_eigenstates(
+        {
+            "basis": eigenstates["basis"],
+            "data": eigenstates["data"],
+            "eigenvalue": np.exp(eigenstates["eigenvalue"]),
+        }
+    )
