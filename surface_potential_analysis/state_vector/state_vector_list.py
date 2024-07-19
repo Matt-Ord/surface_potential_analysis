@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
     from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.operator.operator import Operator
-    from surface_potential_analysis.state_vector.eigenstate_collection import (
+    from surface_potential_analysis.state_vector.eigenstate_list import (
         EigenstateList,
         ValueList,
     )

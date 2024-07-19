@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     )
     from surface_potential_analysis.operator.operator import DiagonalOperator
     from surface_potential_analysis.operator.operator_list import DiagonalOperatorList
-    from surface_potential_analysis.state_vector.eigenstate_collection import (
+    from surface_potential_analysis.state_vector.eigenstate_list import (
         EigenstateList,
     )
     from surface_potential_analysis.state_vector.state_vector_list import (

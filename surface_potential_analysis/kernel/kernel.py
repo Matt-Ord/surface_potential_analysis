@@ -22,7 +22,7 @@ from surface_potential_analysis.operator.operator_list import (
     as_diagonal_operator_list,
     as_operator_list,
 )
-from surface_potential_analysis.state_vector.eigenstate_collection import ValueList
+from surface_potential_analysis.state_vector.eigenstate_list import ValueList
 
 _B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
 _B1_co = TypeVar("_B1_co", bound=BasisLike[Any, Any], covariant=True)

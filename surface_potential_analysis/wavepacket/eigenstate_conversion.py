@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar
 import numpy as np
 
 from surface_potential_analysis.basis.stacked_basis import (
+    StackedBasisLike,
+    StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisLike,
     TupleBasisWithLengthLike,
@@ -14,8 +16,8 @@ from surface_potential_analysis.stacked_basis.build import (
     fundamental_stacked_basis_from_shape,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_basis,
     stacked_basis_as_fundamental_momentum_basis,
+    stacked_basis_as_fundamental_transformed_basis,
 )
 from surface_potential_analysis.state_vector.state_vector_list import (
     as_state_vector_list,
@@ -52,9 +54,10 @@ if TYPE_CHECKING:
 
     _A3d2Inv = TypeVar("_A3d2Inv", bound=BasisWithLengthLike3d[Any, Any])
 
-    _SB1 = TypeVar("_SB1", bound=TupleBasisWithLengthLike[*tuple[Any, ...]])
+    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+
     _MB0 = TypeVar("_MB0", bound=FundamentalTransformedPositionBasis[Any, Any])
-    _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
+    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
     _FB0 = TypeVar("_FB0", bound=FundamentalBasis[Any])
     _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
 
@@ -165,9 +168,9 @@ def _unfurl_momentum_basis_wavepacket(
 
 
 def unfurl_wavepacket(
-    wavepacket: BlochWavefunctionList[_SB0, _SB1],
+    wavepacket: BlochWavefunctionList[_SB0, _SBV0],
 ) -> StateVector[
-    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
+    TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
 ]:
     """
     Convert a wavepacket into an eigenstate of the irreducible unit cell.
@@ -185,16 +188,21 @@ def unfurl_wavepacket(
     """
     converted = convert_wavepacket_to_fundamental_momentum_basis(
         wavepacket,
-        list_basis=stacked_basis_as_fundamental_basis(wavepacket["basis"][0]),
+        list_basis=stacked_basis_as_fundamental_transformed_basis(
+            wavepacket["basis"][0]
+        ),
     )
     # TDOO:! np.testing.assert_array_equal(converted["data"], wavepacket["data"])
     return _unfurl_momentum_basis_wavepacket(converted)
 
 
 def unfurl_wavepacket_list(
-    wavepackets: BlochWavefunctionListList[_B0, _SB0, _SB1],
+    wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBV0],
 ) -> StateVectorList[
-    _B0, TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
+    _B0,
+    TupleBasisWithLengthLike[
+        *tuple[FundamentalTransformedPositionBasis[Any, Any], ...]
+    ],
 ]:
     """
     Convert a wavepacket list into a StateVectorList.

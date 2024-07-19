@@ -72,7 +72,8 @@ def convert_diagonal_operator_to_basis(
 
 
 def convert_operator_list_to_basis(
-    operator: OperatorList[_B4, _B0Inv, _B1Inv], basis: TupleBasisLike[_B2Inv, _B3Inv]
+    operator: OperatorList[_B4, _B0Inv, _B1Inv],
+    basis: TupleBasisLike[_B2Inv, _B3Inv],
 ) -> OperatorList[_B4, _B2Inv, _B3Inv]:
     """Given an operator, convert it to the given basis.
 

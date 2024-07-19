@@ -7,8 +7,8 @@ import numpy as np
 from surface_potential_analysis.basis.basis import FundamentalBasis
 from surface_potential_analysis.basis.basis_like import BasisLike
 from surface_potential_analysis.basis.stacked_basis import (
+    StackedBasisLike,
     TupleBasis,
-    TupleBasisLike,
 )
 from surface_potential_analysis.operator.operator_list import (
     OperatorList,
@@ -41,8 +41,8 @@ each bloch k, and all other states can be found by translating the
 states by a unit cell.
 """
 
-_SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
-_SB1 = TypeVar("_SB1", bound=TupleBasisLike[*tuple[Any, ...]])
+_SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
+_SB1 = TypeVar("_SB1", bound=StackedBasisLike[Any, Any, Any])
 
 
 def get_localized_wavepackets(
@@ -64,6 +64,9 @@ def get_localized_wavepackets(
     WavepacketList[_B1, _SB1, _SB0]
         The localized wavepackets
     """
+    assert wavepackets["basis"][0][0] == operator["basis"][1][1]
+    assert wavepackets["basis"][0][1] == operator["basis"][0]
+
     stacked_operator = operator["data"].reshape(
         operator["basis"][0].n, *operator["basis"][1].shape
     )
@@ -133,10 +136,21 @@ def get_localized_hamiltonian_from_eigenvalues(
 def get_identity_operator(
     basis: BlochWavefunctionListBasis[_SB0, _SB1],
 ) -> LocalizationOperator[_SB1, FundamentalBasis[int], _SB0]:
+    """
+    Get the localization operator which is a simple identity.
+
+    Parameters
+    ----------
+    basis : BlochWavefunctionListBasis[_SB0, _SB1]
+
+    Returns
+    -------
+    LocalizationOperator[_SB1, FundamentalBasis[int], _SB0]
+    """
     return as_operator_list(
         {
             "basis": TupleBasis(
-                basis[0], TupleBasis(FundamentalBasis(basis[1].n), basis[1])
+                basis[1], TupleBasis(FundamentalBasis(basis[1].n), basis[0])
             ),
             "data": np.ones(basis.n, dtype=np.complex128),
         }

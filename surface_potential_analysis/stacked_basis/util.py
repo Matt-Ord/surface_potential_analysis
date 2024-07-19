@@ -43,7 +43,7 @@ if TYPE_CHECKING:
     )
 
     _S0Inv = TypeVar("_S0Inv", bound=tuple[int, ...])
-    _B0Inv = TypeVar("_B0Inv", bound=BasisLike[Any, Any])
+    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
     _BL0Inv = TypeVar("_BL0Inv", bound=BasisWithLengthLike[Any, Any, Any])
     _NDInv = TypeVar("_NDInv", bound=int)
 
@@ -130,7 +130,7 @@ def get_k_coordinates_in_axes(
 
 def project_x_points_along_axes(
     points: np.ndarray[tuple[_NDInv, Unpack[_TS]], np.dtype[np.float64]],
-    basis: TupleBasisLike[Unpack[tuple[_BL0Inv, ...]]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     axes: tuple[int, ...],
 ) -> np.ndarray[tuple[int, Unpack[_TS]], np.dtype[np.float64]]:
     """
@@ -160,7 +160,7 @@ def project_x_points_along_axes(
 
 
 def get_fundamental_stacked_x_points_projected_along_axes(
-    basis: TupleBasisLike[Unpack[tuple[_BL0Inv, ...]]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     axes: tuple[int, ...],
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     """
@@ -248,7 +248,7 @@ def _wrap_index(distance: Any, length: Any, origin: Any = 0) -> Any:
 
 @overload
 def wrap_index_around_origin(
-    basis: TupleBasisLike[*tuple[_B0Inv, ...]],
+    basis: TupleBasisLike[*tuple[_B0, ...]],
     idx: SingleStackedIndexLike,
     origin: SingleIndexLike | None = None,
     axes: tuple[int, ...] | None = None,
@@ -258,7 +258,7 @@ def wrap_index_around_origin(
 
 @overload
 def wrap_index_around_origin(
-    basis: TupleBasisLike[*tuple[_B0Inv, ...]],
+    basis: TupleBasisLike[*tuple[_B0, ...]],
     idx: ArrayStackedIndexLike[_S0Inv],
     origin: SingleIndexLike | None = None,
     axes: tuple[int, ...] | None = None,
@@ -267,7 +267,7 @@ def wrap_index_around_origin(
 
 
 def wrap_index_around_origin(
-    basis: TupleBasisLike[*tuple[_B0Inv, ...]],
+    basis: TupleBasisLike[*tuple[_B0, ...]],
     idx: StackedIndexLike,
     origin: SingleIndexLike | None = None,
     axes: tuple[int, ...] | None = None,

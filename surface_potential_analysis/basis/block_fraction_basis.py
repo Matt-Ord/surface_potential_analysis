@@ -27,6 +27,10 @@ class BasisWithBlockFractionLike(BasisLike[_NF0_co, _N0_co], Protocol[_NF0_co, _
     def bloch_fractions(self) -> np.ndarray[tuple[int, _N0_co], np.dtype[np.float64]]:
         ...
 
+    @property
+    def ndim(self) -> int:
+        return self.bloch_fractions.shape[0]
+
 
 class ExplicitBlockFractionBasis(
     FundamentalBasis[_NF0_co], BasisWithBlockFractionLike[_NF0_co, _NF0_co]
