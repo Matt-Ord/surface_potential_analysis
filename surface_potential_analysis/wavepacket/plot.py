@@ -22,6 +22,9 @@ from surface_potential_analysis.state_vector.plot import (
     plot_state_along_path,
     plot_state_difference_2d_x,
 )
+from surface_potential_analysis.state_vector.plot_value_list import (
+    plot_value_list_against_nx,
+)
 from surface_potential_analysis.util.plot import (
     get_figure,
     plot_data_1d,
@@ -71,7 +74,10 @@ if TYPE_CHECKING:
         TupleBasisLike,
         TupleBasisWithLengthLike,
     )
-    from surface_potential_analysis.state_vector.eigenstate_list import EigenstateList
+    from surface_potential_analysis.state_vector.eigenstate_list import (
+        EigenstateList,
+        ValueList,
+    )
     from surface_potential_analysis.state_vector.state_vector import StateVector
     from surface_potential_analysis.types import (
         SingleStackedIndexLike,
@@ -211,7 +217,7 @@ def plot_uneven_wavepacket_eigenvalues_1d_k(
     """
     direction = BasisUtil(wavepacket["basis"][1]).dk_stacked[axes[0]]
     bloch_fractions = _get_projected_bloch_phases(wavepacket, direction)
-    sorted_fractions = np.arange(bloch_fractions.size)
+    sorted_fractions = np.argsort(bloch_fractions)
 
     bands = list(range(wavepacket["basis"][0][0].n)) if bands is None else bands
     data = wavepacket["eigenvalue"].reshape(wavepacket["basis"][0].shape)[bands, :]
@@ -405,7 +411,50 @@ def plot_wavepacket_transformed_energy_1d(
         (line,) = ax.plot(nx_points, points)
         line.set_label("free particle")
 
-    return (fig, ax, line)
+    return fig, ax, line
+
+
+def get_wavepacket_effective_mass(
+    wavepacket: BlochWavefunctionListWithEigenvaluesList[
+        _B0,
+        _SB0,
+        _SBV0,
+    ],
+    axis: int = 0,
+) -> ValueList[_B0]:
+    """
+    Get the effective mass of a wavepacket band along the axis direction.
+
+    Parameters
+    ----------
+    wavepacket : BlochWavefunctionListWithEigenvaluesList[ _B0, _SB0, _SBV0, ]
+    axis : int, optional
+        axis index, by default 0
+
+    Returns
+    -------
+    ValueList[_B0]
+    """
+    # E(\Delta x)
+    converted = convert_wavepacket_with_eigenvalues_to_basis(
+        wavepacket,
+        list_basis=stacked_basis_as_fundamental_basis(wavepacket["basis"][0][1]),
+    )
+
+    nx_points = BasisUtil(wavepacket["basis"][0][0]).nx_points
+    data = converted["eigenvalue"].reshape(-1, *converted["basis"][0][1].shape)
+    list_basis = converted["basis"][0][1]
+    sliced_data = data[:, *tuple(1 if i == axis else 0 for i in range(list_basis.ndim))]
+
+    offset = np.abs(sliced_data) / (2 * nx_points + 1)
+    # By integrating explicitly we find
+    # |E(\Delta x)| = (\Delta x)^{-3}(8\pi N + 4 \pi)
+    # we add an additional np.sqrt(wavepacket["basis"][0][1].n) * delta_x / (2 * np.pi)
+    # to account for the difference in fourier transform definitions
+    delta_x = np.linalg.norm(wavepacket["basis"][1].delta_x_stacked[axis])
+    norm = np.sqrt(wavepacket["basis"][0][1].n) * delta_x / (2 * np.pi)
+    effective_mass = norm * ((4 * np.pi * hbar**2) / (2 * offset * delta_x**3))
+    return {"basis": wavepacket["basis"][0][0], "data": effective_mass}
 
 
 def plot_wavepacket_transformed_energy_effective_mass_1d(
@@ -415,10 +464,10 @@ def plot_wavepacket_transformed_energy_effective_mass_1d(
         _SBV0,
     ],
     axes: tuple[int,] = (0,),
-    bands: list[int] | None = None,
     *,
     ax: Axes | None = None,
     scale: Scale = "linear",
+    measure: Measure = "real",
 ) -> tuple[Figure, Axes, Line2D]:
     """
     Plot the energy of the eigenstates in a wavepacket.
@@ -435,36 +484,12 @@ def plot_wavepacket_transformed_energy_effective_mass_1d(
     -------
     tuple[Figure, Axes, QuadMesh]
     """
-    converted = convert_wavepacket_with_eigenvalues_to_basis(
-        wavepacket,
-        list_basis=stacked_basis_as_fundamental_basis(wavepacket["basis"][0][1]),
-    )
-
-    bands = list(range(converted["basis"][0][0].n)) if bands is None else bands
-    nx_points = BasisUtil(wavepacket["basis"][0]).nx_points[bands]
-    data = converted["eigenvalue"].reshape(converted["basis"][0].shape)[bands, :]
-    list_basis = converted["basis"][0][1]
-    sliced_data = data[
-        :, *tuple(1 if i == axes[0] else 0 for i in range(list_basis.ndim))
-    ]
-
-    offset = np.abs(sliced_data) / (2 * nx_points + 1)
-    # By integrating explicitly we find
-    # |E(\Delta x)| = (\Delta x)^{-3}(8\pi N + 4 \pi)
-    # we add an additional np.sqrt(wavepacket["basis"][0][1].n) * delta_x / (2 * np.pi)
-    # to account for the difference in fourier transform definitions
-    delta_x = np.linalg.norm(wavepacket["basis"][1].delta_x_stacked[axes[0]])
-    norm = np.sqrt(wavepacket["basis"][0][1].n) * delta_x / (2 * np.pi)
-    effective_mass = norm * ((4 * np.pi * hbar**2) / (2 * offset * delta_x**3))
-
-    fig, ax, line = plot_data_1d(
-        effective_mass,
-        nx_points.astype(np.float64),
+    fig, ax, line = plot_value_list_against_nx(
+        get_wavepacket_effective_mass(wavepacket, axes[0]),
         ax=ax,
         scale=scale,
-        measure="real",
+        measure=measure,
     )
-    line.set_linestyle("--")
     line.set_marker("x")
     line.set_label("Effective Mass")
 
@@ -472,7 +497,7 @@ def plot_wavepacket_transformed_energy_effective_mass_1d(
     ax.set_ylabel("Mass / Kg")
     ax.set_ylim([0, ax.get_ylim()[1]])
 
-    return (fig, ax, line)
+    return fig, ax, line
 
 
 def plot_wavepacket_eigenvalues_2d_x(
@@ -875,11 +900,35 @@ def plot_wavepacket_along_path(
     return plot_state_along_path(eigenstate, path, ax=ax, measure=measure, scale=scale)
 
 
+def get_wavepacket_band_occupation(
+    wavepacket: EigenstateList[TupleBasisLike[_B0, _B1], _B2],
+    temperature: float,
+) -> ValueList[_B0]:
+    """
+    Get the occupation of each band of a wavepacket.
+
+    Parameters
+    ----------
+    wavepacket : EigenstateList[TupleBasisLike[_B0, _B1], _B2]
+    temperature : float
+
+    Returns
+    -------
+    ValueList[_B0]
+    """
+    eigenvalues = wavepacket["eigenvalue"].reshape(*wavepacket["basis"][0].shape)
+    occupations = np.exp(-eigenvalues / (temperature * Boltzmann))
+    occupation_for_band = np.sum(occupations, axis=1) / np.sum(occupations)
+    return {"basis": wavepacket["basis"][0][0], "data": occupation_for_band.ravel()}
+
+
 def plot_occupation_against_band(
-    collection: EigenstateList[TupleBasisLike[_B0, _B1], _B2],
+    wavepacket: EigenstateList[TupleBasisLike[_B0, _B1], _B2],
     temperature: float,
     *,
     ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "abs",
 ) -> tuple[Figure, Axes, Line2D]:
     """
     Plot the eigenvalues in an eigenstate collection against their projected phases.
@@ -897,12 +946,13 @@ def plot_occupation_against_band(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    fig, ax = get_figure(ax)
-
-    eigenvalues = collection["eigenvalue"].reshape(*collection["basis"][0].shape, -1)
-    occupations = np.exp(-eigenvalues / (temperature * Boltzmann))
-    occupation_for_band = np.sum(occupations, axis=0) / np.sum(occupations)
-    (line,) = ax.plot(occupation_for_band)
-    ax.set_xlabel("band idx")
+    fig, ax, line = plot_value_list_against_nx(
+        get_wavepacket_band_occupation(wavepacket, temperature),
+        ax=ax,
+        scale=scale,
+        measure=measure,
+    )
+    line.set_label("Occupation")
+    ax.set_xlabel("Band Idx")
     ax.set_ylabel("Occupation / Au")
     return fig, ax, line

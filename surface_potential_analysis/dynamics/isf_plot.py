@@ -66,7 +66,7 @@ def plot_isf_against_time(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    (fig, ax, line) = plot_eigenvalue_against_time(
+    fig, ax, line = plot_eigenvalue_against_time(
         eigenvalues, ax=ax, measure=measure, scale=scale
     )
     ax.set_ylabel("ISF")

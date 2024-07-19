@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar
 import numpy as np
 import scipy.stats
 
+from surface_potential_analysis.basis.basis_like import BasisLike
 from surface_potential_analysis.basis.time_basis_like import BasisWithTimeLike
 from surface_potential_analysis.util.plot import (
     Scale,
@@ -25,6 +26,41 @@ if TYPE_CHECKING:
     )
 
 _BT0 = TypeVar("_BT0", bound=BasisWithTimeLike[Any, Any])
+_B0 = TypeVar("_B0", bound=BasisLike[int, int])
+
+
+def plot_value_list_against_nx(
+    values: ValueList[_B0],
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "abs",
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot the data against time.
+
+    Parameters
+    ----------
+    values : ValueList[_AX0Inv]
+    ax : Axes | None, optional
+        ax, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+    measure : Measure, optional
+        measure, by default "abs"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    fig, ax, line = plot_data_1d(
+        values["data"],
+        np.arange(values["basis"].n).astype(np.float64),
+        scale=scale,
+        measure=measure,
+        ax=ax,
+    )
+    return fig, ax, line
 
 
 def plot_value_list_against_time(
