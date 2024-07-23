@@ -503,7 +503,7 @@ def get_noise_operators_isotropic(
     """
     return {
         "basis": kernel["basis"],
-        "data": np.sqrt(np.fft.ifft(kernel["data"], norm="forward")),
+        "data": np.fft.ifft(kernel["data"], norm="forward"),
     }
 
 
@@ -538,7 +538,7 @@ def get_noise_operators_isotropic_stacked(
     )
     return {
         "basis": kernel["basis"],
-        "data": np.sqrt(transformed).ravel(),
+        "data": transformed.ravel(),
     }
 
 
@@ -564,16 +564,7 @@ def isotropic_noise_operators_as_diagonal(
         _description_
     """
     operators = np.fft.ifftn(np.eye(isotropic["basis"].n), axes=(1,), norm="backward")
-    # !np.testing.assert_array_almost_equal(
-    # !    operators,
-    # !    np.exp(
-    # !        (1j * 2 * np.pi)
-    # !        * np.arange(isotropic["basis"].n)[:, np.newaxis]
-    # !        * np.arange(isotropic["basis"].n)[np.newaxis, :]
-    # !        / isotropic["basis"].n
-    # !    )
-    # !    / isotropic["basis"].n,
-    # !)
+
     return {
         "basis": TupleBasis(
             FundamentalBasis(isotropic["basis"].n),
