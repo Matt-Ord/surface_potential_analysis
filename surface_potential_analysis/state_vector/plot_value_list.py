@@ -95,6 +95,47 @@ def plot_value_list_against_time(
     return fig, ax, line
 
 
+def plot_split_value_list_against_time(
+    values: ValueList[TupleBasisLike[_B0, _BT0]],
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "abs",
+) -> tuple[Figure, Axes]:
+    """
+    Plot the data against time, split by _B0.
+
+    Parameters
+    ----------
+    values : ValueList[_AX0Inv]
+    ax : Axes | None, optional
+        ax, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+    measure : Measure, optional
+        measure, by default "abs"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    fig, ax = get_figure(ax)
+
+    stacked = values["data"].reshape(values["basis"].shape)
+    cumulative = np.cumsum(stacked, axis=0)
+    for band_data in cumulative:
+        fig, ax, _line = plot_data_1d(
+            band_data,
+            values["basis"][1].times,
+            scale=scale,
+            measure=measure,
+            ax=ax,
+        )
+
+    ax.set_xlabel("Times /s")
+    return fig, ax
+
+
 def plot_all_value_list_against_time(
     values: ValueList[TupleBasisLike[Any, _BT0]],
     *,
