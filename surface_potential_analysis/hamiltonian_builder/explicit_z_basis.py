@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from surface_potential_analysis.stacked_basis.potential_basis import (
         PotentialBasisConfig,
     )
-    from surface_potential_analysis.state_vector.eigenstate_collection import (
+    from surface_potential_analysis.state_vector.eigenstate_list import (
         EigenstateList,
     )
 

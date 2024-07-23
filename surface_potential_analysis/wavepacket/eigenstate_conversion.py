@@ -16,8 +16,8 @@ from surface_potential_analysis.stacked_basis.build import (
     fundamental_stacked_basis_from_shape,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_basis,
     stacked_basis_as_fundamental_momentum_basis,
+    stacked_basis_as_fundamental_transformed_basis,
 )
 from surface_potential_analysis.state_vector.state_vector_list import (
     as_state_vector_list,
@@ -188,7 +188,9 @@ def unfurl_wavepacket(
     """
     converted = convert_wavepacket_to_fundamental_momentum_basis(
         wavepacket,
-        list_basis=stacked_basis_as_fundamental_basis(wavepacket["basis"][0]),
+        list_basis=stacked_basis_as_fundamental_transformed_basis(
+            wavepacket["basis"][0]
+        ),
     )
     # TDOO:! np.testing.assert_array_equal(converted["data"], wavepacket["data"])
     return _unfurl_momentum_basis_wavepacket(converted)

@@ -16,6 +16,10 @@ from surface_potential_analysis.basis.basis_like import (
     BasisWithLengthLike,
     convert_vector,
 )
+from surface_potential_analysis.basis.block_fraction_basis import (
+    BasisWithBlockFractionLike,
+    ExplicitBlockFractionBasis,
+)
 from surface_potential_analysis.basis.evenly_spaced_basis import (
     EvenlySpacedBasis,
     EvenlySpacedTransformedPositionBasis,
@@ -35,13 +39,13 @@ from surface_potential_analysis.operator.operator import (
     average_eigenvalues,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_basis,
     stacked_basis_as_fundamental_position_basis,
+    stacked_basis_as_fundamental_transformed_basis,
 )
 from surface_potential_analysis.state_vector.eigenstate_calculation import (
     calculate_eigenvectors_hermitian,
 )
-from surface_potential_analysis.state_vector.eigenstate_collection import (
+from surface_potential_analysis.state_vector.eigenstate_list import (
     EigenstateList,
     get_eigenvalues_list,
 )
@@ -227,7 +231,7 @@ def get_wavepacket_sample_fractions(
         util.fundamental_stacked_nk_points
         / np.array(util.fundamental_shape, dtype=np.int_)[:, np.newaxis]
     )
-    fundamental_basis = stacked_basis_as_fundamental_basis(list_basis)
+    fundamental_basis = stacked_basis_as_fundamental_transformed_basis(list_basis)
     with warnings.catch_warnings(
         category=np.exceptions.ComplexWarning, action="ignore"
     ):
@@ -257,13 +261,67 @@ def get_wavepacket_sample_frequencies(
     return util.fundamental_stacked_k_points
 
 
+_BF0 = TypeVar("_BF0", bound=BasisWithBlockFractionLike[Any, Any])
+
+
+def generate_uneven_wavepacket(
+    hamiltonian_generator: Callable[
+        [np.ndarray[tuple[_ND0Inv], np.dtype[np.float64]]],
+        SingleBasisOperator[_SB1],
+    ],
+    list_basis: _BF0,
+    band_basis: _ESB0,
+) -> EigenstateList[TupleBasis[_ESB0, _BF0], _SB1]:
+    """
+    Generate a wavepacket with the given number of samples.
+
+    Parameters
+    ----------
+    hamiltonian_generator : Callable[[np.ndarray[tuple[Literal[3]], np.dtype[np.float_]]], Hamiltonian[_B3d0Inv]]
+    shape : _S0Inv
+    save_bands : np.ndarray[tuple[int], np.dtype[np.int_]] | None, optional
+
+    Returns
+    -------
+    np.ndarray[tuple[int], np.dtype[Wavepacket[_NS0Inv, _NS1Inv, _B3d0Inv]]]
+    """
+    bloch_fractions = list_basis.bloch_fractions
+    h = hamiltonian_generator(bloch_fractions[:, 0])
+    assert list_basis.ndim == h["basis"][0].ndim
+    basis_size = h["basis"][0].n
+
+    subset_by_index = (
+        band_basis.offset,
+        band_basis.offset + band_basis.step * (band_basis.n - 1),
+    )
+
+    n_samples = list_basis.n
+    vectors = np.empty((band_basis.n, n_samples, basis_size), dtype=np.complex128)
+    energies = np.empty((band_basis.n, n_samples), dtype=np.complex128)
+
+    for i in range(list_basis.n):
+        h = hamiltonian_generator(bloch_fractions[:, i])
+        eigenstates = calculate_eigenvectors_hermitian(h, subset_by_index)
+
+        for b in range(band_basis.n):
+            band_idx = band_basis.step * b
+            vectors[b][i] = eigenstates["data"].reshape(-1, basis_size)[band_idx]
+            energies[b][i] = eigenstates["eigenvalue"][band_idx]
+
+    return {
+        "basis": TupleBasis(TupleBasis(band_basis, list_basis), h["basis"][0]),
+        "data": vectors.reshape(-1),
+        "eigenvalue": energies.reshape(-1),
+    }
+
+
 def generate_wavepacket(
     hamiltonian_generator: Callable[
         [np.ndarray[tuple[_ND0Inv], np.dtype[np.float64]]],
         SingleBasisOperator[_SB1],
     ],
     list_basis: _SB0,
-    save_bands: _ESB0,
+    band_basis: _ESB0,
 ) -> BlochWavefunctionListWithEigenvaluesList[_ESB0, _SB0, _SB1]:
     """
     Generate a wavepacket with the given number of samples.
@@ -279,31 +337,13 @@ def generate_wavepacket(
     np.ndarray[tuple[int], np.dtype[Wavepacket[_NS0Inv, _NS1Inv, _B3d0Inv]]]
     """
     bloch_fractions = get_wavepacket_sample_fractions(list_basis)
-    h = hamiltonian_generator(bloch_fractions[:, 0])
-    assert list_basis.ndim == h["basis"][0].ndim
-    basis_size = h["basis"][0].n
-
-    subset_by_index = (
-        save_bands.offset,
-        save_bands.offset + save_bands.step * (save_bands.n - 1),
+    wavepacket = generate_uneven_wavepacket(
+        hamiltonian_generator, ExplicitBlockFractionBasis(bloch_fractions), band_basis
     )
-
-    n_samples = list_basis.n
-    vectors = np.empty((save_bands.n, n_samples, basis_size), dtype=np.complex128)
-    energies = np.empty((save_bands.n, n_samples), dtype=np.complex128)
-
-    for i in range(list_basis.n):
-        h = hamiltonian_generator(bloch_fractions[:, i])
-        eigenstates = calculate_eigenvectors_hermitian(h, subset_by_index)
-
-        for b in range(save_bands.n):
-            band_idx = save_bands.step * b
-            vectors[b][i] = eigenstates["data"].reshape(-1, basis_size)[band_idx]
-            energies[b][i] = eigenstates["eigenvalue"][band_idx]
     return {
-        "basis": TupleBasis(TupleBasis(save_bands, list_basis), h["basis"][0]),
-        "data": vectors.reshape(-1),
-        "eigenvalue": energies.reshape(-1),
+        "basis": TupleBasis(TupleBasis(band_basis, list_basis), wavepacket["basis"][1]),
+        "data": wavepacket["data"].reshape(-1),
+        "eigenvalue": wavepacket["eigenvalue"].reshape(-1),
     }
 
 

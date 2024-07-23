@@ -79,7 +79,7 @@ if TYPE_CHECKING:
         Operator,
         SingleBasisOperator,
     )
-    from surface_potential_analysis.state_vector.eigenstate_collection import ValueList
+    from surface_potential_analysis.state_vector.eigenstate_list import ValueList
     from surface_potential_analysis.state_vector.state_vector import StateVector
     from surface_potential_analysis.state_vector.state_vector_list import (
         StateVectorList,
@@ -894,7 +894,7 @@ def plot_periodic_averaged_occupation_1d_x(
 
 def _get_x_operator(basis: _SB0, axis: int) -> SingleBasisOperator[_SB0]:
     """
-    Generate operator for e^(2pi*x / delta_x).
+    Generate operator for x.
 
     Parameters
     ----------
@@ -1085,7 +1085,7 @@ def plot_spread_distribution_1d(
 
 def _get_k_operator(basis: _SB0, axis: int) -> SingleBasisOperator[_SB0]:
     """
-    Generate operator for e^(2pi*x / delta_x).
+    Generate operator for k.
 
     Parameters
     ----------

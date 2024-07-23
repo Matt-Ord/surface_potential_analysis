@@ -8,6 +8,7 @@ import numpy as np
 from surface_potential_analysis.basis.basis import (
     FundamentalBasis,
     FundamentalPositionBasis,
+    FundamentalTransformedBasis,
     FundamentalTransformedPositionBasis,
     FundamentalTransformedPositionBasis3d,
 )
@@ -106,6 +107,58 @@ def fundamental_stacked_basis_from_shape(
     FundamentalPositionTupleBasisLike[tuple[_NF0Inv, _NF1Inv, _NF2Inv]
     """
     return TupleBasis(*tuple(FundamentalBasis(n) for n in shape))
+
+
+@overload
+def fundamental_transformed_stacked_basis_from_shape(
+    shape: tuple[_L0],
+) -> TupleBasisLike[FundamentalTransformedBasis[_L0]]:
+    ...
+
+
+@overload
+def fundamental_transformed_stacked_basis_from_shape(
+    shape: tuple[_L0, _L1],
+) -> TupleBasisLike[FundamentalTransformedBasis[_L0], FundamentalTransformedBasis[_L1]]:
+    ...
+
+
+@overload
+def fundamental_transformed_stacked_basis_from_shape(
+    shape: tuple[_L0, _L1, _L2],
+) -> TupleBasisLike[
+    FundamentalTransformedBasis[_L0],
+    FundamentalTransformedBasis[_L1],
+    FundamentalTransformedBasis[_L2],
+]:
+    ...
+
+
+@overload
+def fundamental_transformed_stacked_basis_from_shape(
+    shape: tuple[int, ...],
+) -> TupleBasisLike[*tuple[FundamentalTransformedBasis[Any], ...]]:
+    ...
+
+
+def fundamental_transformed_stacked_basis_from_shape(
+    shape: tuple[Any, ...] | tuple[Any, Any, Any] | tuple[Any, Any] | tuple[Any],
+) -> TupleBasisLike[*tuple[FundamentalTransformedBasis[Any], ...]]:
+    """
+    Given a resolution and a set of directions construct a FundamentalPositionBasisConfig.
+
+    Parameters
+    ----------
+    resolution : tuple[_NF0Inv, _NF1Inv, _NF2Inv]
+        resolution of the basis
+    delta_x : tuple[np.ndarray[tuple[Literal[3]], np.dtype[np.float_]], np.ndarray[tuple[Literal[3]], np.dtype[np.float_]], np.ndarray[tuple[Literal[3]], np.dtype[np.float_]], ] | None, optional
+        vectors for the basis, by default (np.array([1, 0, 0]), np.array([0, 1, 0]), np.array([0, 0, 1]))
+
+    Returns
+    -------
+    FundamentalPositionTupleBasisLike[tuple[_NF0Inv, _NF1Inv, _NF2Inv]
+    """
+    return TupleBasis(*tuple(FundamentalTransformedBasis(n) for n in shape))
 
 
 def position_basis_from_shape(

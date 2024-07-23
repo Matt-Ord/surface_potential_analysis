@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from surface_potential_analysis.potential.potential import (
         Potential,
     )
-    from surface_potential_analysis.state_vector.eigenstate_collection import (
+    from surface_potential_analysis.state_vector.eigenstate_list import (
         EigenstateList,
     )
 
