@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisWithVolumeLike,
         TupleBasisLike,
+        TupleBasisWithLengthLike,
     )
     from surface_potential_analysis.types import SingleStackedIndexLike
 
@@ -130,6 +131,7 @@ def plot_data_1d(
     ax: Axes | None = None,
     scale: Scale = "linear",
     measure: Measure = "abs",
+    periodic: bool = False,
 ) -> tuple[Figure, Axes, Line2D]:
     """
     Plot data in 1d.
@@ -152,6 +154,10 @@ def plot_data_1d(
     fig, ax = get_figure(ax)
 
     measured_data = get_measured_data(data, measure)
+    # The data is periodic, so we repeat the first point at the end
+    if periodic:
+        coordinates = np.append(coordinates, coordinates[-1] + coordinates[1])
+        measured_data = np.append(measured_data, measured_data[0])
 
     (line,) = ax.plot(coordinates, measured_data)
     ax.set_xmargin(0)
@@ -200,10 +206,15 @@ def plot_data_1d_k(
     data_in_axis = get_data_in_axes(data.reshape(basis.shape), axes, idx)
 
     shifted_data = np.fft.fftshift(data_in_axis)
-    shifted_coordinates = np.fft.fftshift(coordinates)
+    shifted_coordinates = np.fft.fftshift(coordinates[0])
 
     fig, ax, line = plot_data_1d(
-        shifted_data, shifted_coordinates[0], ax=ax, scale=scale, measure=measure
+        shifted_data,
+        shifted_coordinates,
+        ax=ax,
+        scale=scale,
+        measure=measure,
+        periodic=True,
     )
 
     ax.set_xlabel(f"k{(axes[0] % 3)} axis")
@@ -211,7 +222,7 @@ def plot_data_1d_k(
 
 
 def plot_data_1d_x(
-    basis: TupleBasisLike[*tuple[Any, ...]],
+    basis: TupleBasisWithLengthLike[*tuple[Any, ...]],
     data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -249,7 +260,12 @@ def plot_data_1d_x(
     data_in_axis = get_data_in_axes(data.reshape(basis.shape), axes, idx)
 
     fig, ax, line = plot_data_1d(
-        data_in_axis, coordinates[0], ax=ax, scale=scale, measure=measure
+        data_in_axis,  # type: ignore shape is correct
+        coordinates[0],
+        ax=ax,
+        scale=scale,
+        measure=measure,
+        periodic=True,
     )
 
     ax.set_xlabel(f"x{(axes[0] % 3)} axis")
