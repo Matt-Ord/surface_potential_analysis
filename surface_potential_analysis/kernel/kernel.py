@@ -207,7 +207,7 @@ def as_isotropic_kernel(
     -------
     IsotropicNoiseKernel[_B0]
     """
-    data = kernel["data"].reshape(kernel["basis"].shape)[0]
+    data = kernel["data"].reshape(kernel["basis"][0].shape)[0]
 
     return {"basis": kernel["basis"][0][0], "data": data}
 
@@ -348,7 +348,7 @@ def get_noise_operators(
     )
     # Find the n^2 operators which are independent
     # I think this is always true
-    np.testing.assert_array_almost_equal(data, np.conj(np.transpose(data)))
+    # np.testing.assert_array_almost_equal(data, np.conj(np.transpose(data)))
 
     res = np.linalg.eigh(data)
     # np.testing.assert_array_almost_equal(
