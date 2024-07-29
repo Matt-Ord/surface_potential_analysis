@@ -102,7 +102,7 @@ def get_gaussian_isotropic_noise_kernel(
     a: float,
     lambda_: float,
 ) -> IsotropicNoiseKernel[
-    TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
 ]:
     """
     Get the noise kernel for a gaussian correllated surface.

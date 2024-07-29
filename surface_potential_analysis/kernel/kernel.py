@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from typing import Any, Generic, Iterable, TypedDict, TypeVar, TypeVarTuple
+from typing import Any, Generic, Iterable, TypedDict, TypeVar, TypeVarTuple, cast
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import FundamentalBasis
+from surface_potential_analysis.basis.basis import (
+    FundamentalBasis,
+)
 from surface_potential_analysis.basis.basis_like import BasisLike
 from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasisLike,
+    StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisLike,
 )
@@ -22,18 +24,23 @@ from surface_potential_analysis.operator.operator_list import (
     as_diagonal_operator_list,
     as_operator_list,
 )
-from surface_potential_analysis.state_vector.eigenstate_list import ValueList
+from surface_potential_analysis.stacked_basis.build import (
+    fundamental_stacked_basis_from_shape,
+)
+from surface_potential_analysis.util.interpolation import pad_ft_points
+from surface_potential_analysis.util.util import slice_along_axis
 
 _B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
 _B1_co = TypeVar("_B1_co", bound=BasisLike[Any, Any], covariant=True)
 _B2_co = TypeVar("_B2_co", bound=BasisLike[Any, Any], covariant=True)
 _B3_co = TypeVar("_B3_co", bound=BasisLike[Any, Any], covariant=True)
 
-_B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
+_B0 = TypeVar("_B0", bound=BasisLike[int, int])
 _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
 _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
 
-_SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
+_TB0 = TypeVar("_TB0", bound=TupleBasisLike[*tuple[Any, ...]])
+_SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
 
 class NoiseKernel(TypedDict, Generic[_B0_co, _B1_co, _B2_co, _B3_co]):
@@ -472,12 +479,9 @@ def truncate_diagonal_noise_operators(
     }
 
 
-IsotropicNoiseOperatorList = ValueList[_B0]
-
-
 def get_noise_operators_isotropic(
-    kernel: IsotropicNoiseKernel[_B0],
-) -> IsotropicNoiseOperatorList[_B0]:
+    kernel: IsotropicNoiseKernel[_B0], *, n: int | None = None
+) -> SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[int], _B0]:
     r"""
     For an isotropic noise kernel, the noise operators are independent in k space.
 
@@ -501,15 +505,92 @@ def get_noise_operators_isotropic(
     DiagonalNoiseOperator[BasisLike[Any, Any], BasisLike[Any, Any]]
         _description_
     """
+    n = kernel["basis"].n if n is None else n
+    coefficients = np.fft.ifft(
+        pad_ft_points(kernel["data"], (n,), (0,)),
+        norm="forward",
+    )
+
+    coefficients *= kernel["basis"].n / n
+
+    # Operators e^(ik_n x_m) / sqrt(M)
+    # with k_n = 2 * np.pi * n / N, n = 0...N
+    # and x_m = m, m = 0...M
+    k = 2 * np.pi / n
+    nk_points = BasisUtil(kernel["basis"]).nk_points
+
+    operators = np.array(
+        [
+            np.exp(1j * i * k * nk_points).astype(np.complex128)
+            / np.sqrt(kernel["basis"].n)
+            for i in np.arange(0, n)
+        ]
+    )
+
     return {
-        "basis": kernel["basis"],
-        "data": np.fft.ifft(kernel["data"], norm="forward"),
+        "basis": TupleBasis(
+            FundamentalBasis(n),
+            TupleBasis(kernel["basis"], kernel["basis"]),
+        ),
+        "eigenvalue": coefficients,
+        "data": operators.ravel(),
+    }
+
+
+def get_noise_operators_real_isotropic(
+    kernel: IsotropicNoiseKernel[_B0],
+    *,
+    n: int | None = None,
+) -> SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[int], _B0]:
+    r"""
+    For an isotropic noise kernel, the noise operators are independent in k space.
+
+    beta(x - x') = 1 / N \sum_k |f(k)|^2 e^(ikx) for some f(k)
+    |f(k)|^2 = \sum_x beta(x) e^(-ik.x)
+
+    The independent noise operators are then given by
+
+    L(k) = 1 / N \sum_x e^(ikx) S(x)
+
+    The inddependent operators can therefore be found directly using a FFT
+    of the noise beta(x).
+
+    For a real kernel, the coefficients of  e^(+-ikx) are the same
+    we can therefore equivalently use cos(x) and sin(x) as the basis
+    for the kernel.
+
+    Parameters
+    ----------
+    kernel : DiagonalNoiseKernel[_B0, _B0, _B0, _B0]
+
+    Returns
+    -------
+    SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[int], FundamentalBasis[int]]
+    """
+    np.testing.assert_allclose(np.imag(kernel["data"]), 0)
+    n = cast(int, kernel["basis"].n) // 2 if n is None else n
+
+    standard_operators = get_noise_operators_isotropic(kernel, n=2 * n + 1)
+
+    data = standard_operators["data"].reshape(2 * n + 1, -1)
+    # Build (e^(ikx) +- e^(-ikx)) operators
+    data[1 : 1 + n] = np.sqrt(2) * np.real(data[1 : 1 + n])
+    data[1 + n :] = np.sqrt(2) * np.imag(np.conj(data[1 + n :]))
+
+    return {
+        "basis": standard_operators["basis"],
+        "data": data.ravel(),
+        "eigenvalue": standard_operators["eigenvalue"],
     }
 
 
 def get_noise_operators_isotropic_stacked(
-    kernel: IsotropicNoiseKernel[_SB0],
-) -> IsotropicNoiseOperatorList[_SB0]:
+    kernel: IsotropicNoiseKernel[_TB0],
+    *,
+    shape: tuple[int, ...] | None = None,
+) -> SingleBasisDiagonalNoiseOperatorList[
+    TupleBasisLike[*tuple[FundamentalBasis[int], ...]], _TB0
+]:
     r"""
     For an isotropic noise kernel, the noise operators are independent in k space.
 
@@ -533,45 +614,88 @@ def get_noise_operators_isotropic_stacked(
     DiagonalNoiseOperator[BasisLike[Any, Any], BasisLike[Any, Any]]
         _description_
     """
-    transformed = np.fft.ifftn(
-        kernel["data"].reshape(kernel["basis"].shape), norm="forward"
+    shape = kernel["basis"].shape if shape is None else shape
+    shape_basis = fundamental_stacked_basis_from_shape(shape)
+
+    coefficients = np.fft.ifftn(
+        pad_ft_points(
+            kernel["data"].reshape(kernel["basis"].shape),
+            shape,
+            tuple(range(len(shape))),
+        ),
+        norm="forward",
     )
-    return {
-        "basis": kernel["basis"],
-        "data": transformed.ravel(),
-    }
 
+    coefficients *= kernel["basis"].n / coefficients.size
 
-def isotropic_noise_operators_as_diagonal(
-    isotropic: IsotropicNoiseOperatorList[_B0],
-) -> SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[int], _B0]:
-    r"""
-    Get operators corresponding to an IsotropicNoiseOperatorList.
+    # Operators e^(ik_n0,n1,.. x_m0,m1,..) / sqrt(prod(Mi))
+    # with k_n0,n1 = 2 * np.pi * (n0,n1,...) / prod(Ni), ni = 0...Ni
+    # and x_m0,m1 = (m0,m1,...), mi = 0...Mi
+    k = tuple(2 * np.pi / n for n in shape)
+    nk_points = BasisUtil(kernel["basis"]).stacked_nk_points
+    i_points = BasisUtil(shape_basis).stacked_nx_points
 
-    Given a set of isotropic noise operators (ie noise which is like |n><n| in some basis n),
-    get the noise operators as an operator list.
-
-    L(k) = 1 / N f(k) \sum_x e^(ikx) S(x)
-
-    Parameters
-    ----------
-    isotropic : IsotropicNoiseOperatorList[_B0]
-        _description_
-
-    Returns
-    -------
-    SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[int], _B0]
-        _description_
-    """
-    operators = np.fft.ifftn(np.eye(isotropic["basis"].n), axes=(1,), norm="backward")
+    operators = np.array(
+        [
+            np.exp(1j * np.einsum("i,i,ij->j", k, i, nk_points))
+            / np.sqrt(kernel["basis"].n)
+            for i in zip(*i_points)
+        ]
+    )
 
     return {
         "basis": TupleBasis(
-            FundamentalBasis(isotropic["basis"].n),
-            TupleBasis(isotropic["basis"], isotropic["basis"]),
+            shape_basis,
+            TupleBasis(kernel["basis"], kernel["basis"]),
         ),
         "data": operators.ravel(),
-        "eigenvalue": isotropic["data"],
+        "eigenvalue": coefficients.ravel(),
+    }
+
+
+def get_noise_operators_real_isotropic_stacked(
+    kernel: IsotropicNoiseKernel[_TB0],
+    *,
+    shape: tuple[int, ...] | None = None,
+) -> SingleBasisDiagonalNoiseOperatorList[
+    TupleBasisLike[*tuple[FundamentalBasis[int], ...]], _TB0
+]:
+    """
+    Get the noise operators, expanding the kernel about each axis individually.
+
+    Returns
+    -------
+    SingleBasisDiagonalNoiseOperatorList[
+        TupleBasisLike[*tuple[FundamentalBasis[int], ...]], _TB0
+    ]
+    """
+    np.testing.assert_allclose(np.imag(kernel["data"]), 0)
+    shape = tuple(n // 2 for n in kernel["basis"].shape) if shape is None else shape
+
+    standard_operators = get_noise_operators_isotropic_stacked(
+        kernel, shape=tuple(2 * n + 1 for n in shape)
+    )
+
+    data = standard_operators["data"].reshape(*standard_operators["basis"][0].shape, -1)
+
+    for axis, n in enumerate(shape):
+        cloned = data.copy()
+        # Build (e^(ikx) +- e^(-ikx)) operators
+        cos_slice = slice_along_axis(slice(1, 1 + n), axis)
+        sin_slice = slice_along_axis(slice(1 + n, None), axis)
+        reverse_slice = slice_along_axis(slice(None, None, -1), axis)
+
+        data[cos_slice] = (
+            cloned[cos_slice] + cloned[sin_slice][reverse_slice]
+        ) / np.sqrt(2)
+        data[sin_slice] = (
+            cloned[cos_slice][reverse_slice] - cloned[sin_slice]
+        ) / np.sqrt(2)
+
+    return {
+        "basis": standard_operators["basis"],
+        "data": data.ravel(),
+        "eigenvalue": standard_operators["eigenvalue"],
     }
 
 
