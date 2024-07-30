@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-from typing import Any, Literal, Protocol, TypeVar, runtime_checkable
+from typing import Any, Literal, Protocol, TypeVar, Union, runtime_checkable
 
 import numpy as np
 
@@ -166,6 +166,9 @@ class AsTransformedBasis(
         return np.fft.ifft(as_transformed, axis=axis, norm="ortho")  # type: ignore[no-any-return]
 
 
+NestedShape = tuple[Union[int, "NestedShape"], ...]
+
+
 @runtime_checkable
 class BasisLike(
     FromFundamentalBasis[_NF0_co, _N0_co],
@@ -178,6 +181,16 @@ class BasisLike(
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(n={self.n.__repr__()}, fundamental_n={self.fundamental_n.__repr__()})"
+
+    @property
+    @abc.abstractmethod
+    def fundamental_nested_shape(self) -> NestedShape:
+        ...
+
+    @property
+    @abc.abstractmethod
+    def fundamental_shape(self) -> tuple[int, ...]:
+        ...
 
     @property
     @abc.abstractmethod
