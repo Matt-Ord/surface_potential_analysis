@@ -1,33 +1,21 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar, TypeVarTuple
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 from scipy.constants import Boltzmann, hbar
 
-from surface_potential_analysis.basis.basis_like import BasisLike
-from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasisWithVolumeLike,
-    TupleBasis,
-    TupleBasisLike,
-    TupleBasisWithLengthLike,
+from surface_potential_analysis.basis.util import BasisUtil
+from surface_potential_analysis.kernel.build import (
+    build_isotropic_kernel_from_function,
+    get_temperature_corrected_diagonal_noise_operators,
 )
-from surface_potential_analysis.basis.util import BasisUtil, get_displacements_x
 from surface_potential_analysis.kernel.kernel import (
     IsotropicNoiseKernel,
     SingleBasisDiagonalNoiseKernel,
-    SingleBasisDiagonalNoiseOperatorList,
     SingleBasisNoiseOperatorList,
-    as_noise_operators,
-    get_noise_operators_diagonal,
-)
-from surface_potential_analysis.operator.operations import (
-    add_list_list,
-    get_commutator_operator_list,
-    scale_operator_list,
-)
-from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_position_basis,
+    as_diagonal_kernel_from_isotropic,
+    get_noise_operators_real_isotropic_stacked,
 )
 
 if TYPE_CHECKING:
@@ -35,25 +23,51 @@ if TYPE_CHECKING:
         FundamentalBasis,
         FundamentalPositionBasis,
     )
-    from surface_potential_analysis.operator.operator import SingleBasisOperator
-    from surface_potential_analysis.operator.operator_list import (
-        SingleBasisOperatorList,
+    from surface_potential_analysis.basis.stacked_basis import (
+        StackedBasisWithVolumeLike,
+        TupleBasisLike,
+        TupleBasisWithLengthLike,
     )
+    from surface_potential_analysis.operator.operator import SingleBasisOperator
 
-_B1 = TypeVar(
-    "_B1",
-    bound=BasisLike[Any, Any],
-)
+    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
-_B0 = TypeVar(
-    "_B0",
-    bound=BasisLike[Any, Any],
-)
-_B2 = TypeVar(
-    "_B2",
-    bound=BasisLike[Any, Any],
-)
-_B0s = TypeVarTuple("_B0s")
+
+def get_gaussian_isotropic_noise_kernel(
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    a: float,
+    lambda_: float,
+) -> IsotropicNoiseKernel[
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+]:
+    """
+    Get the noise kernel for a gaussian correllated surface.
+
+    Parameters
+    ----------
+    basis : TupleBasisLike[BasisWithLengthLike[Any, Any, Literal[1]]]
+        _description_
+    eta : float
+        _description_
+    temperature : float
+        _description_
+    lambda_factor : float, optional
+        _description_, by default 2*np.sqrt(2)
+
+    Returns
+    -------
+    SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]] ]
+        _description_
+    """
+
+    def fn(
+        displacements: np.ndarray[Any, np.dtype[np.float64]],
+    ) -> np.ndarray[Any, np.dtype[np.complex128]]:
+        return a**2 * np.exp(-(displacements**2) / (2 * lambda_**2)).astype(
+            np.complex128,
+        )
+
+    return build_isotropic_kernel_from_function(basis, fn)
 
 
 def get_gaussian_noise_kernel(
@@ -82,57 +96,9 @@ def get_gaussian_noise_kernel(
     SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]] ]
         _description_
     """
-    basis_x = stacked_basis_as_fundamental_position_basis(basis)
-    displacements = get_displacements_x(basis_x)
-    correlation = (a**2) * np.exp(-(displacements**2) / (2 * lambda_**2)).astype(
-        np.complex128,
+    return as_diagonal_kernel_from_isotropic(
+        get_gaussian_isotropic_noise_kernel(basis, a, lambda_)
     )
-
-    return {
-        "basis": TupleBasis(
-            TupleBasis(basis_x, basis_x),
-            TupleBasis(basis_x, basis_x),
-        ),
-        "data": correlation.ravel(),
-    }
-
-
-def get_gaussian_isotropic_noise_kernel(
-    basis: TupleBasisWithLengthLike[*_B0s],
-    a: float,
-    lambda_: float,
-) -> IsotropicNoiseKernel[
-    TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
-]:
-    """
-    Get the noise kernel for a gaussian correllated surface.
-
-    Parameters
-    ----------
-    basis : TupleBasisLike[BasisWithLengthLike[Any, Any, Literal[1]]]
-        _description_
-    eta : float
-        _description_
-    temperature : float
-        _description_
-    lambda_factor : float, optional
-        _description_, by default 2*np.sqrt(2)
-
-    Returns
-    -------
-    SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]] ]
-        _description_
-    """
-    displacements = get_displacements_x(basis)[0]
-    correlation = a**2 * np.exp(-(displacements**2) / (2 * lambda_**2)).astype(
-        np.complex128,
-    )
-
-    basis_x = stacked_basis_as_fundamental_position_basis(basis)
-    return {
-        "basis": basis_x,
-        "data": correlation.ravel(),
-    }
 
 
 def get_effective_gaussian_parameters(
@@ -201,99 +167,14 @@ def get_effective_gaussian_noise_kernel(
     return get_gaussian_noise_kernel(basis, a, lambda_)
 
 
-def _get_temperature_corrected_operators(
-    hamiltonian: SingleBasisOperator[_B1],
-    operators: SingleBasisOperatorList[
-        _B0,
-        _B2,
-    ],
-    temperature: float,
-) -> SingleBasisOperatorList[
-    _B0,
-    _B1,
-]:
-    commutator = get_commutator_operator_list(hamiltonian, operators)
-    correction = scale_operator_list(-1 / (4 * Boltzmann * temperature), commutator)
-    return add_list_list(correction, operators)
-
-
-def get_temperature_corrected_noise_operators(
-    hamiltonian: SingleBasisOperator[_B1],
-    operators: SingleBasisNoiseOperatorList[
-        _B0,
-        _B2,
-    ],
-    temperature: float,
-) -> SingleBasisNoiseOperatorList[
-    _B0,
-    _B1,
-]:
-    """
-    Get the noise operators, applying the caldeira-legget like temperature correction.
-
-    Parameters
-    ----------
-    hamiltonian : SingleBasisOperator[_B1]
-    operators : SingleBasisDiagonalNoiseOperatorList[ _B0, _B1, ]
-    temperature : float
-
-    Returns
-    -------
-    SingleBasisNoiseOperatorList[ _B0, _B1]
-    """
-    corrected_operators = _get_temperature_corrected_operators(
-        hamiltonian,
-        operators,
-        temperature,
-    )
-
-    return {
-        "basis": corrected_operators["basis"],
-        "data": corrected_operators["data"],
-        "eigenvalue": operators["eigenvalue"],
-    }
-
-
-def get_temperature_corrected_diagonal_noise_operators(
-    hamiltonian: SingleBasisOperator[_B1],
-    operators: SingleBasisDiagonalNoiseOperatorList[
-        _B0,
-        _B2,
-    ],
-    temperature: float,
-) -> SingleBasisNoiseOperatorList[
-    _B0,
-    _B1,
-]:
-    """
-    Get the noise operators, applying the caldeira-legget like temperature correction.
-
-    Parameters
-    ----------
-    hamiltonian : SingleBasisOperator[_B1]
-    operators : SingleBasisDiagonalNoiseOperatorList[ _B0, _B1, ]
-    temperature : float
-
-    Returns
-    -------
-    SingleBasisNoiseOperatorList[ _B0, _B1]
-    """
-    operators_full = as_noise_operators(operators)
-    return get_temperature_corrected_noise_operators(
-        hamiltonian,
-        operators_full,
-        temperature,
-    )
-
-
 def get_temperature_corrected_gaussian_noise_operators(
-    hamiltonian: SingleBasisOperator[TupleBasisWithLengthLike[*_B0s]],
+    hamiltonian: SingleBasisOperator[_SBV0],
     a: float,
     lambda_: float,
     temperature: float,
 ) -> SingleBasisNoiseOperatorList[
-    FundamentalBasis[int],
-    TupleBasisWithLengthLike[*_B0s],
+    TupleBasisLike[*tuple[FundamentalBasis[int], ...]],
+    _SBV0,
 ]:
     """Get the noise operators for a gausssian kernel in the given basis.
 
@@ -312,12 +193,12 @@ def get_temperature_corrected_gaussian_noise_operators(
     ]
 
     """
-    kernel = get_gaussian_noise_kernel(
+    kernel = get_gaussian_isotropic_noise_kernel(
         hamiltonian["basis"][0],
         a,
         lambda_,
     )
-    operators = get_noise_operators_diagonal(kernel)
+    operators = get_noise_operators_real_isotropic_stacked(kernel)
     return get_temperature_corrected_diagonal_noise_operators(
         hamiltonian,
         operators,
@@ -326,12 +207,11 @@ def get_temperature_corrected_gaussian_noise_operators(
 
 
 def get_temperature_corrected_effective_gaussian_noise_operators(
-    hamiltonian: SingleBasisOperator[TupleBasisWithLengthLike[*_B0s]],
+    hamiltonian: SingleBasisOperator[_SBV0],
     eta: float,
     temperature: float,
 ) -> SingleBasisNoiseOperatorList[
-    FundamentalBasis[int],
-    TupleBasisWithLengthLike[*_B0s],
+    TupleBasisLike[*tuple[FundamentalBasis[int], ...]], _SBV0
 ]:
     """Get the noise operators for a gausssian kernel in the given basis.
 

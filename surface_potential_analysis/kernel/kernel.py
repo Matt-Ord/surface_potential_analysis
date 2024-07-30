@@ -207,7 +207,7 @@ def as_isotropic_kernel(
     -------
     IsotropicNoiseKernel[_B0]
     """
-    data = kernel["data"].reshape(kernel["basis"].shape)[0]
+    data = kernel["data"].reshape(kernel["basis"][0][0].n, kernel["basis"][1][1].n)[0]
 
     return {"basis": kernel["basis"][0][0], "data": data}
 

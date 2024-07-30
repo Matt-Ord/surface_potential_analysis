@@ -14,6 +14,7 @@ from surface_potential_analysis.kernel.conversion import (
 )
 from surface_potential_analysis.kernel.kernel import (
     DiagonalNoiseOperatorList,
+    IsotropicNoiseKernel,
     NoiseOperatorList,
     SingleBasisDiagonalNoiseKernel,
     SingleBasisDiagonalNoiseOperatorList,
@@ -49,7 +50,6 @@ if TYPE_CHECKING:
     )
     from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisWithVolumeLike,
-        TupleBasisLike,
     )
     from surface_potential_analysis.kernel.kernel import (
         DiagonalNoiseKernel,
@@ -304,9 +304,9 @@ def plot_noise_operators_single_sample_x(
 
 def plot_noise_kernel_single_sample(
     kernel: SingleBasisDiagonalNoiseKernel[
-        TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]],
+        TupleBasisWithLengthLike[FundamentalPositionBasis[Any, Literal[1]]],
     ],
-    truncation: int | None = None,
+    truncation: Iterable[int] | None = None,
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -392,3 +392,38 @@ def plot_diagonal_noise_operators_eigenvalues(
     ax.set_yscale(scale)
 
     return fig, ax, line
+
+
+def plot_isotropic_noise_kernel_1d_x(
+    kernel: IsotropicNoiseKernel[StackedBasisWithVolumeLike[Any, Any, Any]],
+    axes: tuple[int] = (0,),
+    idx: SingleStackedIndexLike | None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "real",
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot an isotropic kernal in 1d.
+
+    Parameters
+    ----------
+    kernel : IsotropicNoiseKernel[StackedBasisWithVolumeLike[Any, Any, Any]]
+    axes : tuple[int], optional
+        axes, by default (0,)
+    idx : SingleStackedIndexLike | None, optional
+        idx, by default None
+    ax : Axes | None, optional
+        ax, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+    measure : Measure, optional
+        measure, by default "real"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    return plot_data_1d_x(
+        kernel["basis"], kernel["data"], axes, idx, ax=ax, scale=scale, measure=measure
+    )

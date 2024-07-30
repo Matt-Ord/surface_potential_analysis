@@ -10,7 +10,10 @@ from matplotlib.colors import Normalize, SymLogNorm
 from matplotlib.figure import Figure
 from matplotlib.scale import LinearScale, ScaleBase, SymmetricalLogScale
 
-from surface_potential_analysis.basis.basis_like import BasisLike
+from surface_potential_analysis.basis.basis_like import BasisLike, convert_vector
+from surface_potential_analysis.stacked_basis.conversion import (
+    stacked_basis_as_fundamental_position_basis,
+)
 from surface_potential_analysis.stacked_basis.util import (
     get_k_coordinates_in_axes,
     get_max_idx,
@@ -29,7 +32,6 @@ if TYPE_CHECKING:
     from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisWithVolumeLike,
         TupleBasisLike,
-        TupleBasisWithLengthLike,
     )
     from surface_potential_analysis.types import SingleStackedIndexLike
 
@@ -222,7 +224,7 @@ def plot_data_1d_k(
 
 
 def plot_data_1d_x(
-    basis: TupleBasisWithLengthLike[*tuple[Any, ...]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -254,10 +256,14 @@ def plot_data_1d_x(
     tuple[Figure, Axes, Line2D]
     """
     fig, ax = get_figure(ax)
-    idx = get_max_idx(basis, data, axes) if idx is None else idx
 
-    coordinates = get_x_coordinates_in_axes(basis, axes, idx)
-    data_in_axis = get_data_in_axes(data.reshape(basis.shape), axes, idx)
+    basis_x = stacked_basis_as_fundamental_position_basis(basis)
+    converted_data = convert_vector(data, basis, basis_x)
+
+    idx = get_max_idx(basis_x, converted_data, axes) if idx is None else idx
+
+    coordinates = get_x_coordinates_in_axes(basis_x, axes, idx)
+    data_in_axis = get_data_in_axes(converted_data.reshape(basis_x.shape), axes, idx)
 
     fig, ax, line = plot_data_1d(
         data_in_axis,  # type: ignore shape is correct
@@ -554,7 +560,7 @@ def animate_data_through_surface_x(
 
 
 def animate_data_through_list_1d_x(
-    basis: TupleBasisLike[*tuple[Any, ...]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,

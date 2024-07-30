@@ -80,11 +80,9 @@ def plot_potential_1d_x(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    converted = convert_potential_to_position_basis(potential)
-
     fig, ax, line = plot_data_1d_x(
-        converted["basis"],
-        converted["data"],
+        potential["basis"],
+        potential["data"],
         axes,
         idx,
         ax=ax,
