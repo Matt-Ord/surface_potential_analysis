@@ -6,19 +6,16 @@ from scipy.constants import Boltzmann
 
 from surface_potential_analysis.basis.util import get_displacements_x
 from surface_potential_analysis.kernel.kernel import (
-    SingleBasisDiagonalNoiseOperatorList,
     SingleBasisNoiseOperatorList,
-    as_noise_operators,
 )
+from surface_potential_analysis.operator.conversion import convert_operator_to_basis
 from surface_potential_analysis.operator.operations import (
     add_list_list,
+    get_commutator_diagonal_operator_list,
     get_commutator_operator_list,
     scale_operator_list,
 )
 from surface_potential_analysis.operator.operator import SingleBasisOperator
-from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_position_basis,
-)
 
 if TYPE_CHECKING:
     import numpy as np
@@ -31,10 +28,13 @@ if TYPE_CHECKING:
     )
     from surface_potential_analysis.kernel.kernel import (
         IsotropicNoiseKernel,
+        SingleBasisDiagonalNoiseOperatorList,
         SingleBasisNoiseOperatorList,
     )
     from surface_potential_analysis.operator.operator import SingleBasisOperator
     from surface_potential_analysis.operator.operator_list import (
+        OperatorList,
+        SingleBasisDiagonalOperatorList,
         SingleBasisOperatorList,
     )
 
@@ -80,11 +80,10 @@ def build_isotropic_kernel_from_function(
         TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
     ]
     """
-    displacements = get_displacements_x(basis)[0]
-    correlation = fn(displacements)
+    displacements = get_displacements_x(basis)
+    correlation = fn(displacements["data"][0])
 
-    basis_x = stacked_basis_as_fundamental_position_basis(basis)
-    return {"basis": basis_x, "data": correlation.ravel()}
+    return {"basis": displacements["basis"][0], "data": correlation.ravel()}
 
 
 def _get_temperature_corrected_operators(
@@ -140,6 +139,20 @@ def get_temperature_corrected_noise_operators(
     }
 
 
+def _get_temperature_corrected_diagonal_operators(
+    hamiltonian: SingleBasisOperator[_B1],
+    operators: SingleBasisDiagonalOperatorList[
+        _B0,
+        _B2,
+    ],
+    temperature: float,
+) -> OperatorList[_B0, _B2, _B2]:
+    converted = convert_operator_to_basis(hamiltonian, operators["basis"][1])
+    commutator = get_commutator_diagonal_operator_list(converted, operators)
+    correction = scale_operator_list(-1 / (4 * Boltzmann * temperature), commutator)
+    return add_list_list(correction, operators)
+
+
 def get_temperature_corrected_diagonal_noise_operators(
     hamiltonian: SingleBasisOperator[_B1],
     operators: SingleBasisDiagonalNoiseOperatorList[
@@ -149,7 +162,7 @@ def get_temperature_corrected_diagonal_noise_operators(
     temperature: float,
 ) -> SingleBasisNoiseOperatorList[
     _B0,
-    _B1,
+    _B2,
 ]:
     """
     Get the noise operators, applying the caldeira-legget like temperature correction.
@@ -164,9 +177,14 @@ def get_temperature_corrected_diagonal_noise_operators(
     -------
     SingleBasisNoiseOperatorList[ _B0, _B1]
     """
-    operators_full = as_noise_operators(operators)
-    return get_temperature_corrected_noise_operators(
+    corrected_operators = _get_temperature_corrected_diagonal_operators(
         hamiltonian,
-        operators_full,
+        operators,
         temperature,
     )
+
+    return {
+        "basis": corrected_operators["basis"],
+        "data": corrected_operators["data"],
+        "eigenvalue": operators["eigenvalue"],
+    }

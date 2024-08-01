@@ -15,7 +15,9 @@ from surface_potential_analysis.operator.operator import (
     matmul_operator,
     subtract_operator,
 )
-from surface_potential_analysis.operator.operator_list import OperatorList
+from surface_potential_analysis.operator.operator_list import (
+    OperatorList,
+)
 from surface_potential_analysis.state_vector.conversion import (
     convert_state_vector_list_to_basis,
 )
@@ -31,6 +33,7 @@ if TYPE_CHECKING:
         SingleBasisOperator,
     )
     from surface_potential_analysis.operator.operator_list import (
+        DiagonalOperatorList,
         OperatorList,
         SingleBasisOperatorList,
     )
@@ -115,6 +118,73 @@ def matmul_operator_list(
     }
 
 
+def matmul_diagonal_list_operator(
+    lhs: DiagonalOperatorList[_B3, _B0, _B1],
+    rhs: Operator[_B4, _B2],
+) -> OperatorList[_B3, _B0, _B2]:
+    """
+    Multiply each operator in rhs by lhs.
+
+    Aij Bjk = Mik
+
+    Parameters
+    ----------
+    lhs : Operator[_B0, _B1]
+    rhs : OperatorList[_B3, _B1, _B2]
+
+    Returns
+    -------
+    OperatorList[_B3, _B0, _B2]
+    """
+    converted = convert_operator_to_basis(
+        rhs, TupleBasis(lhs["basis"][1][1], rhs["basis"][1])
+    )
+    data = np.einsum(
+        "ik,mkk->mik",
+        lhs["data"].reshape(-1, lhs["basis"][1][1].n),
+        converted["data"].reshape(*converted["basis"].shape),
+    ).reshape(-1)
+    return {
+        "basis": TupleBasis(
+            lhs["basis"][0], TupleBasis(lhs["basis"][1][0], converted["basis"][1])
+        ),
+        "data": data,
+    }
+
+
+def matmul_operator_diagonal_list(
+    lhs: Operator[_B0, _B1], rhs: DiagonalOperatorList[_B3, _B4, _B2]
+) -> OperatorList[_B3, _B0, _B2]:
+    """
+    Multiply each operator in rhs by lhs.
+
+    Aij Bjk = Mik
+
+    Parameters
+    ----------
+    lhs : Operator[_B0, _B1]
+    rhs : OperatorList[_B3, _B1, _B2]
+
+    Returns
+    -------
+    OperatorList[_B3, _B0, _B2]
+    """
+    converted = convert_operator_to_basis(
+        lhs, TupleBasis(lhs["basis"][0], rhs["basis"][1][0])
+    )
+    data = np.einsum(
+        "ik,mkk->mik",
+        converted["data"].reshape(lhs["basis"].shape),
+        rhs["data"].reshape(-1, *rhs["basis"][1][0].n),
+    ).reshape(-1)
+    return {
+        "basis": TupleBasis(
+            rhs["basis"][0], TupleBasis(lhs["basis"][0], rhs["basis"][1][1])
+        ),
+        "data": data,
+    }
+
+
 def subtract_list_list(
     lhs: OperatorList[_B3, _B0, _B1], rhs: OperatorList[_B3, _B2, _B4]
 ) -> OperatorList[_B3, _B0, _B1]:
@@ -157,6 +227,28 @@ def get_commutator_operator_list(
     converted = convert_operator_list_to_basis(rhs, lhs["basis"])
     lhs_rhs = matmul_operator_list(lhs, converted)
     rhs_lhs = matmul_list_operator(converted, lhs)
+    return subtract_list_list(lhs_rhs, rhs_lhs)
+
+
+def get_commutator_diagonal_operator_list(
+    lhs: SingleBasisOperator[_B0], rhs: DiagonalOperatorList[_B1, _B2, _B3]
+) -> OperatorList[_B1, _B0, _B3]:
+    """
+    Given two operators lhs, rhs, calculate the commutator.
+
+    This is equivalent to lhs rhs - rhs lhs
+
+    Parameters
+    ----------
+    lhs : SingleBasisOperator[_B0]
+    rhs : SingleBasisOperator[_B0]
+
+    Returns
+    -------
+    SingleBasisOperator[_B0]
+    """
+    lhs_rhs = matmul_operator_diagonal_list(lhs, rhs)
+    rhs_lhs = matmul_diagonal_list_operator(rhs, lhs)
     return subtract_list_list(lhs_rhs, rhs_lhs)
 
 

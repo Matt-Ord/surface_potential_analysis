@@ -37,6 +37,12 @@
 						]
 					}
 				},
+				"python.analysis.diagnosticMode": "workspace",
+				"python.analysis.typeCheckingMode": "strict",
+				"python.analysis.include": [
+					"surface_potential_analysis"
+				],
+				"python.analysis.autoImportCompletions": true,
 				"cSpell.allowCompoundWords": true,
 				"cSpell.flagWords": [
 					"hte",

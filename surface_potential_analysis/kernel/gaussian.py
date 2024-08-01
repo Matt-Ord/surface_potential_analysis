@@ -5,10 +5,18 @@ from typing import TYPE_CHECKING, Any, TypeVar
 import numpy as np
 from scipy.constants import Boltzmann, hbar
 
+from surface_potential_analysis.basis.stacked_basis import (
+    StackedBasisWithVolumeLike,
+    TupleBasisLike,
+    TupleBasisWithLengthLike,
+)
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.kernel.build import (
     build_isotropic_kernel_from_function,
     get_temperature_corrected_diagonal_noise_operators,
+)
+from surface_potential_analysis.kernel.conversion import (
+    convert_noise_operator_list_to_basis,
 )
 from surface_potential_analysis.kernel.kernel import (
     IsotropicNoiseKernel,
@@ -173,8 +181,7 @@ def get_temperature_corrected_gaussian_noise_operators(
     lambda_: float,
     temperature: float,
 ) -> SingleBasisNoiseOperatorList[
-    TupleBasisLike[*tuple[FundamentalBasis[int], ...]],
-    _SBV0,
+    TupleBasisLike[*tuple[FundamentalBasis[int], ...]], _SBV0
 ]:
     """Get the noise operators for a gausssian kernel in the given basis.
 
@@ -198,12 +205,14 @@ def get_temperature_corrected_gaussian_noise_operators(
         a,
         lambda_,
     )
+
     operators = get_noise_operators_real_isotropic_stacked(kernel)
-    return get_temperature_corrected_diagonal_noise_operators(
+    corrected = get_temperature_corrected_diagonal_noise_operators(
         hamiltonian,
         operators,
         temperature,
     )
+    return convert_noise_operator_list_to_basis(corrected, hamiltonian["basis"])
 
 
 def get_temperature_corrected_effective_gaussian_noise_operators(

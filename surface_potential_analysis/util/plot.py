@@ -12,6 +12,7 @@ from matplotlib.scale import LinearScale, ScaleBase, SymmetricalLogScale
 
 from surface_potential_analysis.basis.basis_like import BasisLike, convert_vector
 from surface_potential_analysis.stacked_basis.conversion import (
+    stacked_basis_as_fundamental_momentum_basis,
     stacked_basis_as_fundamental_position_basis,
 )
 from surface_potential_analysis.stacked_basis.util import (
@@ -171,7 +172,7 @@ def plot_data_1d(
 
 
 def plot_data_1d_k(
-    basis: TupleBasisLike[*tuple[Any, ...]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -202,10 +203,13 @@ def plot_data_1d_k(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    idx = get_max_idx(basis, data, axes) if idx is None else idx
+    basis_k = stacked_basis_as_fundamental_momentum_basis(basis)
+    converted_data = convert_vector(data, basis, basis_k)
 
-    coordinates = get_k_coordinates_in_axes(basis, axes, idx)
-    data_in_axis = get_data_in_axes(data.reshape(basis.shape), axes, idx)
+    idx = get_max_idx(basis_k, data, axes) if idx is None else idx
+
+    coordinates = get_k_coordinates_in_axes(basis_k, axes, idx)
+    data_in_axis = get_data_in_axes(converted_data.reshape(basis_k.shape), axes, idx)
 
     shifted_data = np.fft.fftshift(data_in_axis)
     shifted_coordinates = np.fft.fftshift(coordinates[0])
@@ -287,8 +291,7 @@ def plot_data_2d(
     ax: Axes | None = None,
     scale: Scale = "linear",
     measure: Measure = "abs",
-) -> tuple[Figure, Axes, QuadMesh]:
-    ...
+) -> tuple[Figure, Axes, QuadMesh]: ...
 
 
 @overload
@@ -299,8 +302,7 @@ def plot_data_2d(
     ax: Axes | None = None,
     scale: Scale = "linear",
     measure: Measure = "abs",
-) -> tuple[Figure, Axes, QuadMesh]:
-    ...
+) -> tuple[Figure, Axes, QuadMesh]: ...
 
 
 def plot_data_2d(
@@ -607,7 +609,7 @@ def animate_data_through_list_1d_x(
 
 
 def animate_data_through_list_1d_k(
-    basis: TupleBasisLike[*tuple[Any, ...]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,

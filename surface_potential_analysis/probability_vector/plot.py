@@ -111,7 +111,7 @@ def plot_total_probability_against_time(
 
 
 def plot_probability_1d_k(
-    state: ProbabilityVector[TupleBasisLike[*tuple[Any, ...]]],
+    state: ProbabilityVector[StackedBasisWithVolumeLike[Any, Any, Any]],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -140,11 +140,9 @@ def plot_probability_1d_k(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    converted = convert_probability_vector_to_momentum_basis(state)
-
     fig, ax, line = plot_data_1d_k(
-        converted["basis"],
-        converted["data"],
+        state["basis"],
+        state["data"],
         axes,
         idx,
         ax=ax,

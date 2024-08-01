@@ -123,11 +123,9 @@ def plot_state_1d_k(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    converted = convert_state_vector_to_momentum_basis(state)
-
     fig, ax, line = plot_data_1d_k(
-        converted["basis"],
-        converted["data"],
+        state["basis"],
+        state["data"],
         axes,
         idx,
         ax=ax,
