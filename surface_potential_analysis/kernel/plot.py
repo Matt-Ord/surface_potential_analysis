@@ -87,6 +87,7 @@ def plot_diagonal_kernel(
     """
     n_states = kernel["basis"][0].shape[0]
     data = kernel["data"].reshape(n_states, n_states)
+    data = np.fft.fftshift(data)
 
     return plot_data_2d(data, ax=ax, scale=scale, measure=measure)
 
@@ -424,6 +425,8 @@ def plot_isotropic_noise_kernel_1d_x(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    return plot_data_1d_x(
+    fig, ax, line = plot_data_1d_x(
         kernel["basis"], kernel["data"], axes, idx, ax=ax, scale=scale, measure=measure
     )
+    line.set_label(f"{measure} kernel")
+    return fig, ax, line

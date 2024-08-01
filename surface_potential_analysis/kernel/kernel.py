@@ -588,6 +588,7 @@ def get_noise_operators_isotropic_stacked(
     kernel: IsotropicNoiseKernel[_TB0],
     *,
     shape: tuple[int, ...] | None = None,
+    assert_periodic: bool = True,
 ) -> SingleBasisDiagonalNoiseOperatorList[
     TupleBasisLike[*tuple[FundamentalBasis[int], ...]], _TB0
 ]:
@@ -615,6 +616,12 @@ def get_noise_operators_isotropic_stacked(
         _description_
     """
     shape = kernel["basis"].shape if shape is None else shape
+    if assert_periodic:
+        ratio = tuple(n % s for n, s in zip(kernel["basis"].shape, shape))
+        # Is 2 * np.pi * N / s equal to A * 2 * np.pi for some integer A
+        np.testing.assert_array_almost_equal(
+            ratio, 0, err_msg="Operators requested are not periodic"
+        )
     shape_basis = fundamental_stacked_basis_from_shape(shape)
 
     coefficients = np.fft.ifftn(
@@ -633,7 +640,7 @@ def get_noise_operators_isotropic_stacked(
     # and x_m0,m1 = (m0,m1,...), mi = 0...Mi
     k = tuple(2 * np.pi / n for n in shape)
     nk_points = BasisUtil(kernel["basis"]).stacked_nk_points
-    i_points = BasisUtil(shape_basis).stacked_nx_points
+    i_points = BasisUtil(shape_basis).stacked_nk_points
 
     operators = np.array(
         [
@@ -678,6 +685,12 @@ def get_noise_operators_real_isotropic_stacked(
 
     data = standard_operators["data"].reshape(*standard_operators["basis"][0].shape, -1)
 
+    np.testing.assert_allclose(
+        standard_operators["eigenvalue"][1::],
+        standard_operators["eigenvalue"][1::][::-1],
+        rtol=1e-8,
+    )
+
     for axis, n in enumerate(shape):
         cloned = data.copy()
         # Build (e^(ikx) +- e^(-ikx)) operators
@@ -700,7 +713,7 @@ def get_noise_operators_real_isotropic_stacked(
 
 
 def get_diagonal_noise_kernel(
-    operators: DiagonalNoiseOperatorList[FundamentalBasis[int], _B0, _B1],
+    operators: DiagonalNoiseOperatorList[BasisLike[Any, Any], _B0, _B1],
 ) -> DiagonalNoiseKernel[_B0, _B1, _B0, _B1]:
     operators_data = operators["data"].reshape(operators["basis"][0].n, -1)
     data = np.einsum(

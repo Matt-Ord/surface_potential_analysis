@@ -7,7 +7,6 @@ from scipy.constants import Boltzmann, hbar
 
 from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisWithVolumeLike,
-    TupleBasisLike,
     TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
@@ -20,6 +19,7 @@ from surface_potential_analysis.kernel.conversion import (
 )
 from surface_potential_analysis.kernel.kernel import (
     IsotropicNoiseKernel,
+    NoiseOperatorList,
     SingleBasisDiagonalNoiseKernel,
     SingleBasisNoiseOperatorList,
     as_diagonal_kernel_from_isotropic,
@@ -34,7 +34,6 @@ if TYPE_CHECKING:
     )
     from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisWithVolumeLike,
-        TupleBasisLike,
         TupleBasisWithLengthLike,
     )
     from surface_potential_analysis.operator.operator import SingleBasisOperator
@@ -84,7 +83,7 @@ def get_gaussian_noise_kernel(
     a: float,
     lambda_: float,
 ) -> SingleBasisDiagonalNoiseKernel[
-    TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
 ]:
     """
     Get the noise kernel for a gaussian correllated surface.
@@ -150,7 +149,7 @@ def get_effective_gaussian_noise_kernel(
     *,
     lambda_factor: float = 2 * np.sqrt(2),
 ) -> SingleBasisDiagonalNoiseKernel[
-    TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
 ]:
     """
     Get the noise kernel for a gaussian correllated surface, given the Caldeira leggett parameters.
@@ -174,6 +173,106 @@ def get_effective_gaussian_noise_kernel(
         basis, eta, temperature, lambda_factor=lambda_factor
     )
     return get_gaussian_noise_kernel(basis, a, lambda_)
+
+
+def get_effective_gaussian_isotropic_noise_kernel(
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    eta: float,
+    temperature: float,
+    *,
+    lambda_factor: float = 2 * np.sqrt(2),
+) -> IsotropicNoiseKernel[
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+]:
+    """
+    Get the noise kernel for a gaussian correllated surface, given the Caldeira leggett parameters.
+
+    This chooses the largest possible wavelength, such that the smallest correllation between
+    any two points is a**2 * np.exp(- lambda_factor ** 2 / 2), where a**2 is the max correllation
+
+    Parameters
+    ----------
+    basis : TupleBasisLike[BasisWithLengthLike[Any, Any, Literal[1]]]
+    eta : float
+    temperature : float
+    lambda_factor : float, optional
+        lambda_factor, by default 2*np.sqrt(2)
+
+    Returns
+    -------
+    SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]] ]
+    """
+    a, lambda_ = get_effective_gaussian_parameters(
+        basis, eta, temperature, lambda_factor=lambda_factor
+    )
+    return get_gaussian_isotropic_noise_kernel(basis, a, lambda_)
+
+
+def get_gaussian_noise_operators(
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    a: float,
+    lambda_: float,
+    *,
+    truncation: Iterable[int] | None = None,
+) -> NoiseOperatorList[
+    FundamentalBasis[int],
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+]:
+    """Get the noise operators for a gausssian kernel in the given basis.
+
+    Parameters
+    ----------
+    hamiltonian : SingleBasisOperator[_BL0]
+    mass : float
+    temperature : float
+    gamma : float
+
+    Returns
+    -------
+    SingleBasisNoiseOperatorList[
+        FundamentalBasis[int],
+        FundamentalPositionBasis[Any, Literal[1]],
+    ]
+
+    """
+    kernel = get_gaussian_isotropic_noise_kernel(basis, a, lambda_)
+
+    operators = get_noise_operators_real_isotropic_stacked(kernel)
+    truncation = range(operators["basis"][0].n) if truncation is None else truncation
+    return truncate_diagonal_noise_operators(operators, truncation=truncation)
+
+
+def get_effective_gaussian_noise_operators(
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    eta: float,
+    temperature: float,
+    *,
+    truncation: Iterable[int] | None = None,
+) -> NoiseOperatorList[
+    FundamentalBasis[int],
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+]:
+    """Get the noise operators for a gausssian kernel in the given basis.
+
+    Parameters
+    ----------
+    hamiltonian : SingleBasisOperator[_BL0]
+    mass : float
+    temperature : float
+    gamma : float
+
+    Returns
+    -------
+    SingleBasisNoiseOperatorList[
+        FundamentalBasis[int],
+        FundamentalPositionBasis[Any, Literal[1]],
+    ]
+
+    """
+    a, lambda_ = get_effective_gaussian_parameters(basis, eta, temperature)
+    return get_gaussian_noise_operators(basis, a, lambda_, truncation=truncation)
 
 
 def get_temperature_corrected_gaussian_noise_operators(
@@ -201,16 +300,9 @@ def get_temperature_corrected_gaussian_noise_operators(
     ]
 
     """
-    kernel = get_gaussian_isotropic_noise_kernel(
-        hamiltonian["basis"][0],
-        a,
-        lambda_,
+    operators = get_gaussian_noise_operators(
+        hamiltonian["basis"][0], a, lambda_, truncation=truncation
     )
-
-    operators = get_noise_operators_real_isotropic_stacked(kernel)
-    truncation = range(operators["basis"][0].n) if truncation is None else truncation
-
-    operators = truncate_diagonal_noise_operators(operators, truncation)
     corrected = get_temperature_corrected_diagonal_noise_operators(
         hamiltonian,
         operators,
