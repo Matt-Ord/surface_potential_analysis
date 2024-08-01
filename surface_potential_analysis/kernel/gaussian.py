@@ -1,10 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar, TypeVarTuple
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, TypeVarTuple
 
 import numpy as np
 from scipy.constants import Boltzmann, hbar
+from scipy.special import factorial
 
+from surface_potential_analysis.basis.basis import (
+    FundamentalBasis,
+)
 from surface_potential_analysis.basis.basis_like import BasisLike
 from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisWithVolumeLike,
@@ -19,6 +23,7 @@ from surface_potential_analysis.kernel.kernel import (
     SingleBasisDiagonalNoiseOperatorList,
     SingleBasisNoiseOperatorList,
     as_noise_operators,
+    get_coefficient_matrix_taylor,
     get_noise_operators_diagonal,
 )
 from surface_potential_analysis.operator.operations import (
@@ -32,7 +37,6 @@ from surface_potential_analysis.stacked_basis.conversion import (
 
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis import (
-        FundamentalBasis,
         FundamentalPositionBasis,
     )
     from surface_potential_analysis.operator.operator import SingleBasisOperator
@@ -360,3 +364,59 @@ def get_temperature_corrected_effective_gaussian_noise_operators(
         lambda_,
         temperature,
     )
+
+
+def get_gaussian_operators_explicit_taylor(
+    a: float,
+    lambda_: float,
+    basis: TupleBasisWithLengthLike[FundamentalPositionBasis[Any, Literal[1]]],
+    *,
+    n: int = 1,
+) -> SingleBasisDiagonalNoiseOperatorList[
+    FundamentalBasis[int],
+    TupleBasisWithLengthLike[FundamentalPositionBasis[Any, Literal[1]]],
+]:
+    """Calculate the noise operators for an isotropic gaussian noise kernel, using
+    an explicit Taylor expansion.
+
+    This function makes use of the analytical expression for the Taylor expansion of gaussian
+    noise (a^2)*e^(-x^2/2*lambda_^2) about origin to find the 2n+1 lowest fourier coefficients.
+
+    Return in the order of [const term, first n sine terms, first n cos terms]
+    and also their corresponding coefficients.
+    """
+    # currently only support 1D
+    assert basis.ndim == 1
+    delta_x = np.linalg.norm(BasisUtil(basis).delta_x_stacked[0])
+    k = 2 * np.pi / basis.shape[0]
+    delta_k = 2 * np.pi / delta_x
+    nx_points = BasisUtil(basis).fundamental_stacked_nx_points[0]
+
+    sines = [
+        np.sin(i * k * nx_points).astype(np.complex128) for i in np.arange(1, n + 1)
+    ]
+    coses = [
+        np.cos(i * k * nx_points).astype(np.complex128) for i in np.arange(1, n + 1)
+    ]
+    data = np.append(np.ones_like(nx_points).astype(np.complex128), [sines, coses])
+
+    # expand gaussian and define array containing coefficients for each term in the polynomial
+    # coefficients for the explicit Taylor expansion of the gaussian noise
+    true_noise_coeff = np.array(
+        [
+            (a**2) * (1 / factorial(i)) * ((-1 / (2 * lambda_**2)) ** i)
+            for i in np.arange(0, n + 1)
+        ],
+    )
+    # coefficients for the Taylor expansion of the trig terms
+    coeff = get_coefficient_matrix_taylor(
+        true_noise_coeff=true_noise_coeff,
+        delta_k=delta_k,
+        n=n,
+    )
+
+    return {
+        "basis": TupleBasis(FundamentalBasis(2 * n + 1), TupleBasis(basis, basis)),
+        "data": data.astype(np.complex128),
+        "eigenvalue": coeff.astype(np.complex128),
+    }
