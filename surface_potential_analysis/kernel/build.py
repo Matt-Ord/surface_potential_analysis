@@ -16,6 +16,7 @@ from surface_potential_analysis.operator.operations import (
     scale_operator_list,
 )
 from surface_potential_analysis.operator.operator import SingleBasisOperator
+from surface_potential_analysis.operator.operator_list import as_operator_list
 
 if TYPE_CHECKING:
     import numpy as np
@@ -81,7 +82,7 @@ def build_isotropic_kernel_from_function(
     ]
     """
     displacements = get_displacements_x(basis)
-    correlation = fn(displacements["data"][0])
+    correlation = fn(displacements["data"].reshape(displacements["basis"].shape)[0])
 
     return {"basis": displacements["basis"][0], "data": correlation.ravel()}
 
@@ -150,7 +151,7 @@ def _get_temperature_corrected_diagonal_operators(
     converted = convert_operator_to_basis(hamiltonian, operators["basis"][1])
     commutator = get_commutator_diagonal_operator_list(converted, operators)
     correction = scale_operator_list(-1 / (4 * Boltzmann * temperature), commutator)
-    return add_list_list(correction, operators)
+    return add_list_list(correction, as_operator_list(operators))
 
 
 def get_temperature_corrected_diagonal_noise_operators(

@@ -455,7 +455,7 @@ def get_noise_operators_diagonal(
 
 
 def truncate_diagonal_noise_operators(
-    operators: DiagonalNoiseOperatorList[FundamentalBasis[int], _B0, _B1],
+    operators: DiagonalNoiseOperatorList[BasisLike[Any, Any], _B0, _B1],
     truncation: Iterable[int],
 ) -> DiagonalNoiseOperatorList[FundamentalBasis[int], _B0, _B1]:
     """

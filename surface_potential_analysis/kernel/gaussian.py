@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, Iterable, TypeVar
 
 import numpy as np
 from scipy.constants import Boltzmann, hbar
@@ -24,6 +24,7 @@ from surface_potential_analysis.kernel.kernel import (
     SingleBasisNoiseOperatorList,
     as_diagonal_kernel_from_isotropic,
     get_noise_operators_real_isotropic_stacked,
+    truncate_diagonal_noise_operators,
 )
 
 if TYPE_CHECKING:
@@ -180,9 +181,9 @@ def get_temperature_corrected_gaussian_noise_operators(
     a: float,
     lambda_: float,
     temperature: float,
-) -> SingleBasisNoiseOperatorList[
-    TupleBasisLike[*tuple[FundamentalBasis[int], ...]], _SBV0
-]:
+    *,
+    truncation: Iterable[int] | None = None,
+) -> SingleBasisNoiseOperatorList[FundamentalBasis[int], _SBV0]:
     """Get the noise operators for a gausssian kernel in the given basis.
 
     Parameters
@@ -207,6 +208,9 @@ def get_temperature_corrected_gaussian_noise_operators(
     )
 
     operators = get_noise_operators_real_isotropic_stacked(kernel)
+    truncation = range(operators["basis"][0].n) if truncation is None else truncation
+
+    operators = truncate_diagonal_noise_operators(operators, truncation)
     corrected = get_temperature_corrected_diagonal_noise_operators(
         hamiltonian,
         operators,
@@ -219,9 +223,9 @@ def get_temperature_corrected_effective_gaussian_noise_operators(
     hamiltonian: SingleBasisOperator[_SBV0],
     eta: float,
     temperature: float,
-) -> SingleBasisNoiseOperatorList[
-    TupleBasisLike[*tuple[FundamentalBasis[int], ...]], _SBV0
-]:
+    *,
+    truncation: Iterable[int] | None = None,
+) -> SingleBasisNoiseOperatorList[FundamentalBasis[int], _SBV0]:
     """Get the noise operators for a gausssian kernel in the given basis.
 
     Parameters
@@ -244,8 +248,5 @@ def get_temperature_corrected_effective_gaussian_noise_operators(
     )
 
     return get_temperature_corrected_gaussian_noise_operators(
-        hamiltonian,
-        a,
-        lambda_,
-        temperature,
+        hamiltonian, a, lambda_, temperature, truncation=truncation
     )
