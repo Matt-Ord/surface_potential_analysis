@@ -5,11 +5,13 @@ from typing import TYPE_CHECKING, Any, TypeVar
 from surface_potential_analysis.kernel.kernel import (
     DiagonalNoiseKernel,
     DiagonalNoiseOperatorList,
+    IsotropicNoiseKernel,
     NoiseKernel,
+    as_diagonal_kernel_from_isotropic,
     get_noise_kernel,
-    get_noise_operators,
     get_noise_operators_diagonal,
 )
+from surface_potential_analysis.kernel.solve import get_noise_operators_eigenvalue
 from surface_potential_analysis.operator.conversion import (
     convert_diagonal_operator_list_to_basis,
     convert_operator_list_to_basis,
@@ -90,7 +92,7 @@ def convert_kernel_to_basis(
     -------
     NoiseKernel[_B0, _B1, _B0, _B1]
     """
-    operators = get_noise_operators(kernel)
+    operators = get_noise_operators_eigenvalue(kernel)
     converted = convert_noise_operator_list_to_basis(operators, basis)
     return get_noise_kernel(converted)
 
@@ -113,3 +115,22 @@ def convert_diagonal_kernel_to_basis(
     operators = get_noise_operators_diagonal(kernel)
     converted = convert_diagonal_noise_operator_list_to_basis(operators, basis)
     return get_noise_kernel(converted)
+
+
+def convert_isotropic_kernel_to_basis(
+    kernel: IsotropicNoiseKernel[_B0, _B1, _B0, _B1],
+    basis: TupleBasisLike[_B2, _B3],
+) -> NoiseKernel[_B2, _B3, _B2, _B3]:
+    """Convert the kernel to the given basis.
+
+    Parameters
+    ----------
+    kernel : NoiseKernel[_B0, _B1, _B0, _B1]
+    basis : TupleBasisLike[_B2Inv, _B3Inv]
+
+    Returns
+    -------
+    NoiseKernel[_B0, _B1, _B0, _B1]
+    """
+    kernel_diagonal = as_diagonal_kernel_from_isotropic(kernel)
+    return convert_diagonal_kernel_to_basis(kernel_diagonal, basis)

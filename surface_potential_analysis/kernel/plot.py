@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterable, Literal, TypeVarTuple
+from typing import TYPE_CHECKING, Any, Iterable, Literal, TypeVar, TypeVarTuple
 
 import numpy as np
 from scipy.constants import hbar
@@ -19,7 +19,7 @@ from surface_potential_analysis.kernel.kernel import (
     SingleBasisDiagonalNoiseKernel,
     SingleBasisDiagonalNoiseOperatorList,
     as_diagonal_noise_operators,
-    get_noise_operators,
+    get_noise_kernel_percentage_error,
     get_noise_operators_diagonal,
     truncate_diagonal_noise_operators,
 )
@@ -48,6 +48,7 @@ if TYPE_CHECKING:
         FundamentalBasis,
         FundamentalPositionBasis,
     )
+    from surface_potential_analysis.basis.basis_like import BasisLike
     from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisWithVolumeLike,
     )
@@ -58,6 +59,8 @@ if TYPE_CHECKING:
     from surface_potential_analysis.types import SingleStackedIndexLike
 
     _B0s = TypeVarTuple("_B0s")
+    _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
+    _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
 
 
 def plot_diagonal_kernel(
@@ -430,3 +433,14 @@ def plot_isotropic_noise_kernel_1d_x(
     )
     line.set_label(f"{measure} kernel")
     return fig, ax, line
+
+
+def plot_isotropic_kernel_error(
+    true_kernel: IsotropicNoiseKernel[StackedBasisWithVolumeLike[Any, Any, Any]],
+    fitted_kernel: IsotropicNoiseKernel[StackedBasisWithVolumeLike[Any, Any, Any]],
+) -> tuple[Figure, Axes, Line2D]:
+    """Compare the errors between true kernel and fitted kernel."""
+    percentage_error = get_noise_kernel_percentage_error(true_kernel, fitted_kernel)[
+        "data"
+    ]
+    return plot_data_1d_x(true_kernel["basis"], percentage_error, measure="real")
