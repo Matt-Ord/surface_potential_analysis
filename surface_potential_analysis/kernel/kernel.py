@@ -3,17 +3,20 @@ from __future__ import annotations
 from typing import Any, Generic, Iterable, TypedDict, TypeVar, TypeVarTuple, cast
 
 import numpy as np
+from scipy.special import factorial
 
 from surface_potential_analysis.basis.basis import (
     FundamentalBasis,
+    FundamentalPositionBasis,
 )
 from surface_potential_analysis.basis.basis_like import BasisLike
 from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisLike,
+    TupleBasisWithLengthLike,
 )
-from surface_potential_analysis.basis.util import BasisUtil
+from surface_potential_analysis.basis.util import BasisUtil, get_displacements_x
 from surface_potential_analysis.operator.operator import (
     DiagonalOperator,
     Operator,
@@ -26,6 +29,9 @@ from surface_potential_analysis.operator.operator_list import (
 )
 from surface_potential_analysis.stacked_basis.build import (
     fundamental_stacked_basis_from_shape,
+)
+from surface_potential_analysis.stacked_basis.conversion import (
+    stacked_basis_as_fundamental_position_basis,
 )
 from surface_potential_analysis.util.interpolation import pad_ft_points
 from surface_potential_analysis.util.util import slice_along_axis
@@ -214,7 +220,7 @@ def as_isotropic_kernel(
     -------
     IsotropicNoiseKernel[_B0]
     """
-    data = kernel["data"].reshape(kernel["basis"][0][0].n, kernel["basis"][1][1].n)[0]
+    data = kernel["data"].reshape(kernel["basis"][0].shape)[0]
 
     return {"basis": kernel["basis"][0][0], "data": data}
 
@@ -786,3 +792,52 @@ def truncate_noise_kernel(
             "eigenvalue": operators["eigenvalue"][args],
         }
     )
+
+
+def get_coefficient_matrix_taylor(
+    *,
+    true_noise_coeff: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+    delta_k: np.floating[Any],
+    n: int = 1,
+) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
+    coeff_to_solve = np.array(
+        [
+            np.array(
+                [
+                    (((-1) ** m) / (factorial(2 * m))) * ((i * delta_k) ** (2 * m))
+                    for i in np.arange(0, n + 1)
+                ],
+            )
+            for m in np.arange(0, n + 1)
+        ],
+    )
+    coeff = np.linalg.solve(coeff_to_solve, true_noise_coeff)
+    coeff = coeff.T
+    return np.concatenate([coeff, coeff[1:]])
+
+
+def get_lorentzian_parameter(
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    *,
+    lambda_factor: float = 2 * np.sqrt(2),
+) -> float:
+    util = BasisUtil(basis)
+    smallest_max_displacement = np.min(np.linalg.norm(util.delta_x_stacked, axis=1)) / 2
+    return smallest_max_displacement / lambda_factor
+
+
+def get_lorentzian_isotropic_noise_kernel(
+    basis: TupleBasisWithLengthLike[*_B0s],
+) -> IsotropicNoiseKernel[
+    TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+]:
+    lambda_ = get_lorentzian_parameter(basis)
+    displacements = get_displacements_x(basis)[0]
+    correlation = (lambda_ / (displacements**2 + lambda_**2)).astype(
+        np.complex128,
+    )
+    basis_x = stacked_basis_as_fundamental_position_basis(basis)
+    return {
+        "basis": basis_x,
+        "data": correlation.ravel(),
+    }
