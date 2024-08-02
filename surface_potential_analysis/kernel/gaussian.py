@@ -18,8 +18,8 @@ from surface_potential_analysis.kernel.conversion import (
     convert_noise_operator_list_to_basis,
 )
 from surface_potential_analysis.kernel.kernel import (
+    DiagonalNoiseOperatorList,
     IsotropicNoiseKernel,
-    NoiseOperatorList,
     SingleBasisDiagonalNoiseKernel,
     SingleBasisNoiseOperatorList,
     as_diagonal_kernel_from_isotropic,
@@ -214,7 +214,7 @@ def get_gaussian_noise_operators(
     lambda_: float,
     *,
     truncation: Iterable[int] | None = None,
-) -> NoiseOperatorList[
+) -> DiagonalNoiseOperatorList[
     FundamentalBasis[int],
     TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
     TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
@@ -249,7 +249,7 @@ def get_effective_gaussian_noise_operators(
     temperature: float,
     *,
     truncation: Iterable[int] | None = None,
-) -> NoiseOperatorList[
+) -> DiagonalNoiseOperatorList[
     FundamentalBasis[int],
     TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
     TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
@@ -304,9 +304,7 @@ def get_temperature_corrected_gaussian_noise_operators(
         hamiltonian["basis"][0], a, lambda_, truncation=truncation
     )
     corrected = get_temperature_corrected_diagonal_noise_operators(
-        hamiltonian,
-        operators,
-        temperature,
+        hamiltonian, operators, temperature
     )
     return convert_noise_operator_list_to_basis(corrected, hamiltonian["basis"])
 

@@ -140,7 +140,7 @@ def matmul_diagonal_list_operator(
         rhs, TupleBasis(lhs["basis"][1][1], rhs["basis"][1])
     )
     data = np.einsum(
-        "ik,mk->mik",
+        "ik,kl->ikl",
         lhs["data"].reshape(-1, lhs["basis"][1][1].n),
         converted["data"].reshape(*converted["basis"].shape),
     ).reshape(-1)
