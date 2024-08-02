@@ -25,6 +25,7 @@ from surface_potential_analysis.state_vector.eigenstate_calculation import (
     calculate_eigenvectors,
     operator_from_eigenstates,
 )
+from surface_potential_analysis.util.decorators import timed
 
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis_like import BasisLike
@@ -308,6 +309,7 @@ def scale_operator(factor: complex, operator: Operator[_B0, _B1]) -> Operator[_B
     }
 
 
+@timed
 def apply_operator_to_states(
     lhs: Operator[_B0, _B1], states: StateVectorList[_B2, _B3]
 ) -> EigenstateList[_B2, _B0]:

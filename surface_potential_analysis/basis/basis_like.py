@@ -29,7 +29,12 @@ class FromFundamentalBasis(Protocol[_NF0_co, _N0_co]):
     @abc.abstractmethod
     def __from_fundamental__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         """
@@ -56,7 +61,12 @@ class FromTransformedBasis(Protocol[_NF0_co, _N0_co]):
     @abc.abstractmethod
     def __from_transformed__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         """
@@ -83,7 +93,12 @@ class IntoFundamentalBasis(Protocol[_NF0_co, _N0_co]):
     @abc.abstractmethod
     def __into_fundamental__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         ...
@@ -96,7 +111,12 @@ class IntoTransformedBasis(Protocol[_NF0_co, _N0_co]):
     @abc.abstractmethod
     def __into_transformed__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         ...
@@ -113,21 +133,36 @@ class AsFundamentalBasis(
     @abc.abstractmethod
     def __as_fundamental__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         ...
 
     def __into_fundamental__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         return self.__as_fundamental__(vectors, axis)
 
     def __into_transformed__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         fundamental = self.__into_fundamental__(vectors, axis)
@@ -145,21 +180,36 @@ class AsTransformedBasis(
     @abc.abstractmethod
     def __as_transformed__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         ...
 
     def __into_transformed__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         return self.__as_transformed__(vectors, axis)
 
     def __into_fundamental__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         as_transformed = self.__into_transformed__(vectors, axis)
@@ -191,7 +241,12 @@ class BasisLike(
 
     def __into_fundamental__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         transformed = self.__into_transformed__(vectors, axis)
@@ -203,7 +258,12 @@ class BasisLike(
     # !return np.moveaxis(transformed, -1, axis)  # type: ignore[no-any-return]
     def __into_transformed__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         fundamental = self.__into_fundamental__(vectors, axis)
@@ -211,7 +271,12 @@ class BasisLike(
 
     def __from_fundamental__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         transformed = np.fft.fft(vectors, self.fundamental_n, axis=axis, norm="ortho")
@@ -219,7 +284,12 @@ class BasisLike(
 
     def __from_transformed__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         fundamental = np.fft.ifft(vectors, self.fundamental_n, axis=axis, norm="ortho")
@@ -227,7 +297,12 @@ class BasisLike(
 
     def __convert_vector_into__(
         self,
-        vector: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vector: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         basis: BasisLike[Any, Any],
         axis: int = -1,
     ) -> np.ndarray[Any, np.dtype[np.complex128]]:
@@ -248,7 +323,12 @@ class BasisLike(
 
 
 def convert_vector(
-    vector: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+    vector: np.ndarray[
+        _S0Inv,
+        np.dtype[np.complex128]
+        | np.dtype[np.float64]
+        | np.dtype[np.float64 | np.complex128],
+    ],
     initial_basis: BasisLike[Any, Any],
     final_basis: BasisLike[Any, Any],
     axis: int = -1,
@@ -273,7 +353,12 @@ def convert_vector(
 
 
 def convert_dual_vector(
-    co_vector: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+    co_vector: np.ndarray[
+        _S0Inv,
+        np.dtype[np.complex128]
+        | np.dtype[np.float64]
+        | np.dtype[np.float64 | np.complex128],
+    ],
     initial_basis: BasisLike[Any, Any],
     final_basis: BasisLike[Any, Any],
     axis: int = -1,
@@ -298,7 +383,12 @@ def convert_dual_vector(
 
 
 def convert_matrix(
-    matrix: np.ndarray[tuple[int, int], np.dtype[np.complex128] | np.dtype[np.float64]],
+    matrix: np.ndarray[
+        tuple[int, int],
+        np.dtype[np.complex128]
+        | np.dtype[np.float64]
+        | np.dtype[np.float64 | np.complex128],
+    ],
     initial_basis: BasisLike[Any, Any],
     final_basis: BasisLike[Any, Any],
     initial_dual_basis: BasisLike[Any, Any],
