@@ -731,14 +731,14 @@ def get_noise_operators_real_isotropic_stacked(
         cloned = data.copy()
         # Build (e^(ikx) +- e^(-ikx)) operators
         end = n // 2
+
         cos_slice = slice_along_axis(slice(1, end + 1), axis)
         conj_cos_slice = slice_along_axis(slice(-1, end - 1, -1), axis)
+        data[cos_slice] = (cloned[cos_slice] + cloned[conj_cos_slice]) / np.sqrt(2)
 
         sin_slice = slice_along_axis(slice(end + 1, None), axis)
         conj_sin_slice = slice_along_axis(slice(end - 1, 0, -1), axis)
-
-        data[cos_slice] = (cloned[cos_slice] + cloned[conj_cos_slice]) / np.sqrt(2)
-        data[sin_slice] = (cloned[conj_sin_slice] - cloned[sin_slice]) / np.sqrt(2)
+        data[sin_slice] = (cloned[sin_slice] - cloned[conj_sin_slice]) / np.sqrt(2)
 
     return {
         "basis": standard_operators["basis"],
