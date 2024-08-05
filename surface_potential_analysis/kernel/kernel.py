@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Generic, Iterable, TypedDict, TypeVar, TypeVarTuple, cast
+from typing import Any, Generic, Iterable, TypedDict, TypeVar, TypeVarTuple
 
 import numpy as np
 
@@ -21,6 +21,7 @@ from surface_potential_analysis.operator.operator import (
 from surface_potential_analysis.operator.operator_list import (
     DiagonalOperatorList,
     OperatorList,
+    SingleBasisDiagonalOperatorList,
     as_diagonal_operator_list,
     as_operator_list,
 )
@@ -479,8 +480,52 @@ def truncate_diagonal_noise_operators(
     }
 
 
+def _assert_periodic_sample(
+    basis_shape: tuple[int, ...], shape: tuple[int, ...]
+) -> None:
+    ratio = tuple(n % s for n, s in zip(basis_shape, shape, strict=True))
+    # Is 2 * np.pi * N / s equal to A * 2 * np.pi for some integer A
+    message = (
+        "Operators requested for a sample which does not evenly divide the basis shape\n"
+        "This would result in noise operators which are not periodic"
+    )
+    try:
+        np.testing.assert_array_almost_equal(ratio, 0, err_msg=message)
+    except AssertionError:
+        raise AssertionError(message) from None
+
+
+def _get_operators_for_isotropic_noise(
+    basis: _B0,
+    *,
+    n: int,
+    assert_periodic: bool = True,
+) -> SingleBasisDiagonalOperatorList[FundamentalBasis[int], _B0]:
+    if assert_periodic:
+        _assert_periodic_sample((basis.n,), (n,))
+    # Operators e^(ik_n x_m) / sqrt(M)
+    # with k_n = 2 * np.pi * n / N, n = 0...N
+    # and x_m = m, m = 0...M
+    k = 2 * np.pi / n
+    nk_points = BasisUtil(basis).nk_points
+
+    operators = np.exp(
+        1j * np.arange(0, n)[:, np.newaxis] * k * nk_points[np.newaxis, :]
+    ) / np.sqrt(basis.n)
+    return {
+        "basis": TupleBasis(
+            FundamentalBasis(n),
+            TupleBasis(basis, basis),
+        ),
+        "data": operators.astype(np.complex128).ravel(),
+    }
+
+
 def get_noise_operators_isotropic(
-    kernel: IsotropicNoiseKernel[_B0], *, n: int | None = None
+    kernel: IsotropicNoiseKernel[_B0],
+    *,
+    n: int | None = None,
+    assert_periodic: bool = True,
 ) -> SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[int], _B0]:
     r"""
     For an isotropic noise kernel, the noise operators are independent in k space.
@@ -510,30 +555,16 @@ def get_noise_operators_isotropic(
         pad_ft_points(kernel["data"], (n,), (0,)),
         norm="forward",
     )
-
     coefficients *= kernel["basis"].n / n
 
-    # Operators e^(ik_n x_m) / sqrt(M)
-    # with k_n = 2 * np.pi * n / N, n = 0...N
-    # and x_m = m, m = 0...M
-    k = 2 * np.pi / n
-    nk_points = BasisUtil(kernel["basis"]).nk_points
-
-    operators = np.array(
-        [
-            np.exp(1j * i * k * nk_points).astype(np.complex128)
-            / np.sqrt(kernel["basis"].n)
-            for i in np.arange(0, n)
-        ]
+    operators = _get_operators_for_isotropic_noise(
+        kernel["basis"], n=n, assert_periodic=assert_periodic
     )
 
     return {
-        "basis": TupleBasis(
-            FundamentalBasis(n),
-            TupleBasis(kernel["basis"], kernel["basis"]),
-        ),
+        "basis": operators["basis"],
         "eigenvalue": coefficients,
-        "data": operators.ravel(),
+        "data": operators["data"],
     }
 
 
@@ -541,6 +572,7 @@ def get_noise_operators_real_isotropic(
     kernel: IsotropicNoiseKernel[_B0],
     *,
     n: int | None = None,
+    assert_periodic: bool = True,
 ) -> SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[int], _B0]:
     r"""
     For an isotropic noise kernel, the noise operators are independent in k space.
@@ -568,14 +600,18 @@ def get_noise_operators_real_isotropic(
     SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[int], FundamentalBasis[int]]
     """
     np.testing.assert_allclose(np.imag(kernel["data"]), 0)
-    n = cast(int, kernel["basis"].n) // 2 if n is None else n
 
-    standard_operators = get_noise_operators_isotropic(kernel, n=2 * n + 1)
+    n_operators = kernel["basis"].n if n is None else 2 * n + 1
 
-    data = standard_operators["data"].reshape(2 * n + 1, -1)
+    standard_operators = get_noise_operators_isotropic(
+        kernel, n=n_operators, assert_periodic=assert_periodic
+    )
+
+    data = standard_operators["data"].reshape(kernel["basis"].n, -1)
+    end = n_operators // 2 + 1
     # Build (e^(ikx) +- e^(-ikx)) operators
-    data[1 : 1 + n] = np.sqrt(2) * np.real(data[1 : 1 + n])
-    data[1 + n :] = np.sqrt(2) * np.imag(np.conj(data[1 + n :]))
+    data[1:end] = np.sqrt(2) * np.real(data[1:end])
+    data[end:] = np.sqrt(2) * np.imag(np.conj(data[end:]))
 
     return {
         "basis": standard_operators["basis"],
@@ -617,11 +653,7 @@ def get_noise_operators_isotropic_stacked(
     """
     shape = kernel["basis"].shape if shape is None else shape
     if assert_periodic:
-        ratio = tuple(n % s for n, s in zip(kernel["basis"].shape, shape))
-        # Is 2 * np.pi * N / s equal to A * 2 * np.pi for some integer A
-        np.testing.assert_array_almost_equal(
-            ratio, 0, err_msg="Operators requested are not periodic"
-        )
+        _assert_periodic_sample(kernel["basis"].shape, shape)
     shape_basis = fundamental_stacked_basis_from_shape(shape)
 
     coefficients = np.fft.ifftn(
@@ -664,6 +696,7 @@ def get_noise_operators_real_isotropic_stacked(
     kernel: IsotropicNoiseKernel[_TB0],
     *,
     shape: tuple[int, ...] | None = None,
+    assert_periodic: bool = True,
 ) -> SingleBasisDiagonalNoiseOperatorList[
     TupleBasisLike[*tuple[FundamentalBasis[int], ...]], _TB0
 ]:
@@ -677,10 +710,13 @@ def get_noise_operators_real_isotropic_stacked(
     ]
     """
     np.testing.assert_allclose(np.imag(kernel["data"]), 0)
-    shape = tuple(n // 2 for n in kernel["basis"].shape) if shape is None else shape
+
+    shape_operators = (
+        kernel["basis"].shape if shape is None else tuple(2 * n + 1 for n in shape)
+    )
 
     standard_operators = get_noise_operators_isotropic_stacked(
-        kernel, shape=tuple(2 * n + 1 for n in shape)
+        kernel, shape=shape_operators, assert_periodic=assert_periodic
     )
 
     data = standard_operators["data"].reshape(*standard_operators["basis"][0].shape, -1)
@@ -691,19 +727,18 @@ def get_noise_operators_real_isotropic_stacked(
         rtol=1e-8,
     )
 
-    for axis, n in enumerate(shape):
+    for axis, n in enumerate(shape_operators):
         cloned = data.copy()
         # Build (e^(ikx) +- e^(-ikx)) operators
-        cos_slice = slice_along_axis(slice(1, 1 + n), axis)
-        sin_slice = slice_along_axis(slice(1 + n, None), axis)
-        reverse_slice = slice_along_axis(slice(None, None, -1), axis)
+        end = n // 2
+        cos_slice = slice_along_axis(slice(1, end + 1), axis)
+        conj_cos_slice = slice_along_axis(slice(-1, end - 1, -1), axis)
 
-        data[cos_slice] = (
-            cloned[cos_slice] + cloned[sin_slice][reverse_slice]
-        ) / np.sqrt(2)
-        data[sin_slice] = (
-            cloned[cos_slice][reverse_slice] - cloned[sin_slice]
-        ) / np.sqrt(2)
+        sin_slice = slice_along_axis(slice(end + 1, None), axis)
+        conj_sin_slice = slice_along_axis(slice(end - 1, 0, -1), axis)
+
+        data[cos_slice] = (cloned[cos_slice] + cloned[conj_cos_slice]) / np.sqrt(2)
+        data[sin_slice] = (cloned[conj_sin_slice] - cloned[sin_slice]) / np.sqrt(2)
 
     return {
         "basis": standard_operators["basis"],
