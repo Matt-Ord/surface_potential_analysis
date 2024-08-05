@@ -296,8 +296,7 @@ def generate_uneven_wavepacket(
     offset, step = (
         (band_basis.offset, band_basis.step)
         if isinstance(band_basis, EvenlySpacedBasis)
-        else 0,
-        1,
+        else (0, 1)
     )
     subset_by_index = (
         offset,
