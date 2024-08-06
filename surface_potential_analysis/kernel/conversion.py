@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, TypeVar
 
+from surface_potential_analysis.basis.basis_like import convert_vector
 from surface_potential_analysis.kernel.kernel import (
     DiagonalNoiseKernel,
     DiagonalNoiseOperatorList,
     IsotropicNoiseKernel,
     NoiseKernel,
-    as_diagonal_kernel_from_isotropic,
     get_noise_kernel,
     get_noise_operators_diagonal,
 )
@@ -118,9 +118,9 @@ def convert_diagonal_kernel_to_basis(
 
 
 def convert_isotropic_kernel_to_basis(
-    kernel: IsotropicNoiseKernel[_B0, _B1, _B0, _B1],
-    basis: TupleBasisLike[_B2, _B3],
-) -> NoiseKernel[_B2, _B3, _B2, _B3]:
+    kernel: IsotropicNoiseKernel[_B0],
+    basis: _B2,
+) -> IsotropicNoiseKernel[_B2]:
     """Convert the kernel to the given basis.
 
     Parameters
@@ -132,5 +132,5 @@ def convert_isotropic_kernel_to_basis(
     -------
     NoiseKernel[_B0, _B1, _B0, _B1]
     """
-    kernel_diagonal = as_diagonal_kernel_from_isotropic(kernel)
-    return convert_diagonal_kernel_to_basis(kernel_diagonal, basis)
+    data = convert_vector(kernel["data"], kernel["basis"], basis)
+    return {"data": data, "basis": basis}

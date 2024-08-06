@@ -2,12 +2,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
+import numpy as np
 from scipy.constants import Boltzmann
 
+from surface_potential_analysis.basis.basis import FundamentalBasis
+from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.basis.util import get_displacements_x
 from surface_potential_analysis.kernel.kernel import (
+    NoiseKernel,
     SingleBasisNoiseOperatorList,
+    get_noise_kernel,
 )
+from surface_potential_analysis.kernel.solve import get_noise_operators_eigenvalue
 from surface_potential_analysis.operator.conversion import convert_operator_to_basis
 from surface_potential_analysis.operator.operations import (
     add_list_list,
@@ -19,8 +25,6 @@ from surface_potential_analysis.operator.operator import SingleBasisOperator
 from surface_potential_analysis.operator.operator_list import as_operator_list
 
 if TYPE_CHECKING:
-    import numpy as np
-
     from surface_potential_analysis.basis.basis import FundamentalPositionBasis
     from surface_potential_analysis.basis.basis_like import BasisLike
     from surface_potential_analysis.basis.stacked_basis import (
@@ -189,3 +193,33 @@ def get_temperature_corrected_diagonal_noise_operators(
         "data": corrected_operators["data"],
         "eigenvalue": operators["eigenvalue"],
     }
+
+
+def truncate_noise_kernel(
+    kernel: NoiseKernel[_B0, _B1, _B0, _B1], *, n: int
+) -> NoiseKernel[_B0, _B1, _B0, _B1]:
+    """
+    Given a noise kernel, retain only the first n noise operators.
+
+    Parameters
+    ----------
+    kernel : NoiseKernel[_B0, _B1, _B0, _B1]
+    n : int
+
+    Returns
+    -------
+    NoiseKernel[_B0, _B1, _B0, _B1]
+    """
+    operators = get_noise_operators_eigenvalue(kernel)
+
+    arg_sort = np.argsort(np.abs(operators["eigenvalue"]))
+    args = arg_sort[-n::]
+    return get_noise_kernel(
+        {
+            "basis": TupleBasis(FundamentalBasis(n), operators["basis"][1]),
+            "data": operators["data"]
+            .reshape(operators["basis"][0].n, -1)[args]
+            .ravel(),
+            "eigenvalue": operators["eigenvalue"][args],
+        }
+    )

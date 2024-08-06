@@ -29,7 +29,7 @@ from surface_potential_analysis.stacked_basis.conversion import (
 from surface_potential_analysis.util.interpolation import pad_ft_points
 from surface_potential_analysis.util.util import slice_along_axis
 
-_TBL0 = TypeVar("_B0", bound=TupleBasisWithLengthLike[Any, Any])
+_TBL0 = TypeVar("_TBL0", bound=TupleBasisWithLengthLike[*tuple[Any, ...]])
 
 _B0 = TypeVar("_B0", bound=BasisLike[int, int])
 _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])

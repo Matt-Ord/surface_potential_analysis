@@ -13,7 +13,7 @@ def get_cos_series_expansion(
     n_polynomials: int = 1,
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     i_ = np.arange(0, n_polynomials + 1)
-    m_ = np.arange(0, n_polynomials + 1)
+    m_ = np.arange(0, n_polynomials + 1).reshape(-1, 1)
     coefficients_matrix = (((-1) ** m_) / (factorial(2 * m_))) * (
         (i_ * d_k) ** (2 * m_)
     )

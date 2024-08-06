@@ -26,8 +26,10 @@ from surface_potential_analysis.kernel.fit import get_cos_series_expansion
 from surface_potential_analysis.kernel.kernel import (
     SingleBasisDiagonalNoiseOperatorList,
     as_diagonal_kernel_from_isotropic,
-    get_noise_operators_real_isotropic_stacked,
     truncate_diagonal_noise_operators,
+)
+from surface_potential_analysis.kernel.solve import (
+    get_noise_operators_real_isotropic_stacked,
 )
 
 if TYPE_CHECKING:
@@ -372,7 +374,7 @@ def get_gaussian_operators_explicit_taylor(
     assert basis.ndim == 1
     delta_x = np.linalg.norm(BasisUtil(basis).delta_x_stacked[0])
     k = 2 * np.pi / basis.shape[0]
-    delta_k = 2 * np.pi / delta_x
+    delta_k = (2 * np.pi / delta_x).item()
     nx_points = BasisUtil(basis).fundamental_stacked_nx_points[0]
 
     sines = np.sin(

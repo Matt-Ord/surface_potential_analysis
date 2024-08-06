@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING,
     Any,
     Generic,
     Iterable,
@@ -15,7 +14,6 @@ import numpy as np
 
 from surface_potential_analysis.basis.basis import (
     FundamentalBasis,
-    FundamentalPositionBasis,
 )
 from surface_potential_analysis.basis.basis_like import BasisLike
 from surface_potential_analysis.basis.stacked_basis import (
@@ -24,10 +22,6 @@ from surface_potential_analysis.basis.stacked_basis import (
     TupleBasisLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
-from surface_potential_analysis.kernel.conversion import (
-    convert_isotropic_kernel_to_basis,
-)
-from surface_potential_analysis.kernel.solve import get_noise_operators_eigenvalue
 from surface_potential_analysis.operator.operator import (
     DiagonalOperator,
     Operator,
@@ -42,9 +36,6 @@ from surface_potential_analysis.stacked_basis.build import (
     fundamental_stacked_basis_from_shape,
 )
 from surface_potential_analysis.util.interpolation import pad_ft_points
-
-if TYPE_CHECKING:
-    from surface_potential_analysis.state_vector.eigenstate_list import ValueList
 
 _B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
 _B1_co = TypeVar("_B1_co", bound=BasisLike[Any, Any], covariant=True)
@@ -672,49 +663,3 @@ def truncate_diagonal_noise_kernel(
             "eigenvalue": operators["eigenvalue"][args],
         }
     )
-
-
-def truncate_noise_kernel(
-    kernel: NoiseKernel[_B0, _B1, _B0, _B1], *, n: int
-) -> NoiseKernel[_B0, _B1, _B0, _B1]:
-    """
-    Given a noise kernel, retain only the first n noise operators.
-
-    Parameters
-    ----------
-    kernel : NoiseKernel[_B0, _B1, _B0, _B1]
-    n : int
-
-    Returns
-    -------
-    NoiseKernel[_B0, _B1, _B0, _B1]
-    """
-    operators = get_noise_operators_eigenvalue(kernel)
-
-    arg_sort = np.argsort(np.abs(operators["eigenvalue"]))
-    args = arg_sort[-n::]
-    return get_noise_kernel(
-        {
-            "basis": TupleBasis(FundamentalBasis(n), operators["basis"][1]),
-            "data": operators["data"]
-            .reshape(operators["basis"][0].n, -1)[args]
-            .ravel(),
-            "eigenvalue": operators["eigenvalue"][args],
-        }
-    )
-
-
-def get_noise_kernel_percentage_error(
-    true_kernel: IsotropicNoiseKernel[
-        TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
-    ],
-    fitted_kernel: IsotropicNoiseKernel[
-        TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
-    ],
-) -> ValueList[TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]]:
-    true_data = true_kernel["data"].reshape(true_kernel["basis"].shape)
-    converted = convert_isotropic_kernel_to_basis(fitted_kernel, true_kernel["basis"])
-    return {
-        "basis": true_kernel["basis"],
-        "data": (converted["data"] - true_data) / true_data,
-    }
