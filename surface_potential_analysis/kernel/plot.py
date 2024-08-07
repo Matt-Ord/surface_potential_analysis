@@ -452,16 +452,18 @@ def _get_noise_kernel_percentage_error(
     converted = convert_isotropic_kernel_to_basis(fitted_kernel, true_kernel["basis"])
     return {
         "basis": true_kernel["basis"],
-        "data": (converted["data"] - true_data) / true_data,
+        "data": (converted["data"] - true_data) * 100 / true_data,
     }
 
 
 def plot_isotropic_kernel_error(
     true_kernel: IsotropicNoiseKernel[StackedBasisWithVolumeLike[Any, Any, Any]],
     fitted_kernel: IsotropicNoiseKernel[StackedBasisWithVolumeLike[Any, Any, Any]],
+    *,
+    ax: Axes | None = None,
 ) -> tuple[Figure, Axes, Line2D]:
     """Compare the errors between true kernel and fitted kernel."""
     percentage_error = _get_noise_kernel_percentage_error(true_kernel, fitted_kernel)[
         "data"
     ]
-    return plot_data_1d_x(true_kernel["basis"], percentage_error, measure="real")
+    return plot_data_1d_x(true_kernel["basis"], percentage_error, ax=ax, measure="real")
