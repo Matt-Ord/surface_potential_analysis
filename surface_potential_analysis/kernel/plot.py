@@ -22,8 +22,10 @@ from surface_potential_analysis.kernel.kernel import (
     SingleBasisDiagonalNoiseKernel,
     SingleBasisDiagonalNoiseOperatorList,
     as_diagonal_noise_operators,
-    get_noise_operators_diagonal,
     truncate_diagonal_noise_operators,
+)
+from surface_potential_analysis.kernel.solve import (
+    get_noise_operators_diagonal_eigenvalue,
 )
 from surface_potential_analysis.operator.operator_list import (
     select_operator_diagonal,
@@ -170,7 +172,7 @@ def plot_diagonal_kernel_truncation_error(
     ax: Axes | None = None,
     scale: Scale = "linear",
 ) -> tuple[Figure, Axes, Line2D]:
-    operators = get_noise_operators_diagonal(kernel)
+    operators = get_noise_operators_diagonal_eigenvalue(kernel)
     eigenvalues = np.sort(np.abs(operators["eigenvalue"]))
     cumulative = np.empty(eigenvalues.size + 1)
     cumulative[0] = 0
@@ -344,7 +346,7 @@ def plot_noise_kernel_single_sample(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    operators = get_noise_operators_diagonal(kernel)
+    operators = get_noise_operators_diagonal_eigenvalue(kernel)
 
     return plot_diagonal_noise_operators_single_sample(
         operators,

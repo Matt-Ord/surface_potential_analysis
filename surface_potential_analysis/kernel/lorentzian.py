@@ -9,7 +9,10 @@ from surface_potential_analysis.basis.basis import FundamentalBasis
 from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.kernel.build import build_isotropic_kernel_from_function
-from surface_potential_analysis.kernel.fit import get_cos_series_expansion
+from surface_potential_analysis.kernel.fit import (
+    get_trig_series_coefficients,
+    get_trig_series_data,
+)
 
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis import FundamentalPositionBasis
@@ -74,6 +77,16 @@ def get_lorentzian_isotropic_noise_kernel(
     return build_isotropic_kernel_from_function(basis, fn)
 
 
+def get_lorentzian_explicit_taylor_coefficients(
+    a: float,
+    lambda_: float,
+    *,
+    n: int = 1,
+) -> np.ndarray[Any, np.dtype[np.float64]]:
+    i = np.arange(0, n + 1)
+    return (a / (lambda_**2)) * ((-1 / (lambda_**2)) ** i)
+
+
 def get_lorentzian_operators_explicit_taylor(
     a: float,
     lambda_: float,
@@ -102,29 +115,22 @@ def get_lorentzian_operators_explicit_taylor(
     assert basis.ndim == 1
     delta_x = np.linalg.norm(BasisUtil(basis).delta_x_stacked[0])
     k = 2 * np.pi / basis.shape[0]
-    delta_k = 2 * np.pi / delta_x
+    delta_k = (2 * np.pi / delta_x).item()
     nx_points = BasisUtil(basis).fundamental_stacked_nx_points[0]
 
-    sines = np.sin(
-        np.arange(1, n + 1)[:, np.newaxis] * k * nx_points[np.newaxis, :]
-    ).astype(np.complex128)
-    coses = np.cos(
-        np.arange(0, n + 1)[:, np.newaxis] * k * nx_points[np.newaxis, :]
-    ).astype(np.complex128)
-    data = np.append(coses, sines)
+    data = get_trig_series_data(k, nx_points, n=n)
 
-    i_ = np.arange(0, n + 1)
-    true_noise_coeff = (a / (lambda_**2)) * ((-1 / (lambda_**2)) ** i_)
+    true_noise_coefficients = get_lorentzian_explicit_taylor_coefficients(
+        a, lambda_, n=n
+    )
     # coefficients for the Taylor expansion of the trig terms
-    coefficients = get_cos_series_expansion(
-        true_noise_coeff=true_noise_coeff,
+    coefficients = get_trig_series_coefficients(
+        polynomial_coefficients=true_noise_coefficients,
         d_k=delta_k,
-        n_polynomials=n,
+        n_coses=n,
     )
     return {
         "basis": TupleBasis(FundamentalBasis(2 * n + 1), TupleBasis(basis, basis)),
         "data": data.astype(np.complex128),
-        "eigenvalue": (np.concatenate([coefficients, coefficients[1:]])).astype(
-            np.complex128
-        ),
+        "eigenvalue": coefficients.astype(np.complex128),
     }

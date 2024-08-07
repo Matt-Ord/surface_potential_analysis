@@ -10,6 +10,7 @@ from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.basis.util import get_displacements_x
 from surface_potential_analysis.kernel.kernel import (
     NoiseKernel,
+    NoiseOperatorList,
     SingleBasisNoiseOperatorList,
     get_noise_kernel,
 )
@@ -195,8 +196,15 @@ def get_temperature_corrected_diagonal_noise_operators(
     }
 
 
+def truncate_noise_operator_list(
+    operators: NoiseOperatorList[FundamentalBasis[int], _B0, _B1], *, n: int | slice
+) -> np.ndarray[Any, np.dtype[np.intp]]:
+    sorted_args = np.argsort(np.abs(operators["eigenvalue"]))
+    return sorted_args[-n::] if isinstance(n, int) else sorted_args[::-1][n]
+
+
 def truncate_noise_kernel(
-    kernel: NoiseKernel[_B0, _B1, _B0, _B1], *, n: int
+    kernel: NoiseKernel[_B0, _B1, _B0, _B1], *, n: int | slice
 ) -> NoiseKernel[_B0, _B1, _B0, _B1]:
     """
     Given a noise kernel, retain only the first n noise operators.
@@ -212,11 +220,10 @@ def truncate_noise_kernel(
     """
     operators = get_noise_operators_eigenvalue(kernel)
 
-    arg_sort = np.argsort(np.abs(operators["eigenvalue"]))
-    args = arg_sort[-n::]
+    args = truncate_noise_operator_list(operators, n=n)
     return get_noise_kernel(
         {
-            "basis": TupleBasis(FundamentalBasis(n), operators["basis"][1]),
+            "basis": TupleBasis(FundamentalBasis(args.size), operators["basis"][1]),
             "data": operators["data"]
             .reshape(operators["basis"][0].n, -1)[args]
             .ravel(),

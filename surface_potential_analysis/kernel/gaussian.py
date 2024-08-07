@@ -22,14 +22,17 @@ from surface_potential_analysis.kernel.build import (
 from surface_potential_analysis.kernel.conversion import (
     convert_noise_operator_list_to_basis,
 )
-from surface_potential_analysis.kernel.fit import get_cos_series_expansion
+from surface_potential_analysis.kernel.fit import (
+    get_trig_series_coefficients,
+    get_trig_series_data,
+)
 from surface_potential_analysis.kernel.kernel import (
     SingleBasisDiagonalNoiseOperatorList,
     as_diagonal_kernel_from_isotropic,
     truncate_diagonal_noise_operators,
 )
 from surface_potential_analysis.kernel.solve import (
-    get_noise_operators_real_isotropic_stacked,
+    get_noise_operators_real_isotropic_stacked_fft,
 )
 
 if TYPE_CHECKING:
@@ -248,7 +251,7 @@ def get_gaussian_noise_operators(
     """
     kernel = get_gaussian_isotropic_noise_kernel(basis, a, lambda_)
 
-    operators = get_noise_operators_real_isotropic_stacked(kernel)
+    operators = get_noise_operators_real_isotropic_stacked_fft(kernel)
     truncation = range(operators["basis"][0].n) if truncation is None else truncation
     return truncate_diagonal_noise_operators(operators, truncation=truncation)
 
@@ -352,6 +355,16 @@ def get_temperature_corrected_effective_gaussian_noise_operators(
     )
 
 
+def get_gaussian_explicit_taylor_coefficients(
+    a: float,
+    lambda_: float,
+    *,
+    n: int = 1,
+) -> np.ndarray[Any, np.dtype[np.float64]]:
+    i = np.arange(0, n + 1)
+    return (a**2) * (1 / factorial(i)) * ((-1 / (2 * lambda_**2)) ** i)
+
+
 def get_gaussian_operators_explicit_taylor(
     a: float,
     lambda_: float,
@@ -377,31 +390,20 @@ def get_gaussian_operators_explicit_taylor(
     delta_k = (2 * np.pi / delta_x).item()
     nx_points = BasisUtil(basis).fundamental_stacked_nx_points[0]
 
-    sines = np.sin(
-        np.arange(1, n + 1)[:, np.newaxis] * k * nx_points[np.newaxis, :]
-    ).astype(np.complex128)
-    coses = np.cos(
-        np.arange(0, n + 1)[:, np.newaxis] * k * nx_points[np.newaxis, :]
-    ).astype(np.complex128)
-    data = np.append(coses, sines)
+    data = get_trig_series_data(k, nx_points, n=n)
 
     # expand gaussian and define array containing coefficients for each term in the polynomial
     # coefficients for the explicit Taylor expansion of the gaussian noise
-    i_ = np.arange(0, n + 1)
-    polynomial_coefficients = (
-        (a**2) * (1 / factorial(i_)) * ((-1 / (2 * lambda_**2)) ** i_)
-    )
+    polynomial_coefficients = get_gaussian_explicit_taylor_coefficients(a, lambda_, n=n)
     # coefficients for the Taylor expansion of the trig terms
-    coefficients = get_cos_series_expansion(
-        true_noise_coeff=polynomial_coefficients,
+    coefficients = get_trig_series_coefficients(
+        polynomial_coefficients=polynomial_coefficients,
         d_k=delta_k,
-        n_polynomials=n,
+        n_coses=n,
     )
 
     return {
         "basis": TupleBasis(FundamentalBasis(2 * n + 1), TupleBasis(basis, basis)),
         "data": data.astype(np.complex128),
-        "eigenvalue": (np.concatenate([coefficients, coefficients[1:]])).astype(
-            np.complex128
-        ),
+        "eigenvalue": coefficients.astype(np.complex128),
     }
