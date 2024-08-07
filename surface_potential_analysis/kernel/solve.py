@@ -221,6 +221,7 @@ def get_noise_operators_stacked_taylor_expansion(
         deg=np.arange(0, 2 * n + 1, 2),
         w=weight,
         domain=[-np.min(displacements), np.min(displacements)],
+        window=[-np.min(displacements), np.min(displacements)],
     )
     noise_coefficients = noise_polynomial.convert().coef[::2]
     operator_coefficients = get_trig_series_coefficients(
