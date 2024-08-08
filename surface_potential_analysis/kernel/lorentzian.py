@@ -3,19 +3,22 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Literal, TypeVarTuple
 
 import numpy as np
-from scipy.constants import Boltzmann, hbar
+from scipy.constants import Boltzmann, hbar  # type: ignore no stub
 
-from surface_potential_analysis.basis.basis import FundamentalBasis
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.kernel.build import build_isotropic_kernel_from_function
-from surface_potential_analysis.kernel.fit import (
-    get_trig_series_coefficients,
-    get_trig_series_data,
+from surface_potential_analysis.kernel.solve import (
+    get_noise_operators_explicit_taylor_expansion,
+)
+from surface_potential_analysis.stacked_basis.conversion import (
+    stacked_basis_as_fundamental_position_basis,
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis import FundamentalPositionBasis
+    from surface_potential_analysis.basis.basis import (
+        FundamentalBasis,
+        FundamentalPositionBasis,
+    )
     from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisWithVolumeLike,
         TupleBasisLike,
@@ -69,22 +72,39 @@ def get_lorentzian_isotropic_noise_kernel(
 ) -> IsotropicNoiseKernel[
     TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
 ]:
+    """Get an isotropic noise kernel for a lorentzian correllation.
+
+    beta(x,x') = a**2 * lambda_**2 / ((x-x')**2 + lambda_**2)
+
+    Parameters
+    ----------
+    basis : TupleBasisWithLengthLike[*_B0s]
+    a : float
+    lambda_ : float
+
+    Returns
+    -------
+    IsotropicNoiseKernel[
+    TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    ]
+    """
+
     def fn(
         displacements: np.ndarray[Any, np.dtype[np.float64]],
     ) -> np.ndarray[Any, np.dtype[np.complex128]]:
-        return a / (displacements**2 + lambda_**2).astype(np.complex128)
+        return a**2 * lambda_**2 / (displacements**2 + lambda_**2).astype(np.complex128)
 
     return build_isotropic_kernel_from_function(basis, fn)
 
 
-def get_lorentzian_explicit_taylor_coefficients(
+def _get_explicit_taylor_coefficients_lorentzian(
     a: float,
     lambda_: float,
     *,
-    n: int = 1,
+    n_terms: int = 1,
 ) -> np.ndarray[Any, np.dtype[np.float64]]:
-    i = np.arange(0, n + 1)
-    return (a / (lambda_**2)) * ((-1 / (lambda_**2)) ** i)
+    i = np.arange(0, n_terms + 1)
+    return a**2 * ((-1 / (lambda_**2)) ** i)
 
 
 def get_lorentzian_operators_explicit_taylor(
@@ -92,7 +112,7 @@ def get_lorentzian_operators_explicit_taylor(
     lambda_: float,
     basis: TupleBasisWithLengthLike[FundamentalPositionBasis[Any, Literal[1]]],
     *,
-    n: int = 1,
+    n_terms: int | None = None,
 ) -> SingleBasisDiagonalNoiseOperatorList[
     FundamentalBasis[int],
     TupleBasisWithLengthLike[FundamentalPositionBasis[Any, Literal[1]]],
@@ -113,24 +133,18 @@ def get_lorentzian_operators_explicit_taylor(
     """
     # currently only support 1D
     assert basis.ndim == 1
+    basis_x = stacked_basis_as_fundamental_position_basis(basis)
+    n_terms = (basis_x[0].n // 2) if n_terms is None else n_terms
+
+    # expand gaussian and define array containing coefficients for each term in the polynomial
+    # coefficients for the explicit Taylor expansion of the gaussian noise
+    # Normalize lambda
     delta_x = np.linalg.norm(BasisUtil(basis).delta_x_stacked[0])
-    k = 2 * np.pi / basis.shape[0]
-    delta_k = (2 * np.pi / delta_x).item()
-    nx_points = BasisUtil(basis).fundamental_stacked_nx_points[0]
-
-    data = get_trig_series_data(k, nx_points, n=n)
-
-    true_noise_coefficients = get_lorentzian_explicit_taylor_coefficients(
-        a, lambda_, n=n
+    normalized_lambda = 2 * np.pi * lambda_ / delta_x
+    polynomial_coefficients = _get_explicit_taylor_coefficients_lorentzian(
+        a, normalized_lambda.item(), n_terms=n_terms
     )
-    # coefficients for the Taylor expansion of the trig terms
-    coefficients = get_trig_series_coefficients(
-        polynomial_coefficients=true_noise_coefficients,
-        d_k=delta_k,
-        n_coses=n,
+
+    return get_noise_operators_explicit_taylor_expansion(
+        basis_x, polynomial_coefficients, n_terms=n_terms
     )
-    return {
-        "basis": TupleBasis(FundamentalBasis(2 * n + 1), TupleBasis(basis, basis)),
-        "data": data.astype(np.complex128),
-        "eigenvalue": coefficients.astype(np.complex128),
-    }

@@ -133,7 +133,7 @@ def stacked_basis_as_fundamental_momentum_basis(
 @overload
 def stacked_basis_as_fundamental_position_basis(
     basis: TupleBasisWithLengthLike[_BL0],
-) -> TupleBasisWithLengthLike[FundamentalPositionBasis[Any, Literal[1]]]:
+) -> TupleBasisWithLengthLike[FundamentalPositionBasis[int, Literal[1]]]:
     ...
 
 
@@ -141,8 +141,8 @@ def stacked_basis_as_fundamental_position_basis(
 def stacked_basis_as_fundamental_position_basis(
     basis: TupleBasisWithLengthLike[_BL0, _BL0],
 ) -> TupleBasisWithLengthLike[
-    FundamentalPositionBasis[Any, Literal[2]],
-    FundamentalPositionBasis[Any, Literal[2]],
+    FundamentalPositionBasis[int, Literal[2]],
+    FundamentalPositionBasis[int, Literal[2]],
 ]:
     ...
 
@@ -151,9 +151,9 @@ def stacked_basis_as_fundamental_position_basis(
 def stacked_basis_as_fundamental_position_basis(
     basis: TupleBasisWithLengthLike[_BL0, _BL0, _BL0],
 ) -> TupleBasisWithLengthLike[
-    FundamentalPositionBasis[Any, Literal[3]],
-    FundamentalPositionBasis[Any, Literal[3]],
-    FundamentalPositionBasis[Any, Literal[3]],
+    FundamentalPositionBasis[int, Literal[3]],
+    FundamentalPositionBasis[int, Literal[3]],
+    FundamentalPositionBasis[int, Literal[3]],
 ]:
     ...
 
@@ -161,7 +161,7 @@ def stacked_basis_as_fundamental_position_basis(
 @overload
 def stacked_basis_as_fundamental_position_basis(
     basis: StackedBasisWithVolumeLike[Any, Any, Any],
-) -> TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]:
+) -> TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[int, Any], ...]]:
     ...
 
 

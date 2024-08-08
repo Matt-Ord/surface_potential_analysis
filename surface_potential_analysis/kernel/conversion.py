@@ -3,13 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from surface_potential_analysis.basis.basis_like import convert_vector
-from surface_potential_analysis.kernel.kernel import (
-    DiagonalNoiseKernel,
-    DiagonalNoiseOperatorList,
-    IsotropicNoiseKernel,
-    NoiseKernel,
-    get_noise_kernel,
-)
+from surface_potential_analysis.kernel.kernel import get_full_kernel_from_operators
 from surface_potential_analysis.kernel.solve import (
     get_noise_operators_diagonal_eigenvalue,
     get_noise_operators_eigenvalue,
@@ -23,6 +17,10 @@ if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis_like import BasisLike
     from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.kernel.kernel import (
+        DiagonalNoiseKernel,
+        DiagonalNoiseOperatorList,
+        IsotropicNoiseKernel,
+        NoiseKernel,
         NoiseOperatorList,
     )
 
@@ -96,7 +94,7 @@ def convert_kernel_to_basis(
     """
     operators = get_noise_operators_eigenvalue(kernel)
     converted = convert_noise_operator_list_to_basis(operators, basis)
-    return get_noise_kernel(converted)
+    return get_full_kernel_from_operators(converted)
 
 
 def convert_diagonal_kernel_to_basis(
@@ -116,7 +114,7 @@ def convert_diagonal_kernel_to_basis(
     """
     operators = get_noise_operators_diagonal_eigenvalue(kernel)
     converted = convert_diagonal_noise_operator_list_to_basis(operators, basis)
-    return get_noise_kernel(converted)
+    return get_full_kernel_from_operators(converted)
 
 
 def convert_isotropic_kernel_to_basis(

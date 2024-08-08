@@ -3,40 +3,37 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Iterable, Literal, TypeVar
 
 import numpy as np
-from scipy.constants import Boltzmann, hbar
-from scipy.special import factorial
+from scipy.constants import Boltzmann, hbar  # type:ignore bad stb file
+from scipy.special import factorial  # type:ignore bad stb file
 
-from surface_potential_analysis.basis.basis import (
-    FundamentalBasis,
-)
 from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisWithVolumeLike,
-    TupleBasis,
     TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.kernel.build import (
     build_isotropic_kernel_from_function,
     get_temperature_corrected_diagonal_noise_operators,
+    truncate_diagonal_noise_operator_list,
 )
 from surface_potential_analysis.kernel.conversion import (
     convert_noise_operator_list_to_basis,
 )
-from surface_potential_analysis.kernel.fit import (
-    get_trig_series_coefficients,
-    get_trig_series_data,
-)
 from surface_potential_analysis.kernel.kernel import (
     SingleBasisDiagonalNoiseOperatorList,
     as_diagonal_kernel_from_isotropic,
-    truncate_diagonal_noise_operators,
 )
 from surface_potential_analysis.kernel.solve import (
+    get_noise_operators_explicit_taylor_expansion,
     get_noise_operators_real_isotropic_stacked_fft,
+)
+from surface_potential_analysis.stacked_basis.conversion import (
+    stacked_basis_as_fundamental_position_basis,
 )
 
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis import (
+        FundamentalBasis,
         FundamentalPositionBasis,
     )
     from surface_potential_analysis.basis.stacked_basis import (
@@ -253,7 +250,7 @@ def get_gaussian_noise_operators(
 
     operators = get_noise_operators_real_isotropic_stacked_fft(kernel)
     truncation = range(operators["basis"][0].n) if truncation is None else truncation
-    return truncate_diagonal_noise_operators(operators, truncation=truncation)
+    return truncate_diagonal_noise_operator_list(operators, truncation=truncation)
 
 
 def get_effective_gaussian_noise_operators(
@@ -355,22 +352,22 @@ def get_temperature_corrected_effective_gaussian_noise_operators(
     )
 
 
-def get_gaussian_explicit_taylor_coefficients(
+def _get_explicit_taylor_coefficients_gaussian(
     a: float,
     lambda_: float,
     *,
-    n: int = 1,
+    n_terms: int = 1,
 ) -> np.ndarray[Any, np.dtype[np.float64]]:
-    i = np.arange(0, n + 1)
-    return (a**2) * (1 / factorial(i)) * ((-1 / (2 * lambda_**2)) ** i)
+    i = np.arange(0, n_terms)
+    return (a**2 / factorial(i)) * ((-1 / (2 * lambda_**2)) ** i)
 
 
 def get_gaussian_operators_explicit_taylor(
+    basis: TupleBasisWithLengthLike[FundamentalPositionBasis[Any, Literal[1]]],
     a: float,
     lambda_: float,
-    basis: TupleBasisWithLengthLike[FundamentalPositionBasis[Any, Literal[1]]],
     *,
-    n: int = 1,
+    n_terms: int | None = None,
 ) -> SingleBasisDiagonalNoiseOperatorList[
     FundamentalBasis[int],
     TupleBasisWithLengthLike[FundamentalPositionBasis[Any, Literal[1]]],
@@ -385,25 +382,18 @@ def get_gaussian_operators_explicit_taylor(
     """
     # currently only support 1D
     assert basis.ndim == 1
-    delta_x = np.linalg.norm(BasisUtil(basis).delta_x_stacked[0])
-    k = 2 * np.pi / basis.shape[0]
-    delta_k = (2 * np.pi / delta_x).item()
-    nx_points = BasisUtil(basis).fundamental_stacked_nx_points[0]
-
-    data = get_trig_series_data(k, nx_points, n=n)
+    basis_x = stacked_basis_as_fundamental_position_basis(basis)
+    n_terms = (basis_x[0].n // 2) if n_terms is None else n_terms
 
     # expand gaussian and define array containing coefficients for each term in the polynomial
     # coefficients for the explicit Taylor expansion of the gaussian noise
-    polynomial_coefficients = get_gaussian_explicit_taylor_coefficients(a, lambda_, n=n)
-    # coefficients for the Taylor expansion of the trig terms
-    coefficients = get_trig_series_coefficients(
-        polynomial_coefficients=polynomial_coefficients,
-        d_k=delta_k,
-        n_coses=n,
+    # Normalize lambda
+    delta_x = np.linalg.norm(BasisUtil(basis).delta_x_stacked[0])
+    normalized_lambda = 2 * np.pi * lambda_ / delta_x
+    polynomial_coefficients = _get_explicit_taylor_coefficients_gaussian(
+        a, normalized_lambda.item(), n_terms=n_terms
     )
 
-    return {
-        "basis": TupleBasis(FundamentalBasis(2 * n + 1), TupleBasis(basis, basis)),
-        "data": data.astype(np.complex128),
-        "eigenvalue": coefficients.astype(np.complex128),
-    }
+    return get_noise_operators_explicit_taylor_expansion(
+        basis_x, polynomial_coefficients, n_terms=n_terms
+    )
