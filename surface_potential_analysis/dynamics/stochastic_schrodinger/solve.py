@@ -32,10 +32,17 @@ from surface_potential_analysis.state_vector.state_vector_list import (
     get_state_vector,
     get_weighted_state_vector,
 )
+from surface_potential_analysis.util.decorators import timed
 
 try:
     from sse_solver_py import SimulationConfig, SSEMethod, solve_sse, solve_sse_banded
+
 except ImportError:
+    import warnings
+
+    warnings.warn(
+        "sse_solver_py is not installed, unable to use any solvers", stacklevel=1
+    )
     # if sse_solver_py is not installed, create a dummy functions
 
     def solve_sse(  # noqa: D103
@@ -409,7 +416,12 @@ def _get_operator_diagonals(
     operator: list[list[complex]],
 ) -> list[list[complex]]:
     return [
-        np.diag(np.roll(operator, shift=-i, axis=0)).tolist()
+        np.concatenate(
+            [
+                np.diag(operator, k=-i),
+                np.diag(operator, k=len(operator) - i),
+            ]
+        ).tolist()
         for i in range(len(operator))
     ]
 
@@ -469,6 +481,7 @@ def solve_stochastic_schrodinger_equation_rust_banded(
     ...
 
 
+@timed
 def solve_stochastic_schrodinger_equation_rust_banded(  # type: ignore bad overload
     initial_state: StateVector[_B2],
     times: _AX0Inv,
