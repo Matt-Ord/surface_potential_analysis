@@ -14,12 +14,14 @@ import numpy as np
 
 from surface_potential_analysis.basis.basis import (
     FundamentalBasis,
+    FundamentalPositionBasis,
 )
 from surface_potential_analysis.basis.basis_like import BasisLike
 from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisLike,
+    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.operator.operator import (
@@ -496,3 +498,17 @@ def truncate_diagonal_noise_operators(
         "data": data,
         "eigenvalue": operators["eigenvalue"][args],
     }
+
+
+def get_isotropic_noise_kernel(
+    operators: NoiseOperatorList[
+        TupleBasis[*tuple[FundamentalBasis[int], ...]],
+        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    ],
+) -> IsotropicNoiseKernel[
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
+]:
+    return as_isotropic_kernel(
+        get_diagonal_noise_kernel(as_diagonal_noise_operators(operators)),
+    )
