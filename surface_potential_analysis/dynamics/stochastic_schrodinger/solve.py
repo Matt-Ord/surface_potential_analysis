@@ -36,7 +36,7 @@ from surface_potential_analysis.state_vector.state_vector_list import (
 from surface_potential_analysis.util.decorators import timed
 
 try:
-    from sse_solver_py import SimulationConfig, SSEMethod, solve_sse, solve_sse_banded
+    from sse_solver_py import SimulationConfig, solve_sse, solve_sse_banded
 
 except ImportError:
     import warnings
@@ -492,7 +492,7 @@ def solve_stochastic_schrodinger_equation_rust_banded(  # type: ignore bad overl
     hamiltonian: SingleBasisOperator[_B1],
     collapse_operators: list[Operator[_B3, _B4]] | None = None,
     *,
-    n_trajectories: _L1Inv | Literal[1] = 1,
+    n_trajectories: int = 1,
     n_realizations: int = 1,
     r_threshold: float = 1e-8,
     method: SSEMethod = "Euler",
