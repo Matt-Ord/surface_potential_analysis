@@ -167,7 +167,12 @@ class TupleBasisWithLengthLike(
 
 
 def _convert_tuple_basis_vector(
-    vector: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+    vector: np.ndarray[
+        _S0Inv,
+        np.dtype[np.complex128]
+        | np.dtype[np.float64]
+        | np.dtype[np.float64 | np.complex128],
+    ],
     initial_basis: TupleBasisLike[*tuple[BasisLike[Any, Any], ...]],
     final_basis: TupleBasisLike[*tuple[BasisLike[Any, Any], ...]],
     axis: int = -1,
@@ -210,7 +215,12 @@ class TupleBasis(TupleBasisWithLengthLike[Unpack[_B0]]):
 
     def __from_fundamental__(
         self: TupleBasisLike[*tuple[BasisLike[Any, Any], ...]],
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         basis = TupleBasis[*tuple[Any, ...]](
@@ -220,7 +230,12 @@ class TupleBasis(TupleBasisWithLengthLike[Unpack[_B0]]):
 
     def __into_fundamental__(
         self: TupleBasisLike[*tuple[BasisLike[Any, Any], ...]],
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         basis = TupleBasis[*tuple[Any, ...]](
@@ -230,7 +245,12 @@ class TupleBasis(TupleBasisWithLengthLike[Unpack[_B0]]):
 
     def __into_transformed__(
         self: TupleBasisLike[*tuple[BasisLike[Any, Any], ...]],
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         basis = TupleBasis[*tuple[Any, ...]](
@@ -240,7 +260,12 @@ class TupleBasis(TupleBasisWithLengthLike[Unpack[_B0]]):
 
     def __from_transformed__(
         self: TupleBasisLike[*tuple[BasisLike[Any, Any], ...]],
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         basis = TupleBasis[*tuple[Any, ...]](
@@ -250,7 +275,12 @@ class TupleBasis(TupleBasisWithLengthLike[Unpack[_B0]]):
 
     def __convert_vector_into__(
         self: TupleBasisLike[*tuple[BasisLike[Any, Any], ...]],
-        vector: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vector: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         basis: BasisLike[Any, Any],
         axis: int = -1,
     ) -> np.ndarray[Any, np.dtype[np.complex128]]:

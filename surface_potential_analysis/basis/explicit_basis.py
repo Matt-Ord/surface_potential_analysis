@@ -88,7 +88,12 @@ class ExplicitBasis(BasisLike[Any, Any], Generic[_B0, _B1]):
 
     def __from_state_basis__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         """Given a set of vectors convert them from state basis into this basis along the given axis.
@@ -110,7 +115,12 @@ class ExplicitBasis(BasisLike[Any, Any], Generic[_B0, _B1]):
 
     def __into_state_basis__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         """Given a set of vectors convert them to state basis along the given axis.
@@ -130,7 +140,12 @@ class ExplicitBasis(BasisLike[Any, Any], Generic[_B0, _B1]):
 
     def __from_fundamental__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         # The vectors in self.vectors["basis"][1] basis
@@ -139,7 +154,12 @@ class ExplicitBasis(BasisLike[Any, Any], Generic[_B0, _B1]):
 
     def __into_fundamental__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         vectors_in_basis = self.__into_state_basis__(vectors, axis)
@@ -147,7 +167,12 @@ class ExplicitBasis(BasisLike[Any, Any], Generic[_B0, _B1]):
 
     def __from_transformed__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         # The vectors in self.vectors["basis"][1] basis
@@ -156,7 +181,12 @@ class ExplicitBasis(BasisLike[Any, Any], Generic[_B0, _B1]):
 
     def __into_transformed__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         vectors_in_basis = self.__into_state_basis__(vectors, axis)
@@ -164,7 +194,12 @@ class ExplicitBasis(BasisLike[Any, Any], Generic[_B0, _B1]):
 
     def __convert_vector_into__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         basis: BasisLike[Any, Any],
         axis: int = -1,
     ) -> np.ndarray[Any, np.dtype[np.complex128]]:

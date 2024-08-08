@@ -12,9 +12,6 @@ from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.state_vector.conversion import (
     convert_state_vector_list_to_basis,
 )
-from surface_potential_analysis.types import (
-    SingleFlatIndexLike,
-)
 from surface_potential_analysis.util.util import get_data_in_axes
 
 if TYPE_CHECKING:

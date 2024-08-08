@@ -9,6 +9,7 @@ import numpy as np
 from surface_potential_analysis.basis.basis import (
     FundamentalBasis,
     FundamentalPositionBasis,
+    TruncatedBasis,
 )
 from surface_potential_analysis.basis.basis_like import (
     AxisVector,
@@ -66,7 +67,9 @@ _ND0Inv = TypeVar("_ND0Inv", bound=int)
 
 
 _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-_ESB0 = TypeVar("_ESB0", bound=EvenlySpacedBasis[Any, Any, Any])
+_TRB0 = TypeVar(
+    "_TRB0", bound=TruncatedBasis[Any, Any] | EvenlySpacedBasis[Any, Any, Any]
+)
 _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
 
 _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
@@ -270,8 +273,8 @@ def generate_uneven_wavepacket(
         SingleBasisOperator[_SB1],
     ],
     list_basis: _BF0,
-    band_basis: _ESB0,
-) -> EigenstateList[TupleBasis[_ESB0, _BF0], _SB1]:
+    band_basis: _TRB0,
+) -> EigenstateList[TupleBasis[_TRB0, _BF0], _SB1]:
     """
     Generate a wavepacket with the given number of samples.
 
@@ -290,9 +293,15 @@ def generate_uneven_wavepacket(
     assert list_basis.ndim == h["basis"][0].ndim
     basis_size = h["basis"][0].n
 
+    offset, step = (
+        (band_basis.offset, band_basis.step)
+        if isinstance(band_basis, EvenlySpacedBasis)
+        else 0,
+        1,
+    )
     subset_by_index = (
-        band_basis.offset,
-        band_basis.offset + band_basis.step * (band_basis.n - 1),
+        offset,
+        offset + step * (band_basis.n - 1),
     )
 
     n_samples = list_basis.n
@@ -304,7 +313,7 @@ def generate_uneven_wavepacket(
         eigenstates = calculate_eigenvectors_hermitian(h, subset_by_index)
 
         for b in range(band_basis.n):
-            band_idx = band_basis.step * b
+            band_idx = step * b
             vectors[b][i] = eigenstates["data"].reshape(-1, basis_size)[band_idx]
             energies[b][i] = eigenstates["eigenvalue"][band_idx]
 
@@ -321,8 +330,8 @@ def generate_wavepacket(
         SingleBasisOperator[_SB1],
     ],
     list_basis: _SB0,
-    band_basis: _ESB0,
-) -> BlochWavefunctionListWithEigenvaluesList[_ESB0, _SB0, _SB1]:
+    band_basis: _TRB0,
+) -> BlochWavefunctionListWithEigenvaluesList[_TRB0, _SB0, _SB1]:
     """
     Generate a wavepacket with the given number of samples.
 

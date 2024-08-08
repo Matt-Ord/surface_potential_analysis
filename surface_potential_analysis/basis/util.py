@@ -87,14 +87,24 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
 
     def __into_fundamental__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         return self._basis.__into_fundamental__(vectors, axis)
 
     def __from_fundamental__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         return self._basis.__from_fundamental__(vectors, axis)

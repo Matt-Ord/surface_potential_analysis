@@ -142,7 +142,12 @@ def _get_hopping_potential_integrand(
     k_f: float,
     overlap: Callable[
         [np.ndarray[_S0Inv, np.dtype[np.float64]]],
-        np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
     ],
 ) -> np.ndarray[_S0Inv, np.dtype[np.complex128]]:
     q = k_f * np.sin(phi / 2)
@@ -174,7 +179,12 @@ def calculate_hermitian_gamma_potential_integral(
     k_f: float,
     overlap: Callable[
         [np.ndarray[_S0Inv, np.dtype[np.float64]]],
-        np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
     ],
 ) -> np.complex128:
     """

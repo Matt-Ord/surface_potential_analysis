@@ -20,7 +20,10 @@ from surface_potential_analysis.state_vector.eigenstate_calculation import (
 
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis_like import BasisLike
-    from surface_potential_analysis.basis.time_basis_like import EvenlySpacedTimeBasis
+    from surface_potential_analysis.basis.time_basis_like import (
+        BasisWithTimeLike,
+        EvenlySpacedTimeBasis,
+    )
     from surface_potential_analysis.operator.operator import (
         SingleBasisDiagonalOperator,
         SingleBasisOperator,
@@ -34,7 +37,9 @@ if TYPE_CHECKING:
 
     _B0Inv = TypeVar("_B0Inv", bound=BasisLike[Any, Any])
     _B1Inv = TypeVar("_B1Inv", bound=BasisLike[Any, Any])
-    _AX0Inv = TypeVar("_AX0Inv", bound=EvenlySpacedTimeBasis[Any, Any, Any])
+    _BT0 = TypeVar("_BT0", bound=BasisWithTimeLike[Any, Any])
+
+    _BT1 = TypeVar("_BT1", bound=EvenlySpacedTimeBasis[Any, Any, Any])
 
 
 def get_state_vector_decomposition(
@@ -76,9 +81,9 @@ def get_state_vector_decomposition(
 
 def solve_schrodinger_equation_decomposition(
     initial_state: StateVector[_B0Inv],
-    times: _AX0Inv,
+    times: _BT0,
     hamiltonian: SingleBasisOperator[_B0Inv],
-) -> StateVectorList[_AX0Inv, _B0Inv]:
+) -> StateVectorList[_BT0, _B0Inv]:
     """
     Given an initial state, use the stochastic schrodinger equation to solve the dynamics of the system.
 
@@ -120,10 +125,10 @@ def solve_schrodinger_equation_decomposition(
 
 
 def solve_schrodinger_equation_diagonal(
-    initial_state: StateVector[_B0Inv],
-    times: _AX0Inv,
+    initial_state: StateVector[_B1Inv],
+    times: _BT0,
     hamiltonian: SingleBasisDiagonalOperator[_B0Inv],
-) -> StateVectorList[_AX0Inv, _B0Inv]:
+) -> StateVectorList[_BT0, _B0Inv]:
     """
     Given an initial state, use the schrodinger equation to solve the dynamics of the system.
 
@@ -149,9 +154,9 @@ def solve_schrodinger_equation_diagonal(
 
 def solve_schrodinger_equation(
     initial_state: StateVector[_B0Inv],
-    times: _AX0Inv,
+    times: _BT1,
     hamiltonian: SingleBasisOperator[_B0Inv],
-) -> StateVectorList[_AX0Inv, _B0Inv]:
+) -> StateVectorList[_BT1, _B0Inv]:
     hamiltonian_qobj = qutip.Qobj(
         hamiltonian["data"].reshape(hamiltonian["basis"].shape) / hbar,
     )

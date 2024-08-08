@@ -42,14 +42,24 @@ class FundamentalBasis(
 
     def __as_fundamental__(  # type: ignore[override]
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[_S0Inv, np.dtype[np.complex128]]:
         return vectors.astype(np.complex128, copy=False)  # type: ignore[no-any-return]
 
     def __from_fundamental__(  # type: ignore[override]
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[_S0Inv, np.dtype[np.complex128]]:
         return vectors.astype(np.complex128, copy=False)  # type: ignore[no-any-return]
@@ -99,7 +109,12 @@ class TruncatedBasis(
 
     def __as_fundamental__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         basis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         casted = vectors.astype(np.complex128, copy=False)
@@ -107,7 +122,12 @@ class TruncatedBasis(
 
     def __from_fundamental__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         basis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         casted = vectors.astype(np.complex128, copy=False)
@@ -152,7 +172,12 @@ class TransformedBasis(
 
     def __as_transformed__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         casted = vectors.astype(np.complex128, copy=False)
@@ -160,7 +185,12 @@ class TransformedBasis(
 
     def __from_transformed__(
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
         casted = vectors.astype(np.complex128, copy=False)
@@ -175,14 +205,24 @@ class FundamentalTransformedBasis(TransformedBasis[_NF0_co, _NF0_co]):
 
     def __as_transformed__(  # type: ignore[override]
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[_S0Inv, np.dtype[np.complex128]]:
         return vectors.astype(np.complex128, copy=False)  # type: ignore[no-any-return]
 
     def __from_transformed__(  # type: ignore[override]
         self,
-        vectors: np.ndarray[_S0Inv, np.dtype[np.complex128] | np.dtype[np.float64]],
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
         axis: int = -1,
     ) -> np.ndarray[_S0Inv, np.dtype[np.complex128]]:
         return vectors.astype(np.complex128, copy=False)  # type: ignore[no-any-return]
