@@ -23,9 +23,9 @@ from surface_potential_analysis.basis.stacked_basis import (
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.operator.conversion import convert_operator_to_basis
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_basis,
     stacked_basis_as_fundamental_momentum_basis,
     stacked_basis_as_fundamental_position_basis,
+    stacked_basis_as_fundamental_transformed_basis,
 )
 from surface_potential_analysis.stacked_basis.util import (
     wrap_index_around_origin,
@@ -75,7 +75,7 @@ if TYPE_CHECKING:
         OperatorList,
         SingleBasisDiagonalOperatorList,
     )
-    from surface_potential_analysis.state_vector.eigenstate_collection import Eigenstate
+    from surface_potential_analysis.state_vector.eigenstate_list import Eigenstate
     from surface_potential_analysis.state_vector.state_vector import StateVector
     from surface_potential_analysis.types import (
         SingleIndexLike,
@@ -141,7 +141,9 @@ def get_wavepacket_state_vector(
     """
     converted = convert_wavepacket_to_fundamental_momentum_basis(
         wavepacket,
-        list_basis=stacked_basis_as_fundamental_basis(wavepacket["basis"][0]),
+        list_basis=stacked_basis_as_fundamental_transformed_basis(
+            wavepacket["basis"][0]
+        ),
     )
     util = BasisUtil(converted["basis"][0])
     idx = util.get_flat_index(idx) if isinstance(idx, tuple) else idx
@@ -196,7 +198,9 @@ def get_all_eigenstates(
     """
     converted = convert_wavepacket_to_fundamental_momentum_basis(
         wavepacket,
-        list_basis=stacked_basis_as_fundamental_basis(wavepacket["basis"][0]),
+        list_basis=stacked_basis_as_fundamental_transformed_basis(
+            wavepacket["basis"][0]
+        ),
     )
     util = BasisUtil(get_sample_basis(converted["basis"]))
     return [
@@ -232,7 +236,9 @@ def get_all_wavepacket_states(
     """
     converted = convert_wavepacket_to_fundamental_momentum_basis(
         wavepacket,
-        list_basis=stacked_basis_as_fundamental_basis(wavepacket["basis"][0]),
+        list_basis=stacked_basis_as_fundamental_transformed_basis(
+            wavepacket["basis"][0]
+        ),
     )
     util = BasisUtil(get_sample_basis(converted["basis"]))
     return [
@@ -388,7 +394,7 @@ def get_bloch_states(
     converted_basis = stacked_basis_as_fundamental_momentum_basis(
         wavepackets["basis"][1]
     )
-    converted_list_basis = stacked_basis_as_fundamental_basis(
+    converted_list_basis = stacked_basis_as_fundamental_transformed_basis(
         wavepackets["basis"][0][1]
     )
     converted = convert_wavepacket_to_basis(

@@ -10,12 +10,17 @@ from matplotlib.colors import Normalize, SymLogNorm
 from matplotlib.figure import Figure
 from matplotlib.scale import LinearScale, ScaleBase, SymmetricalLogScale
 
-from surface_potential_analysis.basis.basis_like import BasisLike
+from surface_potential_analysis.basis.basis_like import BasisLike, convert_vector
+from surface_potential_analysis.stacked_basis.conversion import (
+    stacked_basis_as_fundamental_momentum_basis,
+    stacked_basis_as_fundamental_position_basis,
+)
 from surface_potential_analysis.stacked_basis.util import (
     get_k_coordinates_in_axes,
     get_max_idx,
     get_x_coordinates_in_axes,
 )
+from surface_potential_analysis.util.squared_scale import SquaredScale
 
 from .util import Measure, get_data_in_axes, get_measured_data
 
@@ -33,7 +38,7 @@ if TYPE_CHECKING:
     from surface_potential_analysis.types import SingleStackedIndexLike
 
 
-Scale = Literal["symlog", "linear"]
+Scale = Literal["symlog", "linear", "squared"]
 _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
 
 
@@ -94,6 +99,8 @@ def _get_norm_with_lim(
                 vmax=lim[1],
                 linthresh=1 if max_abs <= 0 else 1e-3 * max_abs,  # type: ignore No parameter named "linthresh"
             )
+        case "squared":
+            return Normalize(vmin=lim[0], vmax=lim[1])
 
 
 def _get_scale_with_lim(
@@ -109,6 +116,8 @@ def _get_scale_with_lim(
                 axis=None,
                 linthresh=1 if max_abs <= 0 else 1e-3 * max_abs,
             )
+        case "squared":
+            return SquaredScale(axis=None)
 
 
 # https://stackoverflow.com/questions/49382105/set-different-margins-for-left-and-right-side
@@ -130,6 +139,7 @@ def plot_data_1d(
     ax: Axes | None = None,
     scale: Scale = "linear",
     measure: Measure = "abs",
+    periodic: bool = False,
 ) -> tuple[Figure, Axes, Line2D]:
     """
     Plot data in 1d.
@@ -152,6 +162,10 @@ def plot_data_1d(
     fig, ax = get_figure(ax)
 
     measured_data = get_measured_data(data, measure)
+    # The data is periodic, so we repeat the first point at the end
+    if periodic:
+        coordinates = np.append(coordinates, coordinates[-1] + coordinates[1])
+        measured_data = np.append(measured_data, measured_data[0])
 
     (line,) = ax.plot(coordinates, measured_data)
     ax.set_xmargin(0)
@@ -163,7 +177,7 @@ def plot_data_1d(
 
 
 def plot_data_1d_k(
-    basis: TupleBasisLike[*tuple[Any, ...]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -194,16 +208,24 @@ def plot_data_1d_k(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    idx = get_max_idx(basis, data, axes) if idx is None else idx
+    basis_k = stacked_basis_as_fundamental_momentum_basis(basis)
+    converted_data = convert_vector(data, basis, basis_k)
 
-    coordinates = get_k_coordinates_in_axes(basis, axes, idx)
-    data_in_axis = get_data_in_axes(data.reshape(basis.shape), axes, idx)
+    idx = get_max_idx(basis_k, data, axes) if idx is None else idx
+
+    coordinates = get_k_coordinates_in_axes(basis_k, axes, idx)
+    data_in_axis = get_data_in_axes(converted_data.reshape(basis_k.shape), axes, idx)
 
     shifted_data = np.fft.fftshift(data_in_axis)
-    shifted_coordinates = np.fft.fftshift(coordinates)
+    shifted_coordinates = np.fft.fftshift(coordinates[0])
 
     fig, ax, line = plot_data_1d(
-        shifted_data, shifted_coordinates[0], ax=ax, scale=scale, measure=measure
+        shifted_data,
+        shifted_coordinates,
+        ax=ax,
+        scale=scale,
+        measure=measure,
+        periodic=True,
     )
 
     ax.set_xlabel(f"k{(axes[0] % 3)} axis")
@@ -211,7 +233,7 @@ def plot_data_1d_k(
 
 
 def plot_data_1d_x(
-    basis: TupleBasisLike[*tuple[Any, ...]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -243,18 +265,34 @@ def plot_data_1d_x(
     tuple[Figure, Axes, Line2D]
     """
     fig, ax = get_figure(ax)
-    idx = get_max_idx(basis, data, axes) if idx is None else idx
 
-    coordinates = get_x_coordinates_in_axes(basis, axes, idx)
-    data_in_axis = get_data_in_axes(data.reshape(basis.shape), axes, idx)
+    basis_x = stacked_basis_as_fundamental_position_basis(basis)
+    converted_data = convert_vector(data, basis, basis_x)
+
+    idx = get_max_idx(basis_x, converted_data, axes) if idx is None else idx
+
+    coordinates = get_x_coordinates_in_axes(basis_x, axes, idx)
+    data_in_axis = get_data_in_axes(converted_data.reshape(basis_x.shape), axes, idx)
 
     fig, ax, line = plot_data_1d(
-        data_in_axis, coordinates[0], ax=ax, scale=scale, measure=measure
+        data_in_axis,  # type: ignore shape is correct
+        coordinates[0],
+        ax=ax,
+        scale=scale,
+        measure=measure,
+        periodic=True,
     )
 
     ax.set_xlabel(f"x{(axes[0] % 3)} axis")
 
     return fig, ax, line
+
+
+def _has_colorbar(axis: Axes) -> bool:
+    for artist in axis.get_children():
+        if isinstance(artist, plt.cm.ScalarMappable) and artist.colorbar is not None:
+            return True
+    return False
 
 
 @overload
@@ -303,7 +341,8 @@ def plot_data_2d(
     mesh.set_norm(norm)
     mesh.set_clim(*clim)
     ax.set_aspect("equal", adjustable="box")
-    fig.colorbar(mesh, ax=ax, format="%4.1e")
+    if not _has_colorbar(ax):
+        fig.colorbar(mesh, ax=ax, format="%4.1e")
     return fig, ax, mesh
 
 
@@ -348,7 +387,11 @@ def plot_data_2d_k(
     shifted_coordinates = np.fft.fftshift(coordinates, axes=(1, 2))
 
     fig, ax, mesh = plot_data_2d(
-        shifted_data, shifted_coordinates, ax=ax, scale=scale, measure=measure
+        shifted_data,
+        shifted_coordinates,
+        ax=ax,
+        scale=scale,
+        measure=measure,
     )
 
     ax.set_xlabel(f"k{axes[0]} axis")
@@ -538,7 +581,7 @@ def animate_data_through_surface_x(
 
 
 def animate_data_through_list_1d_x(
-    basis: TupleBasisLike[*tuple[Any, ...]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -584,8 +627,111 @@ def animate_data_through_list_1d_x(
     return fig, ax, ani
 
 
-def animate_data_through_list_1d_k(
+def animate_data_through_list_2d_k(
     basis: TupleBasisLike[*tuple[Any, ...]],
+    data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
+    axes: tuple[int, int] = (0, 1),
+    idx: SingleStackedIndexLike | None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "abs",
+) -> tuple[Figure, Axes, ArtistAnimation]:
+    """
+    Given data, animate along the given direction.
+
+    Parameters
+    ----------
+    basis : TupleBasisLike
+    data : np.ndarray[tuple[_L0Inv], np.dtype[np.complex_]]
+    axes : tuple[int, int, int], optional
+        plot axes (z, y, z), by default (0, 1, 2)
+    idx : SingleStackedIndexLike | None, optional
+        idx in remaining dimensions, by default None
+    ax : Axes | None, optional
+        plot ax, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+    measure : Measure, optional
+        measure, by default "abs"
+
+    Returns
+    -------
+    tuple[Figure, Axes, ArtistAnimation]
+    """
+    fig, ax = get_figure(ax)
+
+    frames: list[list[QuadMesh]] = []
+    for data_i in data:
+        _, _, mesh = plot_data_2d_k(
+            basis,
+            data_i,
+            axes,
+            idx,
+            ax=ax,
+            scale=scale,
+            measure=measure,
+        )
+        frames.append([mesh])
+
+    ani = ArtistAnimation(fig, frames)
+    return fig, ax, ani
+
+
+def animate_data_through_list_2d_x(
+    basis: TupleBasisLike[*tuple[Any, ...]],
+    data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
+    axes: tuple[int, int] = (0, 1),
+    idx: SingleStackedIndexLike | None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "abs",
+) -> tuple[Figure, Axes, ArtistAnimation]:
+    """
+    Given data, animate along the given direction.
+
+    Parameters
+    ----------
+    basis : TupleBasisLike
+    data : np.ndarray[tuple[_L0Inv], np.dtype[np.complex_]]
+    axes : tuple[int, int, int], optional
+        plot axes (z, y, z), by default (0, 1, 2)
+    idx : SingleStackedIndexLike | None, optional
+        idx in remaining dimensions, by default None
+    ax : Axes | None, optional
+        plot ax, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+    measure : Measure, optional
+        measure, by default "abs"
+
+    Returns
+    -------
+    tuple[Figure, Axes, ArtistAnimation]
+    """
+    fig, ax = get_figure(ax)
+
+    frames: list[list[QuadMesh]] = []
+
+    for data_i in data:
+        _, _, mesh = plot_data_2d_x(
+            basis,
+            data_i,
+            axes,
+            idx,
+            ax=ax,
+            scale=scale,
+            measure=measure,
+        )
+        frames.append([mesh])
+
+    ani = ArtistAnimation(fig, frames)
+    return fig, ax, ani
+
+
+def animate_data_through_list_1d_k(
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,

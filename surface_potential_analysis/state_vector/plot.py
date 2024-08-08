@@ -25,6 +25,7 @@ from surface_potential_analysis.operator.conversion import (
     convert_diagonal_operator_to_basis,
 )
 from surface_potential_analysis.operator.operator import (
+    SingleBasisDiagonalOperator,
     as_operator,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
@@ -56,8 +57,11 @@ from surface_potential_analysis.state_vector.state_vector_list import (
 from surface_potential_analysis.util.plot import (
     animate_data_through_list_1d_k,
     animate_data_through_list_1d_x,
+    animate_data_through_list_2d_k,
+    animate_data_through_list_2d_x,
     animate_data_through_surface_x,
     get_figure,
+    plot_data_1d,
     plot_data_1d_k,
     plot_data_1d_x,
     plot_data_2d_k,
@@ -75,11 +79,14 @@ if TYPE_CHECKING:
     from matplotlib.lines import Line2D
 
     from surface_potential_analysis.basis.basis import FundamentalBasis
+    from surface_potential_analysis.basis.explicit_basis import (
+        ExplicitStackedBasisWithLength,
+    )
     from surface_potential_analysis.operator.operator import (
         Operator,
         SingleBasisOperator,
     )
-    from surface_potential_analysis.state_vector.eigenstate_collection import ValueList
+    from surface_potential_analysis.state_vector.eigenstate_list import ValueList
     from surface_potential_analysis.state_vector.state_vector import StateVector
     from surface_potential_analysis.state_vector.state_vector_list import (
         StateVectorList,
@@ -90,6 +97,7 @@ if TYPE_CHECKING:
     from surface_potential_analysis.util.plot import Scale
 
     _B0Inv = TypeVar("_B0Inv", bound=BasisLike[Any, Any])
+    _ESB0 = TypeVar("_ESB0", bound=ExplicitStackedBasisWithLength[Any, Any, Any])
 
 
 # ruff: noqa: PLR0913
@@ -123,11 +131,9 @@ def plot_state_1d_k(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    converted = convert_state_vector_to_momentum_basis(state)
-
     fig, ax, line = plot_data_1d_k(
-        converted["basis"],
-        converted["data"],
+        state["basis"],
+        state["data"],
         axes,
         idx,
         ax=ax,
@@ -168,11 +174,9 @@ def plot_state_1d_x(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    converted = convert_state_vector_to_position_basis(state)
-
     fig, ax, line = plot_data_1d_x(
-        converted["basis"],
-        converted["data"],
+        state["basis"],
+        state["data"],
         axes,
         idx,
         ax=ax,
@@ -219,6 +223,100 @@ def animate_state_over_list_1d_x(
     )
 
     fig, ax, ani = animate_data_through_list_1d_x(
+        converted["basis"][1],
+        converted["data"].reshape(converted["basis"].shape),
+        axes,
+        idx,
+        ax=ax,
+        scale=scale,
+        measure=measure,
+    )
+    ax.set_ylabel("State /Au")
+    return fig, ax, ani
+
+
+def animate_state_over_list_2d_k(
+    states: StateVectorList[_B0, _SB0],
+    axes: tuple[int, int] = (0, 1),
+    idx: SingleStackedIndexLike | None = None,
+    *,
+    ax: Axes | None = None,
+    measure: Measure = "abs",
+    scale: Scale = "linear",
+) -> tuple[Figure, Axes, ArtistAnimation]:
+    """
+    Plot an state in 2d along the given axis in momentum space, over time.
+
+    Parameters
+    ----------
+    states : StateVectorList[BasisLike[Any, Any], TupleBasisLike[*tuple[Any, ...]]]
+    axes : tuple[int, int, int], optional
+        axes to plot in, by default (0, 1)
+    idx : SingleStackedIndexLike | None, optional
+        index to plot, by default None
+    ax : Axes | None, optional
+        plot axis, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+    measure : Measure, optional
+        measure, by default "abs"
+
+    Returns
+    -------
+    tuple[Figure, Axes, ArtistAnimation]
+    """
+    converted = convert_state_vector_list_to_basis(
+        states, stacked_basis_as_fundamental_momentum_basis(states["basis"][1])
+    )
+
+    fig, ax, ani = animate_data_through_list_2d_k(
+        converted["basis"][1],
+        converted["data"].reshape(converted["basis"].shape),
+        axes,
+        idx,
+        ax=ax,
+        scale=scale,
+        measure=measure,
+    )
+    ax.set_ylabel("State /Au")
+    return fig, ax, ani
+
+
+def animate_state_over_list_2d_x(
+    states: StateVectorList[_B0, _SB0],
+    axes: tuple[int, int] = (0, 1),
+    idx: SingleStackedIndexLike | None = None,
+    *,
+    ax: Axes | None = None,
+    measure: Measure = "abs",
+    scale: Scale = "linear",
+) -> tuple[Figure, Axes, ArtistAnimation]:
+    """
+    Plot an state in 2d along the given axis in position space, over time.
+
+    Parameters
+    ----------
+    states : StateVectorList[BasisLike[Any, Any], TupleBasisLike[*tuple[Any, ...]]]
+    axes : tuple[int, int, int], optional
+        axes to plot in, by default (0, 1)
+    idx : SingleStackedIndexLike | None, optional
+        index to plot, by default None
+    ax : Axes | None, optional
+        plot axis, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+    measure : Measure, optional
+        measure, by default "abs"
+
+    Returns
+    -------
+    tuple[Figure, Axes, ArtistAnimation]
+    """
+    converted = convert_state_vector_list_to_basis(
+        states, stacked_basis_as_fundamental_position_basis(states["basis"][1])
+    )
+
+    fig, ax, ani = animate_data_through_list_2d_x(
         converted["basis"][1],
         converted["data"].reshape(converted["basis"].shape),
         axes,
@@ -588,7 +686,7 @@ def plot_state_along_path(
     return fig, ax, line
 
 
-def _get_band_occupation(
+def _get_eigenstate_occupation(
     hamiltonian: SingleBasisOperator[_B0Inv],
     states: StateVectorList[BasisLike[Any, Any], _B0Inv],
 ) -> tuple[
@@ -602,7 +700,7 @@ def _get_band_occupation(
     return (energies, occupations)
 
 
-def plot_all_band_occupations(
+def plot_all_eigenstate_occupations(
     hamiltonian: SingleBasisOperator[_B0Inv],
     states: StateVectorList[BasisLike[Any, Any], _B0Inv],
     *,
@@ -627,7 +725,7 @@ def plot_all_band_occupations(
     """
     fig, ax = get_figure(ax)
 
-    energies, occupations = _get_band_occupation(hamiltonian, states)
+    energies, occupations = _get_eigenstate_occupation(hamiltonian, states)
 
     n_states = states["basis"][0].n
     for i, occupation in enumerate(occupations["data"].reshape(n_states, -1)):
@@ -643,7 +741,7 @@ def plot_all_band_occupations(
     return fig, ax
 
 
-def animate_all_band_occupations(
+def animate_all_eigenstate_occupations(
     hamiltonian: SingleBasisOperator[_B0Inv],
     states: StateVectorList[BasisLike[Any, Any], _B0Inv],
     *,
@@ -669,7 +767,7 @@ def animate_all_band_occupations(
     """
     fig, ax = get_figure(ax)
 
-    energies, occupations = _get_band_occupation(hamiltonian, states)
+    energies, occupations = _get_eigenstate_occupation(hamiltonian, states)
 
     frames: list[list[Line2D]] = []
     n_states = states["basis"][0].n
@@ -689,7 +787,7 @@ def animate_all_band_occupations(
     return fig, ax, ani
 
 
-def plot_band_occupation(
+def plot_eigenstate_occupation(
     hamiltonian: SingleBasisOperator[_B0Inv],
     state: StateVector[_B0Inv],
     *,
@@ -712,12 +810,12 @@ def plot_band_occupation(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    return plot_all_band_occupations(
+    return plot_all_eigenstate_occupations(
         hamiltonian, as_state_vector_list([state]), ax=ax, scale=scale
     )
 
 
-def plot_average_band_occupation(
+def plot_average_eigenstate_occupation(
     hamiltonian: SingleBasisOperator[_B0Inv],
     states: StateVectorList[BasisLike[Any, Any], _B0Inv],
     *,
@@ -742,7 +840,7 @@ def plot_average_band_occupation(
     """
     fig, ax = get_figure(ax)
 
-    energies, occupations = _get_band_occupation(hamiltonian, states)
+    energies, occupations = _get_eigenstate_occupation(hamiltonian, states)
 
     n_states = states["basis"][0].n
     occupations["data"].reshape(n_states, -1)
@@ -754,6 +852,58 @@ def plot_average_band_occupation(
     ax.set_yscale(scale)
     ax.set_xlabel("Occupation")
     ax.set_xlabel("Energy /J")
+
+    return fig, ax, line
+
+
+def plot_total_band_occupation_against_energy(
+    hamiltonian: SingleBasisDiagonalOperator[_ESB0],
+    state: StateVector[BasisLike[Any, Any]],
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "abs",
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot the occupation of the state in each band against energy.
+
+    Parameters
+    ----------
+    hamiltonian : SingleBasisDiagonalOperator[_ESB0]
+        The hamiltonian in the explicit basis, stored as a list of states (bands, bloch k)
+    state : StateVector[_B0Inv]
+    ax : Axes | None, optional
+        axis, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    n_bands = hamiltonian["basis"][1].vectors["basis"][0][0].n
+
+    hamiltonian_data = np.real(hamiltonian["data"].reshape(n_bands, -1))
+    band_energies = np.average(hamiltonian_data, axis=1)
+
+    converted = convert_state_vector_to_basis(state, hamiltonian["basis"][1])
+    occupation = np.square(np.abs(converted["data"])).reshape(n_bands, -1)
+
+    total_band_occupation = np.sum(occupation, axis=1)
+    fig, ax, line = plot_data_1d(
+        total_band_occupation,
+        band_energies,
+        ax=ax,
+        scale=scale,
+        measure=measure,
+    )
+    ax.set_xlabel("Average Band Energy /J")
+    ax.set_ylabel("Total Band Occupation")
+
+    average_energy = np.average(hamiltonian_data, weights=occupation).item()
+    average_line = ax.axvline(average_energy)
+    average_line.set_color(line.get_color())
+    average_line.set_linestyle("--")
 
     return fig, ax, line
 
@@ -894,7 +1044,7 @@ def plot_periodic_averaged_occupation_1d_x(
 
 def _get_x_operator(basis: _SB0, axis: int) -> SingleBasisOperator[_SB0]:
     """
-    Generate operator for e^(2pi*x / delta_x).
+    Generate operator for x.
 
     Parameters
     ----------
@@ -1085,7 +1235,7 @@ def plot_spread_distribution_1d(
 
 def _get_k_operator(basis: _SB0, axis: int) -> SingleBasisOperator[_SB0]:
     """
-    Generate operator for e^(2pi*x / delta_x).
+    Generate operator for k.
 
     Parameters
     ----------

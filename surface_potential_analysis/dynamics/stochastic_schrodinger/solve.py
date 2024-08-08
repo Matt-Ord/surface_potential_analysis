@@ -333,6 +333,7 @@ def solve_stochastic_schrodinger_equation_rust(
     collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: _L1Inv,
+    n_realizations: int = 1,
 ) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1]:
     ...
 
@@ -345,6 +346,7 @@ def solve_stochastic_schrodinger_equation_rust(
     collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: Literal[1] = 1,
+    n_realizations: int = 1,
 ) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1]:
     ...
 
@@ -356,6 +358,7 @@ def solve_stochastic_schrodinger_equation_rust(  # type: ignore bad overload
     collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: _L1Inv | Literal[1] = 1,
+    n_realizations: int = 1,
 ) -> StateVectorList[TupleBasisLike[FundamentalBasis[Any], _AX0Inv], _B1]:
     """
     Given an initial state, use the stochastic schrodinger equation to solve the dynamics of the system.
@@ -388,6 +391,7 @@ def solve_stochastic_schrodinger_equation_rust(  # type: ignore bad overload
             step=times.step,
             dt=times.dt,
             n_trajectories=n_trajectories,
+            n_realizations=n_realizations,
             method="Euler",
         ),
     )
@@ -443,6 +447,7 @@ def solve_stochastic_schrodinger_equation_rust_banded(
     collapse_operators: list[SingleBasisOperator[_B3]] | None = None,
     *,
     n_trajectories: _L1Inv,
+    n_realizations: int = 1,
     r_threshold: float = 1e-8,
     method: SSEMethod = "Euler",
 ) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1]:
@@ -457,6 +462,7 @@ def solve_stochastic_schrodinger_equation_rust_banded(
     collapse_operators: list[SingleBasisOperator[_B3]] | None = None,
     *,
     n_trajectories: Literal[1] = 1,
+    n_realizations: int = 1,
     r_threshold: float = 1e-8,
     method: SSEMethod = "Euler",
 ) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1]:
@@ -470,6 +476,7 @@ def solve_stochastic_schrodinger_equation_rust_banded(  # type: ignore bad overl
     collapse_operators: list[Operator[_B3, _B4]] | None = None,
     *,
     n_trajectories: _L1Inv | Literal[1] = 1,
+    n_realizations: int = 1,
     r_threshold: float = 1e-8,
     method: SSEMethod = "Euler",
 ) -> StateVectorList[TupleBasisLike[FundamentalBasis[Any], _AX0Inv], _B1]:
@@ -534,6 +541,7 @@ def solve_stochastic_schrodinger_equation_rust_banded(  # type: ignore bad overl
             step=times.step,
             dt=dt,
             n_trajectories=n_trajectories,
+            n_realizations=n_realizations,
             method=method,
         ),
     )

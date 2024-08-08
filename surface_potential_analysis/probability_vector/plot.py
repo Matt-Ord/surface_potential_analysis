@@ -25,7 +25,10 @@ if TYPE_CHECKING:
     from matplotlib.lines import Line2D
 
     from surface_potential_analysis.basis.basis_like import BasisLike
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
+    from surface_potential_analysis.basis.stacked_basis import (
+        StackedBasisWithVolumeLike,
+        TupleBasisLike,
+    )
     from surface_potential_analysis.basis.time_basis_like import BasisWithTimeLike
     from surface_potential_analysis.probability_vector.probability_vector import (
         ProbabilityVectorList,
@@ -108,7 +111,7 @@ def plot_total_probability_against_time(
 
 
 def plot_probability_1d_k(
-    state: ProbabilityVector[TupleBasisLike[*tuple[Any, ...]]],
+    state: ProbabilityVector[StackedBasisWithVolumeLike[Any, Any, Any]],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -137,11 +140,9 @@ def plot_probability_1d_k(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    converted = convert_probability_vector_to_momentum_basis(state)
-
     fig, ax, line = plot_data_1d_k(
-        converted["basis"],
-        converted["data"],
+        state["basis"],
+        state["data"],
         axes,
         idx,
         ax=ax,
@@ -153,7 +154,7 @@ def plot_probability_1d_k(
 
 
 def plot_probability_1d_x(
-    state: ProbabilityVector[TupleBasisLike[*tuple[Any, ...]]],
+    state: ProbabilityVector[StackedBasisWithVolumeLike[Any, Any, Any]],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -182,11 +183,9 @@ def plot_probability_1d_x(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    converted = convert_probability_vector_to_position_basis(state)
-
     fig, ax, line = plot_data_1d_x(
-        converted["basis"],
-        converted["data"],
+        state["basis"],
+        state["data"],
         axes,
         idx,
         ax=ax,
