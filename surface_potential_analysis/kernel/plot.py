@@ -24,7 +24,7 @@ from surface_potential_analysis.kernel.solve import (
     get_noise_operators_eigenvalue,
 )
 from surface_potential_analysis.operator.operator_list import (
-    select_operator_diagonal,
+    select_diagonal_operator,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_position_basis,
@@ -298,7 +298,7 @@ def plot_diagonal_noise_operators_single_sample(  # noqa: PLR0913
 
     measured_potential = np.zeros(truncated["basis"][1][0].n, dtype=np.complex128)
     for i, factor in enumerate(factors):
-        operator = select_operator_diagonal(
+        operator = select_diagonal_operator(
             operators,
             idx=i,
         )

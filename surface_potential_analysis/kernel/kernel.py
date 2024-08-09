@@ -244,7 +244,7 @@ def as_isotropic_kernel_from_diagonal(
     out: IsotropicNoiseKernel[_B0] = {"basis": kernel["basis"][0][0], "data": data}
 
     if assert_isotropic:
-        np.testing.assert_almost_equal(
+        np.testing.assert_allclose(
             as_diagonal_kernel_from_isotropic(out)["data"], kernel["data"]
         )
 
@@ -439,7 +439,7 @@ def get_isotropic_kernel_from_diagonal_operators(
     IsotropicNoiseKernel[_B1]
     """
     return as_isotropic_kernel_from_diagonal(
-        get_diagonal_kernel_from_operators(operators),
+        get_diagonal_kernel_from_diagonal_operators(operators),
         assert_isotropic=assert_isotropic,
     )
 
