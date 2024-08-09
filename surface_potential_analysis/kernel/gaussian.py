@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterable, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Iterable, TypeVar
 
 import numpy as np
 from scipy.constants import Boltzmann, hbar  # type:ignore bad stb file
@@ -363,14 +363,14 @@ def _get_explicit_taylor_coefficients_gaussian(
 
 
 def get_gaussian_operators_explicit_taylor(
-    basis: TupleBasisWithLengthLike[FundamentalPositionBasis[Any, Literal[1]]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     a: float,
     lambda_: float,
     *,
     n_terms: int | None = None,
 ) -> SingleBasisDiagonalNoiseOperatorList[
     FundamentalBasis[int],
-    TupleBasisWithLengthLike[FundamentalPositionBasis[Any, Literal[1]]],
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[int, Any], ...]],
 ]:
     """Calculate the noise operators for an isotropic gaussian noise kernel, using an explicit Taylor expansion.
 
