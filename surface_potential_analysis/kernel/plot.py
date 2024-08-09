@@ -8,12 +8,14 @@ from scipy.constants import hbar  # type: ignore no stub
 from surface_potential_analysis.basis.basis import FundamentalPositionBasis
 from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
+    TupleBasisLike,
     TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.kernel.build import (
     truncate_diagonal_noise_operator_list,
 )
 from surface_potential_analysis.kernel.conversion import (
+    convert_isotropic_kernel_to_basis,
     convert_noise_operator_list_to_basis,
 )
 from surface_potential_analysis.kernel.kernel import (
@@ -60,6 +62,7 @@ if TYPE_CHECKING:
         SingleBasisDiagonalNoiseKernel,
         SingleBasisDiagonalNoiseOperatorList,
     )
+    from surface_potential_analysis.state_vector.eigenstate_list import ValueList
     from surface_potential_analysis.types import SingleStackedIndexLike
 
     _B0s = TypeVarTuple("_B0s")
@@ -500,3 +503,32 @@ def plot_isotropic_noise_kernel_1d_x(  # noqa: PLR0913
     )
     line.set_label(f"{measure} kernel")
     return fig, ax, line
+
+
+def _get_noise_kernel_percentage_error(
+    true_kernel: IsotropicNoiseKernel[
+        TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    ],
+    fitted_kernel: IsotropicNoiseKernel[
+        TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    ],
+) -> ValueList[TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]]:
+    true_data = true_kernel["data"].reshape(true_kernel["basis"].shape)
+    converted = convert_isotropic_kernel_to_basis(fitted_kernel, true_kernel["basis"])
+    return {
+        "basis": true_kernel["basis"],
+        "data": (converted["data"] - true_data) * 100 / true_data,
+    }
+
+
+def plot_isotropic_kernel_error(
+    true_kernel: IsotropicNoiseKernel[StackedBasisWithVolumeLike[Any, Any, Any]],
+    fitted_kernel: IsotropicNoiseKernel[StackedBasisWithVolumeLike[Any, Any, Any]],
+    *,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes, Line2D]:
+    """Compare the errors between true kernel and fitted kernel."""
+    percentage_error = _get_noise_kernel_percentage_error(true_kernel, fitted_kernel)[
+        "data"
+    ]
+    return plot_data_1d_x(true_kernel["basis"], percentage_error, ax=ax, measure="real")
