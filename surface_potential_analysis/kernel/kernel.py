@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import (
+    TYPE_CHECKING,
     Any,
     Generic,
     TypedDict,
@@ -14,6 +15,7 @@ from surface_potential_analysis.basis.basis_like import BasisLike
 from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
     TupleBasisLike,
+    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.operator.operator import (
@@ -26,6 +28,12 @@ from surface_potential_analysis.operator.operator_list import (
     as_diagonal_operator_list,
     as_operator_list,
 )
+
+if TYPE_CHECKING:
+    from surface_potential_analysis.basis.basis import (
+        FundamentalBasis,
+        FundamentalPositionBasis,
+    )
 
 _B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
 _B1_co = TypeVar("_B1_co", bound=BasisLike[Any, Any], covariant=True)
@@ -389,3 +397,36 @@ def get_diagonal_kernel_from_operators(
         "basis": TupleBasis(operators["basis"][1], operators["basis"][1]),
         "data": data.reshape(-1),
     }
+
+
+def get_isotropic_kernel_from_operators(
+    operators: NoiseOperatorList[
+        TupleBasis[*tuple[FundamentalBasis[int], ...]],
+        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    ],
+) -> IsotropicNoiseKernel[
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
+]:
+    """
+    Build a isotropic kernel from operators.
+
+    Parameters
+    ----------
+    operators : NoiseOperatorList[
+        TupleBasis[*tuple[FundamentalBasis[int], ...]],
+        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    ]
+
+    Returns
+    -------
+    IsotropicNoiseKernel[
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
+    ]
+    """
+    return as_isotropic_kernel_from_diagonal(
+        get_diagonal_kernel_from_operators(
+            as_diagonal_noise_operators_from_full(operators)
+        ),
+    )
