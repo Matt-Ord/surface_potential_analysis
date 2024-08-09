@@ -363,13 +363,21 @@ def _get_cos_coefficients_for_taylor_series(
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     n_terms = polynomial_coefficients.size if n_terms is None else n_terms
 
-    i = np.arange(0, n_terms).reshape(1, -1)
-    m = np.arange(0, n_terms).reshape(-1, 1)
-    coefficients_matrix = (((-1) ** m) / (factorial(2 * m))) * (i ** (2 * m))
+    atol = 1e-8 * np.max(polynomial_coefficients).item()
+    is_nonzero = np.isclose(polynomial_coefficients, 0, atol=atol)
+    polynomial_coefficients = polynomial_coefficients[: np.argmax(is_nonzero)]
+
+    n_nonzero_terms = min(np.argmax(is_nonzero), n_terms)
+    i = np.arange(0, n_nonzero_terms).reshape(1, -1)
+    m = np.arange(0, n_nonzero_terms).reshape(-1, 1)
+    coefficients_prefactor = ((-1) ** m) / (factorial(2 * m))
+    coefficients_matrix = coefficients_prefactor * (i ** (2 * m))
     cos_series_coefficients = np.linalg.solve(
         coefficients_matrix, polynomial_coefficients
     )
-    return cos_series_coefficients.T
+    out = np.zeros(n_terms, np.float64)
+    out[:n_nonzero_terms] = cos_series_coefficients.T
+    return out
 
 
 def _get_coefficients_for_taylor_series(

@@ -499,4 +499,5 @@ def plot_isotropic_noise_kernel_1d_x(  # noqa: PLR0913
         kernel["basis"], kernel["data"], axes, idx, ax=ax, scale=scale, measure=measure
     )
     line.set_label(f"{measure} kernel")
+    ax.set_ylim(0, None)
     return fig, ax, line
