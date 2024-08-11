@@ -365,9 +365,12 @@ def _get_cos_coefficients_for_taylor_series(
 
     atol = 1e-8 * np.max(polynomial_coefficients).item()
     is_nonzero = np.isclose(polynomial_coefficients, 0, atol=atol)
-    polynomial_coefficients = polynomial_coefficients[: np.argmax(is_nonzero)]
+    first_nonzero = np.argmax(is_nonzero)
+    if first_nonzero == 0 and is_nonzero.item(0) is False:
+        first_nonzero = is_nonzero.size
+    n_nonzero_terms = min(first_nonzero, n_terms)
+    polynomial_coefficients = polynomial_coefficients[:n_nonzero_terms]
 
-    n_nonzero_terms = min(np.argmax(is_nonzero), n_terms)
     i = np.arange(0, n_nonzero_terms).reshape(1, -1)
     m = np.arange(0, n_nonzero_terms).reshape(-1, 1)
     coefficients_prefactor = ((-1) ** m) / (factorial(2 * m))
@@ -461,7 +464,7 @@ def get_noise_operators_real_isotropic_stacked_taylor_expansion(
     )
 
     operator_coefficients = np.concatenate(
-        [noise_polynomial.coef, noise_polynomial.coef[1::][::-1]]
+        [noise_polynomial.coef, noise_polynomial.coef[:0:-1]]
     ).astype(np.complex128)
     operator_coefficients *= n_states
 
