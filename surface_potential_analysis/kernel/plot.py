@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterable, Literal, TypeVarTuple
+from typing import TYPE_CHECKING, Any, Iterable, Literal, TypeVar, TypeVarTuple
 
 import numpy as np
 from scipy.constants import hbar  # type: ignore no stub
@@ -66,6 +66,7 @@ if TYPE_CHECKING:
     from surface_potential_analysis.types import SingleStackedIndexLike
 
     _B0s = TypeVarTuple("_B0s")
+    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
 
 def plot_diagonal_kernel_2d(
@@ -522,8 +523,8 @@ def _get_noise_kernel_percentage_error(
 
 
 def plot_isotropic_kernel_error(
-    true_kernel: IsotropicNoiseKernel[StackedBasisWithVolumeLike[Any, Any, Any]],
-    fitted_kernel: IsotropicNoiseKernel[StackedBasisWithVolumeLike[Any, Any, Any]],
+    true_kernel: IsotropicNoiseKernel[Any],
+    fitted_kernel: IsotropicNoiseKernel[Any],
     *,
     ax: Axes | None = None,
 ) -> tuple[Figure, Axes, Line2D]:
