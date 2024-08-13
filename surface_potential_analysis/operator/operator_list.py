@@ -74,7 +74,7 @@ class DiagonalOperatorList(TypedDict, Generic[_B0_co, _B1_co, _B2_co]):
 SingleBasisDiagonalOperatorList = DiagonalOperatorList[_B0, _B1, _B1]
 
 
-def select_operator_diagonal(
+def select_diagonal_operator(
     operator_list: DiagonalOperatorList[_B0, _B1, _B2], idx: SingleFlatIndexLike
 ) -> DiagonalOperator[_B1, _B2]:
     """

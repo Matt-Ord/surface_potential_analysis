@@ -121,9 +121,8 @@ def get_operators_for_real_isotropic_noise(
     k = 2 * np.pi / n
     nk_points = BasisUtil(basis).nk_points[np.newaxis, :]
 
-    sines = np.sin(np.arange(n_terms, 1, -1)[:, np.newaxis] * nk_points * k)
+    sines = np.sin(np.arange(n_terms - 1, 0, -1)[:, np.newaxis] * nk_points * k)
     coses = np.cos(np.arange(0, n_terms)[:, np.newaxis] * nk_points * k)
-
     data = np.concatenate([coses, sines]).astype(np.complex128) / np.sqrt(basis.n)
     return {
         "basis": TupleBasis(FundamentalBasis(data.shape[0]), TupleBasis(basis, basis)),
@@ -343,11 +342,11 @@ def get_noise_operators_real_isotropic_stacked_fft(
         end = n // 2
 
         cos_slice = slice_along_axis(slice(1, end + 1), axis)
-        conj_cos_slice = slice_along_axis(slice(-1, end - 1, -1), axis)
+        conj_cos_slice = slice_along_axis(slice(None, (n - 1) // 2, -1), axis)
         data[cos_slice] = (cloned[cos_slice] + cloned[conj_cos_slice]) / np.sqrt(2)
 
-        sin_slice = slice_along_axis(slice(end + 1, None), axis)
-        conj_sin_slice = slice_along_axis(slice(end - 1, 0, -1), axis)
+        sin_slice = slice_along_axis(slice((n - 1) // 2 + 1, None), axis)
+        conj_sin_slice = slice_along_axis(slice(end, 0, -1), axis)
         data[sin_slice] = (cloned[sin_slice] - cloned[conj_sin_slice]) / np.sqrt(2)
 
     return {
@@ -364,13 +363,24 @@ def _get_cos_coefficients_for_taylor_series(
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     n_terms = polynomial_coefficients.size if n_terms is None else n_terms
 
-    i = np.arange(0, n_terms).reshape(1, -1)
-    m = np.arange(0, n_terms).reshape(-1, 1)
-    coefficients_matrix = (((-1) ** m) / (factorial(2 * m))) * (i ** (2 * m))
+    atol = 1e-8 * np.max(polynomial_coefficients).item()
+    is_nonzero = np.isclose(polynomial_coefficients, 0, atol=atol)
+    first_nonzero = np.argmax(is_nonzero)
+    if first_nonzero == 0 and is_nonzero.item(0) is False:
+        first_nonzero = is_nonzero.size
+    n_nonzero_terms = min(first_nonzero, n_terms)
+    polynomial_coefficients = polynomial_coefficients[:n_nonzero_terms]
+
+    i = np.arange(0, n_nonzero_terms).reshape(1, -1)
+    m = np.arange(0, n_nonzero_terms).reshape(-1, 1)
+    coefficients_prefactor = ((-1) ** m) / (factorial(2 * m))
+    coefficients_matrix = coefficients_prefactor * (i ** (2 * m))
     cos_series_coefficients = np.linalg.solve(
         coefficients_matrix, polynomial_coefficients
     )
-    return cos_series_coefficients.T
+    out = np.zeros(n_terms, np.float64)
+    out[:n_nonzero_terms] = cos_series_coefficients.T
+    return out
 
 
 def _get_coefficients_for_taylor_series(
@@ -381,7 +391,7 @@ def _get_coefficients_for_taylor_series(
     cos_series_coefficients = _get_cos_coefficients_for_taylor_series(
         polynomial_coefficients, n_terms=n_terms
     )
-    sin_series_coefficients = cos_series_coefficients[1::][::-1]
+    sin_series_coefficients = cos_series_coefficients[:0:-1]
     return np.concatenate([cos_series_coefficients, sin_series_coefficients])
 
 
@@ -415,7 +425,7 @@ def get_noise_operators_explicit_taylor_expansion(
 def get_noise_operators_real_isotropic_stacked_taylor_expansion(
     kernel: IsotropicNoiseKernel[_TBL0],
     *,
-    n: int = 1,
+    n: int | None = None,
 ) -> SingleBasisDiagonalNoiseOperatorList[
     FundamentalBasis[int],
     TupleBasisWithLengthLike[FundamentalPositionBasis[Any, Literal[1]]],
@@ -437,6 +447,7 @@ def get_noise_operators_real_isotropic_stacked_taylor_expansion(
     basis_x = stacked_basis_as_fundamental_position_basis(kernel["basis"])
 
     n_states: int = basis_x.n
+    n = (n_states + 1) // 2 if n is None else n
 
     # weight is chosen such that the 2n+1 points around the origin are selected for fitting
     weight = pad_ft_points(np.ones(2 * n + 1), (n_states,), (0,))
@@ -453,7 +464,7 @@ def get_noise_operators_real_isotropic_stacked_taylor_expansion(
     )
 
     operator_coefficients = np.concatenate(
-        [noise_polynomial.coef, noise_polynomial.coef[1::][::-1]]
+        [noise_polynomial.coef, noise_polynomial.coef[:0:-1]]
     ).astype(np.complex128)
     operator_coefficients *= n_states
 
