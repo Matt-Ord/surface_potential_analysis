@@ -36,11 +36,13 @@ def _get_time_poly_fit(
     ts = datetime.datetime.now(tz=datetime.UTC)
     _noise_polynomial = cast(
         np.polynomial.Polynomial,
-        np.polynomial.Chebyshev.fit(  # type: ignore unknown
-            x=np.cos(np.arange(n_states) * (2 * np.pi / n_states)),
-            y=kernel["data"],
+        np.polynomial.Chebyshev.fit(
+            x=np.cos(
+                pad_ft_points(np.arange(n_states), (2 * n + 1,), (0,))
+                * (2 * np.pi / n_states)
+            ),
+            y=pad_ft_points(kernel["data"], (2 * n + 1,), (0,)),
             deg=np.arange(0, n + 1),
-            w=pad_ft_points(np.ones(2 * n + 1), (n_states,), (0,)),
         ),
     )
     te = datetime.datetime.now(tz=datetime.UTC)
