@@ -5,9 +5,11 @@ import datetime
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 import numpy as np
+from scipy.special import factorial
 
 from surface_potential_analysis.basis.basis_like import BasisLike
 from surface_potential_analysis.basis.stacked_basis import (
+    StackedBasisWithVolumeLike,
     TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.kernel.solve import (
@@ -53,6 +55,7 @@ def _get_time_for_get_op_for_real_isotropic_noise(
     basis: _B0,
     n: int,
 ) -> float:
+    # this is used in both poly fit and explicit
     ts = datetime.datetime.now(tz=datetime.UTC)
     _operators = get_operators_for_real_isotropic_noise(basis, n_terms=n + 1)
     te = datetime.datetime.now(tz=datetime.UTC)
@@ -101,3 +104,38 @@ def get_time_eigh(kernel: DiagonalNoiseKernel[_B0, _B1, _B0, _B1]) -> float:
     _res = np.linalg.eigh(data)
     te = datetime.datetime.now(tz=datetime.UTC)
     return (te - ts).total_seconds()
+
+
+# explicit
+def get_time_explicit(
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    n_terms: int | None,
+    a: float,
+    lambda_: float,
+) -> list[float]:
+    j = np.arange(0, n_terms)
+    polynomial_coefficients = (a**2 / factorial(j)) * ((-1 / (2 * lambda_**2)) ** j)
+    atol = 1e-8 * np.max(polynomial_coefficients).item()
+    is_nonzero = np.isclose(polynomial_coefficients, 0, atol=atol)
+    first_nonzero = np.argmax(is_nonzero)
+    if first_nonzero == 0 and is_nonzero.item(0) is False:
+        first_nonzero = is_nonzero.size
+    n_nonzero_terms = min(first_nonzero, n_terms)
+    polynomial_coefficients = polynomial_coefficients[:n_nonzero_terms]
+
+    i = np.arange(0, n_nonzero_terms).reshape(1, -1)
+    m = np.arange(0, n_nonzero_terms).reshape(-1, 1)
+    coefficients_prefactor = ((-1) ** m) / (factorial(2 * m))
+    coefficients_matrix = coefficients_prefactor * (i ** (2 * m))
+    ts = datetime.datetime.now(tz=datetime.UTC)
+    _cos_series_coefficients = np.linalg.solve(
+        coefficients_matrix, polynomial_coefficients
+    )
+    te = datetime.datetime.now(tz=datetime.UTC)
+    time_for_get_cos_series_coeff = (te - ts).total_seconds()
+
+    basis_x = stacked_basis_as_fundamental_position_basis(basis)
+    time_for_get_op_for_real_isotropic_noise = (
+        _get_time_for_get_op_for_real_isotropic_noise(basis_x, n_terms)
+    )
+    return [time_for_get_cos_series_coeff, time_for_get_op_for_real_isotropic_noise]
