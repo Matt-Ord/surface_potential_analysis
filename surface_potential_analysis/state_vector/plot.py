@@ -7,7 +7,6 @@ import scipy
 import scipy.signal
 from matplotlib.animation import ArtistAnimation
 
-from surface_potential_analysis.basis.basis import BasisLike, FundamentalPositionBasis
 from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisWithVolumeLike,
     TupleBasis,
@@ -38,7 +37,6 @@ from surface_potential_analysis.stacked_basis.util import (
 from surface_potential_analysis.state_vector.conversion import (
     convert_state_vector_list_to_basis,
     convert_state_vector_to_basis,
-    convert_state_vector_to_momentum_basis,
     convert_state_vector_to_position_basis,
 )
 from surface_potential_analysis.state_vector.eigenstate_calculation import (
@@ -78,7 +76,11 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
     from matplotlib.lines import Line2D
 
-    from surface_potential_analysis.basis.basis import FundamentalBasis
+    from surface_potential_analysis.basis.basis import (
+        BasisLike,
+        FundamentalBasis,
+        FundamentalPositionBasis,
+    )
     from surface_potential_analysis.basis.explicit_basis import (
         ExplicitStackedBasisWithLength,
     )
@@ -97,12 +99,16 @@ if TYPE_CHECKING:
     from surface_potential_analysis.util.plot import Scale
 
     _B0Inv = TypeVar("_B0Inv", bound=BasisLike[Any, Any])
-    _ESB0 = TypeVar("_ESB0", bound=ExplicitStackedBasisWithLength[Any, Any, Any])
+    _ESB0 = TypeVar("_ESB0", bound=ExplicitStackedBasisWithLength[Any, Any])
+    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+    _SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+
+    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
 
 
 # ruff: noqa: PLR0913
 def plot_state_1d_k(
-    state: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
+    state: StateVector[_SBV0],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -145,7 +151,7 @@ def plot_state_1d_k(
 
 
 def plot_state_1d_x(
-    state: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
+    state: StateVector[_SBV0],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -189,7 +195,7 @@ def plot_state_1d_x(
 
 
 def animate_state_over_list_1d_x(
-    states: StateVectorList[_B0, _SB0],
+    states: StateVectorList[_B0, _SBV0],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -236,7 +242,7 @@ def animate_state_over_list_1d_x(
 
 
 def animate_state_over_list_2d_k(
-    states: StateVectorList[_B0, _SB0],
+    states: StateVectorList[_B0, _SBV0],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -283,7 +289,7 @@ def animate_state_over_list_2d_k(
 
 
 def animate_state_over_list_2d_x(
-    states: StateVectorList[_B0, _SB0],
+    states: StateVectorList[_B0, _SBV0],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -330,7 +336,7 @@ def animate_state_over_list_2d_x(
 
 
 def animate_state_over_list_1d_k(
-    states: StateVectorList[_B0, _SB0],
+    states: StateVectorList[_B0, _SBV0],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -377,7 +383,7 @@ def animate_state_over_list_1d_k(
 
 
 def plot_state_2d_k(
-    state: StateVector[_SB0],
+    state: StateVector[_SBV0],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -406,11 +412,9 @@ def plot_state_2d_k(
     -------
     tuple[Figure, Axes, QuadMesh]
     """
-    converted = convert_state_vector_to_momentum_basis(state)
-
     return plot_data_2d_k(
-        converted["basis"],
-        converted["data"],
+        state["basis"],
+        state["data"],
         axes,
         idx,
         ax=ax,
@@ -420,8 +424,8 @@ def plot_state_2d_k(
 
 
 def plot_state_difference_2d_k(
-    state_0: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
-    state_1: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
+    state_0: StateVector[_SBV0],
+    state_1: StateVector[_SBV1],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -464,7 +468,7 @@ def plot_state_difference_2d_k(
 
 
 def plot_state_2d_x(
-    state: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
+    state: StateVector[_SBV0],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -493,11 +497,9 @@ def plot_state_2d_x(
     -------
     tuple[Figure, Axes, QuadMesh]
     """
-    converted = convert_state_vector_to_position_basis(state)
-
     return plot_data_2d_x(
-        converted["basis"],
-        converted["data"],
+        state["basis"],
+        state["data"],
         axes,
         idx,
         ax=ax,
@@ -507,8 +509,8 @@ def plot_state_2d_x(
 
 
 def plot_state_difference_1d_k(
-    state_0: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
-    state_1: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
+    state_0: StateVector[_SBV0],
+    state_1: StateVector[_SBV1],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -551,8 +553,8 @@ def plot_state_difference_1d_k(
 
 
 def plot_state_difference_2d_x(
-    state_0: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
-    state_1: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
+    state_0: StateVector[_SBV0],
+    state_1: StateVector[_SBV1],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -595,7 +597,7 @@ def plot_state_difference_2d_x(
 
 
 def animate_state_3d_x(
-    state: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
+    state: StateVector[_SBV0],
     axes: tuple[int, int, int] = (0, 1, 2),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -640,7 +642,7 @@ def animate_state_3d_x(
 
 
 def plot_state_along_path(
-    state: StateVector[StackedBasisWithVolumeLike[Any, Any, Any]],
+    state: StateVector[_SBV0],
     path: np.ndarray[tuple[int, int], np.dtype[np.int_]],
     *,
     wrap_distances: bool = False,
@@ -908,10 +910,6 @@ def plot_total_band_occupation_against_energy(
     return fig, ax, line
 
 
-_SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
-_B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-
-
 def get_periodic_x_operator(
     basis: StackedBasisWithVolumeLike[Any, Any, Any],
     direction: tuple[int, ...] | None = None,
@@ -923,11 +921,11 @@ def get_periodic_x_operator(
 
     Parameters
     ----------
-    basis : _SB0
+    basis : _SBV0
 
     Returns
     -------
-    SingleBasisOperator[_SB0]
+    SingleBasisOperator[_SBV0]
     """
     direction = tuple(1 for _ in range(basis.ndim)) if direction is None else direction
     basis_x = stacked_basis_as_fundamental_position_basis(basis)
@@ -956,11 +954,11 @@ def _get_periodic_x(
 
     Parameters
     ----------
-    basis : _SB0
+    basis : _SBV0
 
     Returns
     -------
-    SingleBasisOperator[_SB0]
+    SingleBasisOperator[_SBV0]
     """
     operator = get_periodic_x_operator(states["basis"][1], direction)
     return calculate_expectation_list(operator, states)
@@ -1042,17 +1040,17 @@ def plot_periodic_averaged_occupation_1d_x(
     return fig, ax
 
 
-def _get_x_operator(basis: _SB0, axis: int) -> SingleBasisOperator[_SB0]:
+def _get_x_operator(basis: _SBV0, axis: int) -> SingleBasisOperator[_SBV0]:
     """
     Generate operator for x.
 
     Parameters
     ----------
-    basis : _SB0
+    basis : _SBV0
 
     Returns
     -------
-    SingleBasisOperator[_SB0]
+    SingleBasisOperator[_SBV0]
     """
     basis_x = stacked_basis_as_fundamental_position_basis(basis)
     util = BasisUtil(basis_x)
@@ -1066,10 +1064,7 @@ def _get_x_operator(basis: _SB0, axis: int) -> SingleBasisOperator[_SB0]:
 
 
 def _get_average_x(
-    states: StateVectorList[
-        _B0Inv,
-        StackedBasisWithVolumeLike[Any, Any, Any],
-    ],
+    states: StateVectorList[_B0Inv, _SBV0],
     axis: int,
 ) -> ValueList[_B0Inv]:
     """
@@ -1077,21 +1072,18 @@ def _get_average_x(
 
     Parameters
     ----------
-    basis : _SB0
+    basis : _SBV0
 
     Returns
     -------
-    SingleBasisOperator[_SB0]
+    SingleBasisOperator[_SBV0]
     """
     operator = _get_x_operator(states["basis"][1], axis)
     return calculate_expectation_list(operator, states)
 
 
 def plot_averaged_occupation_1d_x(
-    states: StateVectorList[
-        TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
-    ],
+    states: StateVectorList[TupleBasisLike[Any, _BT0], _SBV0],
     axes: tuple[int] = (0,),
     *,
     ax: Axes | None = None,
@@ -1233,17 +1225,17 @@ def plot_spread_distribution_1d(
     return fig, ax
 
 
-def _get_k_operator(basis: _SB0, axis: int) -> SingleBasisOperator[_SB0]:
+def _get_k_operator(basis: _SBV0, axis: int) -> SingleBasisOperator[_SBV0]:
     """
     Generate operator for k.
 
     Parameters
     ----------
-    basis : _SB0
+    basis : _SBV0
 
     Returns
     -------
-    SingleBasisOperator[_SB0]
+    SingleBasisOperator[_SBV0]
     """
     basis_k = stacked_basis_as_fundamental_momentum_basis(basis)
     util = BasisUtil(basis_k)
@@ -1257,10 +1249,7 @@ def _get_k_operator(basis: _SB0, axis: int) -> SingleBasisOperator[_SB0]:
 
 
 def _get_average_k(
-    states: StateVectorList[
-        _B0Inv,
-        StackedBasisWithVolumeLike[Any, Any, Any],
-    ],
+    states: StateVectorList[_B0Inv, _SBV0],
     axis: int,
 ) -> ValueList[_B0Inv]:
     """
@@ -1268,11 +1257,11 @@ def _get_average_k(
 
     Parameters
     ----------
-    basis : _SB0
+    basis : _SBV0
 
     Returns
     -------
-    SingleBasisOperator[_SB0]
+    SingleBasisOperator[_SBV0]
     """
     operator = _get_k_operator(states["basis"][1], axis)
     return calculate_expectation_list(operator, states)

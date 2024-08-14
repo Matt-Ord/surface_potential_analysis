@@ -6,7 +6,6 @@ import numpy as np
 
 from surface_potential_analysis.overlap.conversion import (
     convert_overlap_to_momentum_basis,
-    convert_overlap_to_position_basis,
 )
 from surface_potential_analysis.stacked_basis.util import (
     calculate_cumulative_k_distances_along_path,
@@ -31,7 +30,10 @@ if TYPE_CHECKING:
         FundamentalTransformedPositionBasis,
     )
     from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
+    from surface_potential_analysis.basis.stacked_basis import (
+        StackedBasisWithVolumeLike,
+        TupleBasisLike,
+    )
     from surface_potential_analysis.types import (
         SingleStackedIndexLike,
     )
@@ -51,13 +53,14 @@ if TYPE_CHECKING:
             FundamentalTransformedPositionBasis[_L2Inv, Literal[3]],
         ]
     ]
+    _SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
 
 # ruff: noqa: PLR0913
 
 
 def plot_overlap_2d_x(
-    overlap: SingleOverlap[TupleBasisLike[*tuple[_B0, ...]]],
+    overlap: SingleOverlap[_SB0],
     axes: tuple[int, int],
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -86,10 +89,9 @@ def plot_overlap_2d_x(
     -------
     tuple[Figure, Axes, QuadMesh]
     """
-    converted = convert_overlap_to_position_basis(overlap)
     return plot_data_2d_x(
-        converted["basis"][0],
-        converted["data"],
+        overlap["basis"][0],
+        overlap["data"],
         axes,
         idx,
         ax=ax,
@@ -99,7 +101,7 @@ def plot_overlap_2d_x(
 
 
 def plot_overlap_2d_k(
-    overlap: SingleOverlap[TupleBasisLike[*tuple[_B0, ...]]],
+    overlap: SingleOverlap[_SB0],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -128,10 +130,9 @@ def plot_overlap_2d_k(
     -------
     tuple[Figure, Axes, QuadMesh]
     """
-    converted = convert_overlap_to_momentum_basis(overlap)
     return plot_data_2d_k(
-        converted["basis"],
-        converted["data"],
+        overlap["basis"][0],
+        overlap["data"],
         axes,
         idx,
         ax=ax,

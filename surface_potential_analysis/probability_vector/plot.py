@@ -2,10 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, TypeVar
 
-from surface_potential_analysis.probability_vector.conversion import (
-    convert_probability_vector_to_momentum_basis,
-    convert_probability_vector_to_position_basis,
-)
 from surface_potential_analysis.probability_vector.probability_vector import (
     ProbabilityVector,
     sum_probabilities,
@@ -27,7 +23,6 @@ if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis_like import BasisLike
     from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisWithVolumeLike,
-        TupleBasisLike,
     )
     from surface_potential_analysis.basis.time_basis_like import BasisWithTimeLike
     from surface_potential_analysis.probability_vector.probability_vector import (
@@ -40,7 +35,7 @@ if TYPE_CHECKING:
 if TYPE_CHECKING:
     _B0 = TypeVar("_B0", bound=BasisWithTimeLike[int, int])
     _B1 = TypeVar("_B1", bound=BasisLike[int, int])
-    _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
+    _SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
 
 def plot_probability_against_time(
@@ -111,7 +106,7 @@ def plot_total_probability_against_time(
 
 
 def plot_probability_1d_k(
-    state: ProbabilityVector[StackedBasisWithVolumeLike[Any, Any, Any]],
+    state: ProbabilityVector[_SB0],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -154,7 +149,7 @@ def plot_probability_1d_k(
 
 
 def plot_probability_1d_x(
-    state: ProbabilityVector[StackedBasisWithVolumeLike[Any, Any, Any]],
+    state: ProbabilityVector[_SB0],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -197,7 +192,7 @@ def plot_probability_1d_x(
 
 
 def plot_probability_2d_k(
-    state: ProbabilityVector[TupleBasisLike[*tuple[Any, ...]]],
+    state: ProbabilityVector[_SB0],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -226,11 +221,9 @@ def plot_probability_2d_k(
     -------
     tuple[Figure, Axes, QuadMesh]
     """
-    converted = convert_probability_vector_to_momentum_basis(state)
-
     fig, ax, mesh = plot_data_2d_k(
-        converted["basis"],
-        converted["data"],
+        state["basis"],
+        state["data"],
         axes,
         idx,
         ax=ax,
@@ -242,7 +235,7 @@ def plot_probability_2d_k(
 
 
 def plot_probability_2d_x(
-    state: ProbabilityVector[TupleBasisLike[*tuple[Any, ...]]],
+    state: ProbabilityVector[_SB0],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -271,11 +264,9 @@ def plot_probability_2d_x(
     -------
     tuple[Figure, Axes, QuadMesh]
     """
-    converted = convert_probability_vector_to_position_basis(state)
-
     fig, ax, mesh = plot_data_2d_x(
-        converted["basis"],
-        converted["data"],
+        state["basis"],
+        state["data"],
         axes,
         idx,
         ax=ax,

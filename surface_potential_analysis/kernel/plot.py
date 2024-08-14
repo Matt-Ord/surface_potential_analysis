@@ -35,6 +35,7 @@ from surface_potential_analysis.util.plot import (
     plot_data_1d,
     plot_data_1d_x,
     plot_data_2d,
+    plot_data_2d_x,
 )
 from surface_potential_analysis.util.util import Measure, get_measured_data
 
@@ -500,3 +501,39 @@ def plot_isotropic_noise_kernel_1d_x(  # noqa: PLR0913
     )
     line.set_label(f"{measure} kernel")
     return fig, ax, line
+
+
+def plot_isotropic_noise_kernel_2d_x(  # noqa: PLR0913
+    kernel: IsotropicNoiseKernel[StackedBasisWithVolumeLike[Any, Any, Any]],
+    axes: tuple[int, int] = (0, 1),
+    idx: SingleStackedIndexLike | None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "real",
+) -> tuple[Figure, Axes, QuadMesh]:
+    """
+    Plot an isotropic kernel in 1d.
+
+    Parameters
+    ----------
+    kernel : IsotropicNoiseKernel[StackedBasisWithVolumeLike[Any, Any, Any]]
+    axes : tuple[int], optional
+        axes, by default (0,)
+    idx : SingleStackedIndexLike | None, optional
+        idx, by default None
+    ax : Axes | None, optional
+        ax, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+    measure : Measure, optional
+        measure, by default "real"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    fig, ax, mesh = plot_data_2d_x(
+        kernel["basis"], kernel["data"], axes, idx, ax=ax, scale=scale, measure=measure
+    )
+    return fig, ax, mesh
