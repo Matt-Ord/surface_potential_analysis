@@ -316,6 +316,41 @@ def plot_operator_along_diagonal_1d_x(
     )
 
 
+def plot_diagonal_operator_along_diagonal_1d_x(
+    operator: SingleBasisOperator[_SB0],
+    axes: tuple[int] = (0,),
+    idx: SingleStackedIndexLike | None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "real",
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot the expected occupation of eigenstates at the given temperature.
+
+    Parameters
+    ----------
+    eigenstates : EigenstateList[BasisLike[Any, Any], BasisLike[Any, Any]]
+    temperature : float
+    ax : Axes | None, optional
+        ax, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    return plot_operator_along_diagonal_1d_x(
+        as_operator(operator),
+        axes=axes,
+        idx=idx,
+        ax=ax,
+        scale=scale,
+        measure=measure,
+    )
+
+
 def plot_operator_along_diagonal_2d_x(
     operator: SingleBasisOperator[_SB0],
     axes: tuple[int, int] = (0, 1),
@@ -347,6 +382,41 @@ def plot_operator_along_diagonal_2d_x(
     return plot_data_2d_x(
         diagonal["basis"][0],
         diagonal["data"],
+        axes=axes,
+        idx=idx,
+        ax=ax,
+        scale=scale,
+        measure=measure,
+    )
+
+
+def plot_diagonal_operator_along_diagonal_2d_x(
+    operator: SingleBasisOperator[_SB0],
+    axes: tuple[int, int] = (0, 1),
+    idx: SingleStackedIndexLike | None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "real",
+) -> tuple[Figure, Axes, QuadMesh]:
+    """
+    Plot the expected occupation of eigenstates at the given temperature.
+
+    Parameters
+    ----------
+    eigenstates : EigenstateList[BasisLike[Any, Any], BasisLike[Any, Any]]
+    temperature : float
+    ax : Axes | None, optional
+        ax, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    return plot_operator_along_diagonal_2d_x(
+        as_operator(operator),
         axes=axes,
         idx=idx,
         ax=ax,
