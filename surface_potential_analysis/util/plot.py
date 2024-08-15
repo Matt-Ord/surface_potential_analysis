@@ -381,7 +381,7 @@ def plot_data_2d_k(
     basis_k = stacked_basis_as_fundamental_momentum_basis(basis)
     converted_data = convert_vector(data, basis, basis_k)
 
-    idx = get_max_idx(basis_k, data, axes) if idx is None else idx
+    idx = get_max_idx(basis_k, converted_data, axes) if idx is None else idx
 
     coordinates = get_k_coordinates_in_axes(basis_k, axes, idx)
     data_in_axis = get_data_in_axes(converted_data.reshape(basis_k.shape), axes, idx)
