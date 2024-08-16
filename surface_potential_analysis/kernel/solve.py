@@ -428,7 +428,7 @@ def get_operators_for_real_isotropic_stacked_noise(
 
         sin_slice = slice_along_axis(slice(sin_start_idx, None), axis)
         conj_sin_slice = slice_along_axis(slice(cos_end_idx, 0, -1), axis)
-        data[sin_slice] = (cloned[sin_slice] - cloned[conj_sin_slice]) / np.sqrt(2)
+        data[sin_slice] = (cloned[sin_slice] - cloned[conj_sin_slice]) * 1j / np.sqrt(2)
 
     return {
         "basis": complex_operators["basis"],
