@@ -192,27 +192,6 @@ class ExplicitBasis(BasisLike[Any, Any], Generic[_B0, _B1]):
         vectors_in_basis = self.__into_state_basis__(vectors, axis)
         return self.vectors["basis"][1].__into_transformed__(vectors_in_basis, axis)
 
-    def __convert_vector_into__(
-        self,
-        vectors: np.ndarray[
-            _S0Inv,
-            np.dtype[np.complex128]
-            | np.dtype[np.float64]
-            | np.dtype[np.float64 | np.complex128],
-        ],
-        basis: BasisLike[Any, Any],
-        axis: int = -1,
-    ) -> np.ndarray[Any, np.dtype[np.complex128]]:
-        # TODO(matt): does this still give a perf improvement  # noqa: FIX002
-        # ! if isinstance(basis, ExplicitBasis):
-        # !     assert basis.fundamental_n == self.fundamental_n
-        # !     # We dont need to go all the way to fundamental basis here
-        # !     # Instead we can just compute the transformation once
-        # !     matrix = np.tensordot(np.conj(basis.fundamental_raw_vectors), self.fundamental_raw_vectors, axes=([1], [1]))
-        # !     transformed = np.tensordot(matrix, vectors, axes=([1], [axis]))
-        # !     return np.moveaxis(transformed, 0, axis)
-        return super().__convert_vector_into__(vectors, basis, axis)
-
 
 class ExplicitBasisWithLength(
     ExplicitBasis[_B0, _BL1], BasisWithLengthLike[Any, Any, Any]
@@ -261,7 +240,7 @@ class ExplicitStackedBasisWithLength(
     def delta_x_stacked(
         self,
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
-        return self._vectors["basis"][1].delta_x_stacked
+        return self.vectors["basis"][1].delta_x_stacked
 
     @property
     def shape(self) -> tuple[int, ...]:

@@ -347,7 +347,7 @@ def plot_data_2d(
 
 
 def plot_data_2d_k(
-    basis: TupleBasisLike[*tuple[Any, ...]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
@@ -378,10 +378,13 @@ def plot_data_2d_k(
     -------
     tuple[Figure, Axes, QuadMesh]
     """
-    idx = get_max_idx(basis, data, axes) if idx is None else idx
+    basis_k = stacked_basis_as_fundamental_momentum_basis(basis)
+    converted_data = convert_vector(data, basis, basis_k)
 
-    coordinates = get_k_coordinates_in_axes(basis, axes, idx)
-    data_in_axis = get_data_in_axes(data.reshape(basis.shape), axes, idx)
+    idx = get_max_idx(basis_k, converted_data, axes) if idx is None else idx
+
+    coordinates = get_k_coordinates_in_axes(basis_k, axes, idx)
+    data_in_axis = get_data_in_axes(converted_data.reshape(basis_k.shape), axes, idx)
 
     shifted_data = np.fft.fftshift(data_in_axis)
     shifted_coordinates = np.fft.fftshift(coordinates, axes=(1, 2))
@@ -408,7 +411,7 @@ def plot_data_2d_k(
 
 
 def plot_data_2d_x(
-    basis: TupleBasisLike[*tuple[_B0, ...]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
@@ -441,11 +444,13 @@ def plot_data_2d_x(
     -------
     tuple[Figure, Axes, QuadMesh]
     """
-    fig, ax = get_figure(ax)
-    idx = get_max_idx(basis, data, axes) if idx is None else idx
+    basis_x = stacked_basis_as_fundamental_position_basis(basis)
+    converted_data = convert_vector(data, basis, basis_x)
 
-    coordinates = get_x_coordinates_in_axes(basis, axes, idx)
-    data_in_axis = get_data_in_axes(data.reshape(basis.shape), axes, idx)
+    idx = get_max_idx(basis_x, converted_data, axes) if idx is None else idx
+
+    coordinates = get_x_coordinates_in_axes(basis_x, axes, idx)
+    data_in_axis = get_data_in_axes(converted_data.reshape(basis_x.shape), axes, idx)
 
     fig, ax, mesh = plot_data_2d(
         cast(np.ndarray[tuple[int], np.dtype[np.complex128]], data_in_axis),

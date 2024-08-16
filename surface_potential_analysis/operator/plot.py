@@ -1,16 +1,24 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from surface_potential_analysis.basis.basis_like import BasisLike
+from surface_potential_analysis.basis.stacked_basis import (
+    StackedBasisWithVolumeLike,
+    TupleBasis,
+)
+from surface_potential_analysis.operator.conversion import convert_operator_to_basis
 from surface_potential_analysis.operator.operator import (
     SingleBasisDiagonalOperator,
     as_diagonal_operator,
     as_operator,
+)
+from surface_potential_analysis.stacked_basis.conversion import (
+    stacked_basis_as_fundamental_position_basis,
 )
 from surface_potential_analysis.state_vector.eigenstate_calculation import (
     calculate_eigenvectors,
@@ -25,7 +33,9 @@ from surface_potential_analysis.state_vector.eigenvalue_list_plot import (
 from surface_potential_analysis.util.plot import (
     Scale,
     get_figure,
+    plot_data_1d_x,
     plot_data_2d,
+    plot_data_2d_x,
 )
 from surface_potential_analysis.util.util import (
     Measure,
@@ -43,8 +53,11 @@ if TYPE_CHECKING:
         DiagonalOperator,
         SingleBasisOperator,
     )
+    from surface_potential_analysis.types import SingleStackedIndexLike
 
     from .operator import Operator
+
+    _SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
 
 def plot_operator_sparsity(
@@ -261,6 +274,154 @@ def plot_operator_along_diagonal(
     diagonal = as_diagonal_operator(operator)
     return plot_diagonal_operator_along_diagonal(
         diagonal, ax=ax, scale=scale, measure=measure
+    )
+
+
+def plot_operator_along_diagonal_1d_x(
+    operator: SingleBasisOperator[_SB0],
+    axes: tuple[int] = (0,),
+    idx: SingleStackedIndexLike | None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "real",
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot the expected occupation of eigenstates at the given temperature.
+
+    Parameters
+    ----------
+    eigenstates : EigenstateList[BasisLike[Any, Any], BasisLike[Any, Any]]
+    temperature : float
+    ax : Axes | None, optional
+        ax, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    basis_x = stacked_basis_as_fundamental_position_basis(operator["basis"][0])
+    converted = convert_operator_to_basis(operator, TupleBasis(basis_x, basis_x))
+    diagonal = as_diagonal_operator(converted)
+    return plot_data_1d_x(
+        diagonal["basis"][0],
+        diagonal["data"],
+        axes=axes,
+        idx=idx,
+        ax=ax,
+        scale=scale,
+        measure=measure,
+    )
+
+
+def plot_diagonal_operator_along_diagonal_1d_x(
+    operator: SingleBasisOperator[_SB0],
+    axes: tuple[int] = (0,),
+    idx: SingleStackedIndexLike | None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "real",
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot the expected occupation of eigenstates at the given temperature.
+
+    Parameters
+    ----------
+    eigenstates : EigenstateList[BasisLike[Any, Any], BasisLike[Any, Any]]
+    temperature : float
+    ax : Axes | None, optional
+        ax, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    return plot_operator_along_diagonal_1d_x(
+        as_operator(operator),
+        axes=axes,
+        idx=idx,
+        ax=ax,
+        scale=scale,
+        measure=measure,
+    )
+
+
+def plot_operator_along_diagonal_2d_x(
+    operator: SingleBasisOperator[_SB0],
+    axes: tuple[int, int] = (0, 1),
+    idx: SingleStackedIndexLike | None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "real",
+) -> tuple[Figure, Axes, QuadMesh]:
+    """
+    Plot the expected occupation of eigenstates at the given temperature.
+
+    Parameters
+    ----------
+    eigenstates : EigenstateList[BasisLike[Any, Any], BasisLike[Any, Any]]
+    temperature : float
+    ax : Axes | None, optional
+        ax, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    basis_x = stacked_basis_as_fundamental_position_basis(operator["basis"][0])
+    converted = convert_operator_to_basis(operator, TupleBasis(basis_x, basis_x))
+    diagonal = as_diagonal_operator(converted)
+    return plot_data_2d_x(
+        diagonal["basis"][0],
+        diagonal["data"],
+        axes=axes,
+        idx=idx,
+        ax=ax,
+        scale=scale,
+        measure=measure,
+    )
+
+
+def plot_diagonal_operator_along_diagonal_2d_x(
+    operator: SingleBasisOperator[_SB0],
+    axes: tuple[int, int] = (0, 1),
+    idx: SingleStackedIndexLike | None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "real",
+) -> tuple[Figure, Axes, QuadMesh]:
+    """
+    Plot the expected occupation of eigenstates at the given temperature.
+
+    Parameters
+    ----------
+    eigenstates : EigenstateList[BasisLike[Any, Any], BasisLike[Any, Any]]
+    temperature : float
+    ax : Axes | None, optional
+        ax, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    return plot_operator_along_diagonal_2d_x(
+        as_operator(operator),
+        axes=axes,
+        idx=idx,
+        ax=ax,
+        scale=scale,
+        measure=measure,
     )
 
 

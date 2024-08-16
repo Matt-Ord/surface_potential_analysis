@@ -129,6 +129,13 @@ def get_effective_gaussian_parameters(
     """
     Generate a set of Gaussian parameters A, Lambda for a friction coefficient eta.
 
+    This is done to match the quadratic coefficient (A^2/(2 lambda^2))
+    beta(x,x') = A^2(1-(x-x')^2/(lambda^2))
+
+    to the caldeira leggett noise
+
+    beta(x,x') = 2 * eta * Boltzmann * temperature / hbar**2
+
     Parameters
     ----------
     basis : TupleBasisLike[

@@ -1,12 +1,17 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from functools import cached_property
+from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar, cast
 
 import numpy as np
 
 from surface_potential_analysis.basis.basis import (
     FundamentalBasis,
+    FundamentalTransformedBasis,
     FundamentalTransformedPositionBasis,
+)
+from surface_potential_analysis.basis.basis_like import (
+    BasisLike,
 )
 from surface_potential_analysis.basis.evenly_spaced_basis import (
     EvenlySpacedTransformedPositionBasis,
@@ -18,6 +23,7 @@ from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisLike,
     StackedBasisWithVolumeLike,
     TupleBasis,
+    TupleBasisLike,
     TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
@@ -64,12 +70,6 @@ from surface_potential_analysis.wavepacket.wavepacket import (
 
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis import FundamentalPositionBasis
-    from surface_potential_analysis.basis.basis_like import (
-        BasisLike,
-    )
-    from surface_potential_analysis.basis.stacked_basis import (
-        TupleBasisLike,
-    )
     from surface_potential_analysis.operator.operator import SingleBasisDiagonalOperator
     from surface_potential_analysis.operator.operator_list import (
         OperatorList,
@@ -92,9 +92,10 @@ if TYPE_CHECKING:
     _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
     _TB0 = TypeVar("_TB0", bound=TupleBasisLike[*tuple[Any, ...]])
 
-    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
     _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
     _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
+
+_B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
 
 
 def _get_sampled_basis(
@@ -367,7 +368,7 @@ def _get_compressed_bloch_states_at_bloch_idx(
 def get_bloch_states(
     wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBV0],
 ) -> StateVectorList[
-    TupleBasisLike[_B0, _SB0],
+    TupleBasisLike[_B0, TupleBasisLike[*tuple[FundamentalTransformedBasis[Any], ...]]],
     TupleBasisWithLengthLike[
         *tuple[FundamentalTransformedPositionBasis[Any, Any], ...]
     ],
@@ -441,19 +442,102 @@ def get_bloch_states(
         )
 
     return {
-        "basis": TupleBasis(wavepackets["basis"][0], decompressed_basis),
+        "basis": TupleBasis(converted["basis"][0], decompressed_basis),
         "data": out.ravel(),
     }
 
 
+class BlochBasis(
+    ExplicitStackedBasisWithLength[
+        TupleBasisLike[
+            _B0, TupleBasisLike[*tuple[FundamentalTransformedBasis[Any], ...]]
+        ],
+        TupleBasisWithLengthLike[
+            *tuple[FundamentalTransformedPositionBasis[Any, Any], ...]
+        ],
+    ],
+    Generic[_B0],
+):
+    """An basis with vectors given as explicit states."""
+
+    def __init__(
+        self,
+        wavefunctions: BlochWavefunctionListList[_B0, _SB0, _SBV0],
+    ) -> None:
+        converted_list_basis = stacked_basis_as_fundamental_transformed_basis(
+            wavefunctions["basis"][0][1]
+        )
+        self._wavefunctions = convert_wavepacket_to_basis(
+            wavefunctions,
+            list_basis=TupleBasis(wavefunctions["basis"][0][0], converted_list_basis),
+        )
+
+    @property
+    def n(self) -> int:
+        # Number of bloch k * number of bands
+        return self.wavefunctions["basis"][0][1].n * self.wavefunctions["basis"][0][0].n
+
+    @property
+    def fundamental_n(self) -> int:
+        # Number of fundmental bloch k * number of states
+        return (
+            self.wavefunctions["basis"][0][1].fundamental_n
+            * self.wavefunctions["basis"][1].fundamental_n
+        )
+
+    @cached_property
+    def _vectors(
+        self: Self,
+    ) -> StateVectorList[
+        TupleBasisLike[
+            _B0, TupleBasisLike[*tuple[FundamentalTransformedBasis[Any], ...]]
+        ],
+        TupleBasisWithLengthLike[
+            *tuple[FundamentalTransformedPositionBasis[Any, Any], ...]
+        ],
+    ]:
+        return get_bloch_states(self.wavefunctions)
+
+    @property
+    def wavefunctions(
+        self: Self,
+    ) -> BlochWavefunctionListList[
+        _B0,
+        TupleBasisLike[*tuple[FundamentalTransformedBasis[Any], ...]],
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ]:
+        return self._wavefunctions
+
+    def vectors_at_bloch_k(
+        self: Self, idx: SingleIndexLike
+    ) -> StateVectorList[
+        _B0,
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ]:
+        util = BasisUtil(self.wavefunctions["basis"][0][1])
+        idx = util.get_flat_index(idx, mode="wrap") if isinstance(idx, tuple) else idx
+        data = self.wavefunctions["data"].reshape(
+            *self.wavefunctions["basis"][0].shape, -1
+        )[:, idx, :]
+        return {
+            "basis": TupleBasis(
+                self.wavefunctions["basis"][0][0], self.wavefunctions["basis"][1]
+            ),
+            "data": data.ravel(),
+        }
+
+    def basis_at_bloch_k(
+        self: Self, idx: tuple[int, ...]
+    ) -> ExplicitStackedBasisWithLength[
+        _B0,
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ]:
+        return ExplicitStackedBasisWithLength(self.vectors_at_bloch_k(idx))
+
+
 def get_bloch_basis(
     wavefunctions: BlochWavefunctionListList[_B0, _SB0, _SBV0],
-) -> ExplicitStackedBasisWithLength[
-    TupleBasisLike[_B0, _SB0],
-    TupleBasisWithLengthLike[
-        *tuple[FundamentalTransformedPositionBasis[Any, Any], ...]
-    ],
-]:
+) -> BlochBasis[_B0]:
     """
     Get the basis, with the bloch wavefunctions as eigenstates.
 
@@ -464,7 +548,7 @@ def get_bloch_basis(
         TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
     ]
     """
-    return ExplicitStackedBasisWithLength(get_bloch_states(wavefunctions))
+    return BlochBasis(wavefunctions)
 
 
 def get_bloch_hamiltonian(
@@ -494,14 +578,7 @@ def get_bloch_hamiltonian(
 
 def get_full_bloch_hamiltonian(
     wavefunctions: BlochWavefunctionListWithEigenvaluesList[_B0, _SB0, _SBV0],
-) -> SingleBasisDiagonalOperator[
-    ExplicitStackedBasisWithLength[
-        TupleBasisLike[_B0, _SB0],
-        TupleBasisWithLengthLike[
-            *tuple[FundamentalTransformedPositionBasis[Any, Any], ...]
-        ],
-    ]
-]:
+) -> SingleBasisDiagonalOperator[BlochBasis[_B0]]:
     """
     Get the hamiltonian in the full bloch basis.
 

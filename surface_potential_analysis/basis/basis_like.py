@@ -308,7 +308,7 @@ class BasisLike(
     ) -> np.ndarray[Any, np.dtype[np.complex128]]:
         assert basis.fundamental_n == self.fundamental_n
         if self == basis:
-            return vector.astype(np.complex128)
+            return vector.view(np.complex128)
         # Small speedup here, and prevents imprecision of fft followed by ifft
         # And two pad_ft_points
         if isinstance(self, AsTransformedBasis) and isinstance(
