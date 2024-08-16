@@ -67,6 +67,7 @@ if TYPE_CHECKING:
 
     _B0s = TypeVarTuple("_B0s")
     _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+    _SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
 
 def plot_diagonal_kernel_2d(
@@ -523,8 +524,8 @@ def _get_noise_kernel_percentage_error(
 
 
 def plot_isotropic_kernel_error(
-    true_kernel: IsotropicNoiseKernel[Any],
-    fitted_kernel: IsotropicNoiseKernel[Any],
+    true_kernel: IsotropicNoiseKernel[_SBV0],
+    fitted_kernel: IsotropicNoiseKernel[_SBV1],
     *,
     ax: Axes | None = None,
 ) -> tuple[Figure, Axes, Line2D]:

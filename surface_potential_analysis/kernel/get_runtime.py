@@ -53,7 +53,7 @@ def _get_time_poly_fit(
     return (te - ts).total_seconds()
 
 
-def _get_time_for_get_op_for_real_isotropic_noise(
+def get_time_for_get_op_for_real_isotropic_noise(
     basis: _B0,
     n: int,
 ) -> float:
@@ -73,7 +73,7 @@ def get_time_stacked_taylor_expansion(
     n_states: int = basis_x.n
     poly_fit_time = _get_time_poly_fit(n_states, kernel, n)
     time_for_get_op_for_real_isotropic_noise = (
-        _get_time_for_get_op_for_real_isotropic_noise(basis_x, n + 1)
+        get_time_for_get_op_for_real_isotropic_noise(basis_x, n + 1)
     )
 
     return [poly_fit_time, time_for_get_op_for_real_isotropic_noise]
@@ -138,6 +138,6 @@ def get_time_explicit(
 
     basis_x = stacked_basis_as_fundamental_position_basis(basis)
     time_for_get_op_for_real_isotropic_noise = (
-        _get_time_for_get_op_for_real_isotropic_noise(basis_x, n_terms)
+        get_time_for_get_op_for_real_isotropic_noise(basis_x, n_terms)
     )
     return [time_for_get_cos_series_coeff, time_for_get_op_for_real_isotropic_noise]
