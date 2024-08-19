@@ -129,3 +129,6 @@ dmypy.json
 
 out/
 data/
+
+#Binary
+*.prof
