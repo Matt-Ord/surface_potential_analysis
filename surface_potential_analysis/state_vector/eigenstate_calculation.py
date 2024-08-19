@@ -16,11 +16,14 @@ from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
 )
 from surface_potential_analysis.operator.conversion import convert_operator_to_basis
-from surface_potential_analysis.util.decorators import timed
+from surface_potential_analysis.state_vector.conversion import (
+    convert_state_vector_to_basis,
+)
 
 if TYPE_CHECKING:
     from surface_potential_analysis.operator.operator import (
         Operator,
+        SingleBasisDiagonalOperator,
         SingleBasisOperator,
     )
     from surface_potential_analysis.state_vector.eigenstate_list import (
@@ -43,7 +46,6 @@ _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
 _B3 = TypeVar("_B3", bound=BasisLike[Any, Any])
 
 
-@timed
 def calculate_eigenvectors_hermitian(
     operator: SingleBasisOperator[_B0],
     subset_by_index: tuple[IntLike_co, IntLike_co] | None = None,
@@ -92,6 +94,32 @@ def operator_from_eigenstates(
         "basis": TupleBasis(states["basis"][1], states["basis"][1]),
         "data": data.ravel(),
     }
+
+
+def calculate_expectation_diagonal(
+    operator: SingleBasisDiagonalOperator[_B0], state: StateVector[_B2]
+) -> complex:
+    """
+    Calculate the energy of the given eigenvector.
+
+    Parameters
+    ----------
+    hamiltonian : Hamiltonian[_B3d0Inv]
+    eigenstate : Eigenstate[_B3d0Inv]
+
+    Returns
+    -------
+    complex
+        The energy of the Eigenvector given Hamiltonian
+    """
+    converted = convert_state_vector_to_basis(state, operator["basis"][0])
+
+    return np.einsum(
+        "j,j,j->",
+        np.conj(converted["data"]),
+        operator["data"],
+        converted["data"],
+    )
 
 
 def calculate_expectation(

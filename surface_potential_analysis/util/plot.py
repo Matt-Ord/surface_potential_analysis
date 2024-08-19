@@ -135,6 +135,7 @@ def _set_ymargin(ax: Axes, bottom: float = 0.0, top: float = 0.3) -> None:
 def plot_data_1d(
     data: np.ndarray[tuple[int], np.dtype[np.complex128]],
     coordinates: np.ndarray[tuple[int], np.dtype[np.float64]],
+    y_errors: np.ndarray[tuple[int], np.dtype[np.float64]] | None = None,
     *,
     ax: Axes | None = None,
     scale: Scale = "linear",
@@ -167,7 +168,8 @@ def plot_data_1d(
         coordinates = np.append(coordinates, coordinates[-1] + coordinates[1])
         measured_data = np.append(measured_data, measured_data[0])
 
-    (line,) = ax.plot(coordinates, measured_data)
+    container = ax.errorbar(coordinates, measured_data, yerr=y_errors)
+    line = container.lines[0]
     ax.set_xmargin(0)
     _set_ymargin(ax, 0, 0.05)
     if measure == "abs":

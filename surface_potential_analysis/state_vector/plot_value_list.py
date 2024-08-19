@@ -24,7 +24,10 @@ if TYPE_CHECKING:
     from matplotlib.lines import Line2D
 
     from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
-    from surface_potential_analysis.state_vector.eigenstate_list import ValueList
+    from surface_potential_analysis.state_vector.eigenstate_list import (
+        StatisticalValueList,
+        ValueList,
+    )
     from surface_potential_analysis.util.util import (
         Measure,
     )
@@ -379,14 +382,19 @@ def plot_value_list_distribution(
 
 
 def plot_value_list_against_momentum(
-    values: ValueList[MomentumBasis],
+    values: ValueList[MomentumBasis] | StatisticalValueList[MomentumBasis],
     *,
     ax: Axes | None = None,
     scale: Scale = "linear",
     measure: Measure = "abs",
 ) -> tuple[Figure, Axes, Line2D]:
     fig, ax, line = plot_data_1d(
-        values["data"], values["basis"].k_points, scale=scale, measure=measure, ax=ax
+        values["data"],
+        values["basis"].k_points,
+        values.get("standard_deviation", None),
+        scale=scale,
+        measure=measure,
+        ax=ax,
     )
 
     ax.set_xlabel("$k /m^{-1}$")
