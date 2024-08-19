@@ -8,7 +8,6 @@ from scipy.constants import hbar  # type: ignore no stub
 from surface_potential_analysis.basis.basis import FundamentalPositionBasis
 from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
-    TupleBasisLike,
     TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.kernel.build import (
@@ -51,6 +50,7 @@ if TYPE_CHECKING:
         FundamentalBasis,
         FundamentalPositionBasis,
     )
+    from surface_potential_analysis.basis.basis_like import BasisLike
     from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisWithVolumeLike,
     )
@@ -67,6 +67,8 @@ if TYPE_CHECKING:
     from surface_potential_analysis.types import SingleStackedIndexLike
 
     _B0s = TypeVarTuple("_B0s")
+    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
+    _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
     _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
     _SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
@@ -545,18 +547,13 @@ def plot_isotropic_noise_kernel_2d_x(  # noqa: PLR0913
 
 
 def _get_noise_kernel_percentage_error(
-    true_kernel: IsotropicNoiseKernel[
-        TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
-    ],
-    fitted_kernel: IsotropicNoiseKernel[
-        TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
-    ],
-) -> ValueList[TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]]:
-    true_data = true_kernel["data"].reshape(true_kernel["basis"].shape)
+    true_kernel: IsotropicNoiseKernel[_B0],
+    fitted_kernel: IsotropicNoiseKernel[_B1],
+) -> ValueList[_B0]:
     converted = convert_isotropic_kernel_to_basis(fitted_kernel, true_kernel["basis"])
     return {
         "basis": true_kernel["basis"],
-        "data": (converted["data"] - true_data) * 100 / true_data,
+        "data": (converted["data"] - true_kernel["data"]) * 100 / true_kernel["data"],
     }
 
 
