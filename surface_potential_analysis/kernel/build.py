@@ -98,7 +98,7 @@ def build_isotropic_kernel_from_function(
     return {"basis": displacements["basis"][0], "data": correlation.ravel()}
 
 
-def build_2d_isotropic_kernel_from_function(
+def build_isotropic_kernels_from_function(
     basis: StackedBasisWithVolumeLike[Any, Any, Any],
     fn: Callable[
         [np.ndarray[Any, np.dtype[np.float64]]],
@@ -128,6 +128,7 @@ def build_2d_isotropic_kernel_from_function(
         TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
     ]
     """
+    # return tuple(build_isotropic_kernel_from_function(basis_i, fn) for basis_i in basis)
     displacements = np.array([get_displacements_x(basis_i) for basis_i in basis])
     correlation = tuple(
         fn(displacements[i]["data"].reshape(displacements[i]["basis"].shape)[0])

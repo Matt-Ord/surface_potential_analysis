@@ -12,8 +12,8 @@ from surface_potential_analysis.basis.stacked_basis import (
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.kernel.build import (
-    build_2d_isotropic_kernel_from_function,
     build_isotropic_kernel_from_function,
+    build_isotropic_kernels_from_function,
     get_temperature_corrected_diagonal_noise_operators,
     truncate_diagonal_noise_operator_list,
 )
@@ -128,7 +128,7 @@ def get_2d_gaussian_isotropic_noise_kernel(
             np.complex128,
         )
 
-    return build_2d_isotropic_kernel_from_function(basis, fn)
+    return build_isotropic_kernels_from_function(basis, fn)
 
 
 def get_gaussian_noise_kernel(
