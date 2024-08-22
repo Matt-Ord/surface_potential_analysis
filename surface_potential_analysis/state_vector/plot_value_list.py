@@ -356,7 +356,7 @@ def plot_value_list_distribution(
         if distribution is not None
         else (np.min(measured_data).item(), np.max(measured_data).item())
     )
-    n_bins = np.max([11, values["data"].size // 500]).item()
+    n_bins = np.max([11, values["data"].size // 100]).item()
 
     ax.hist(measured_data, n_bins, x_range, density=True)
 
