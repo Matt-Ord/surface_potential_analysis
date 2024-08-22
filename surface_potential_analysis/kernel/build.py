@@ -108,9 +108,7 @@ def build_2d_isotropic_kernel_from_function(
     IsotropicNoiseKernel[
         TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
     ],
-    IsotropicNoiseKernel[
-        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
-    ],
+    ...,
 ]:
     """
     Get an Isotropic Kernel with a correllation beta(x-x').
@@ -131,20 +129,18 @@ def build_2d_isotropic_kernel_from_function(
     ]
     """
     displacements = np.array([get_displacements_x(basis_i) for basis_i in basis])
-    correlation_x = fn(
-        displacements[0]["data"].reshape(displacements[0]["basis"].shape)[0]
-    )
-    correlation_y = fn(
-        displacements[1]["data"].reshape(displacements[1]["basis"].shape)[0]
+    correlation = tuple(
+        fn(displacements[i]["data"].reshape(displacements[i]["basis"].shape)[0])
+        for i in range(len(displacements))
     )
 
     basis_out = np.array(
         [displacements_i["basis"][0] for displacements_i in displacements]
     )
-    kernel_x = {"basis": basis_out[0][0], "data": correlation_x.ravel()}
-    kernel_y = {"basis": basis_out[1][0], "data": correlation_y.ravel()}
-
-    return (kernel_x, kernel_y)
+    return tuple(
+        {"basis": basis_out[i][0], "data": correlation[i].ravel()}
+        for i in range(len(displacements))
+    )
 
 
 def _get_temperature_corrected_operators(
