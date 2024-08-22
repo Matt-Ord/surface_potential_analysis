@@ -569,10 +569,7 @@ def get_noise_operators_real_isotropic_taylor_expansion(
     The noise operators formed using the 2n+1 lowest fourier terms, and the corresponding coefficients.
 
     """
-    # for 1d
-    # then kernel basis should be TBL0, and return type should be SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[int], TupleBasisWithLengthLike[FundamentalPositionBasis[Any, Literal[1]]],]
-    # basis_x = stacked_basis_as_fundamental_position_basis(kernel["basis"])
-    basis_x = basis_as_fundamental_position_basis(kernel["basis"])  # for 2d and more
+    basis_x = basis_as_fundamental_position_basis(kernel["basis"])
 
     n_states: int = basis_x.n
     n = (n_states + 1) // 2 if n is None else n

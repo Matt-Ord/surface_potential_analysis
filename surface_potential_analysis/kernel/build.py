@@ -33,7 +33,6 @@ if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis_like import BasisLike
     from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisWithVolumeLike,
-        TupleBasisWithLengthLike,
     )
     from surface_potential_analysis.kernel.kernel import (
         DiagonalNoiseOperatorList,
@@ -71,9 +70,7 @@ def build_isotropic_kernel_from_function(
         [np.ndarray[Any, np.dtype[np.float64]]],
         np.ndarray[Any, np.dtype[np.complex128]],
     ],
-) -> IsotropicNoiseKernel[
-    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
-]:
+) -> IsotropicNoiseKernel[FundamentalPositionBasis[Any, Any],]:
     """
     Get an Isotropic Kernel with a correllation beta(x-x').
 
@@ -95,7 +92,7 @@ def build_isotropic_kernel_from_function(
     displacements = get_displacements_x(basis)
     correlation = fn(displacements["data"].reshape(displacements["basis"].shape)[0])
 
-    return {"basis": displacements["basis"][0], "data": correlation.ravel()}
+    return {"basis": displacements["basis"][0][0], "data": correlation.ravel()}
 
 
 def build_isotropic_kernels_from_function(
@@ -105,9 +102,7 @@ def build_isotropic_kernels_from_function(
         np.ndarray[Any, np.dtype[np.complex128]],
     ],
 ) -> tuple[
-    IsotropicNoiseKernel[
-        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
-    ],
+    IsotropicNoiseKernel[FundamentalPositionBasis[Any, Any]],
     ...,
 ]:
     """
@@ -128,20 +123,7 @@ def build_isotropic_kernels_from_function(
         TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
     ]
     """
-    # return tuple(build_isotropic_kernel_from_function(basis_i, fn) for basis_i in basis)
-    displacements = np.array([get_displacements_x(basis_i) for basis_i in basis])
-    correlation = tuple(
-        fn(displacements[i]["data"].reshape(displacements[i]["basis"].shape)[0])
-        for i in range(len(displacements))
-    )
-
-    basis_out = np.array(
-        [displacements_i["basis"][0] for displacements_i in displacements]
-    )
-    return tuple(
-        {"basis": basis_out[i][0], "data": correlation[i].ravel()}
-        for i in range(len(displacements))
-    )
+    return tuple(build_isotropic_kernel_from_function(basis_i, fn) for basis_i in basis)
 
 
 def _get_temperature_corrected_operators(

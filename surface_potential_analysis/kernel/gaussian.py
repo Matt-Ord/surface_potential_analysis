@@ -96,9 +96,7 @@ def get_2d_gaussian_isotropic_noise_kernel(
     a: float,
     lambda_: float,
 ) -> tuple[
-    IsotropicNoiseKernel[
-        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
-    ],
+    IsotropicNoiseKernel[FundamentalPositionBasis[Any, Any]],
     ...,
 ]:
     """
