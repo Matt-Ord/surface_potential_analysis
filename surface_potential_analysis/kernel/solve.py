@@ -9,6 +9,9 @@ from surface_potential_analysis.basis.basis import (
     FundamentalBasis,
     FundamentalPositionBasis,
 )
+from surface_potential_analysis.basis.conversion import (
+    basis_as_fundamental_position_basis,
+)
 from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisLike,
     TupleBasis,
@@ -23,14 +26,14 @@ from surface_potential_analysis.kernel.kernel import (
 from surface_potential_analysis.stacked_basis.build import (
     fundamental_stacked_basis_from_shape,
 )
-from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_position_basis,
-)
 from surface_potential_analysis.util.interpolation import pad_ft_points
 from surface_potential_analysis.util.util import slice_along_axis
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis_like import BasisLike
+    from surface_potential_analysis.basis.basis_like import (
+        BasisLike,
+        BasisWithLengthLike,
+    )
     from surface_potential_analysis.kernel.kernel import (
         DiagonalNoiseKernel,
         DiagonalNoiseOperatorList,
@@ -45,6 +48,8 @@ if TYPE_CHECKING:
     from surface_potential_analysis.state_vector.eigenstate_list import ValueList
 
     _TBL0 = TypeVar("_TBL0", bound=TupleBasisWithLengthLike[*tuple[Any, ...]])
+
+    _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
 
     _B0 = TypeVar("_B0", bound=BasisLike[int, int])
     _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
@@ -543,12 +548,12 @@ def get_noise_operators_explicit_taylor_expansion(
 
 
 def get_noise_operators_real_isotropic_taylor_expansion(
-    kernel: IsotropicNoiseKernel[_TBL0],
+    kernel: IsotropicNoiseKernel[_BL0],
     *,
     n: int | None = None,
 ) -> SingleBasisDiagonalNoiseOperatorList[
     FundamentalBasis[int],
-    TupleBasisWithLengthLike[FundamentalPositionBasis[Any, Literal[1]]],
+    FundamentalPositionBasis[Any, Literal[1]],
 ]:
     """Calculate the noise operators for a general isotropic noise kernel.
 
@@ -564,7 +569,10 @@ def get_noise_operators_real_isotropic_taylor_expansion(
     The noise operators formed using the 2n+1 lowest fourier terms, and the corresponding coefficients.
 
     """
-    basis_x = stacked_basis_as_fundamental_position_basis(kernel["basis"])
+    # for 1d
+    # then kernel basis should be TBL0, and return type should be SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[int], TupleBasisWithLengthLike[FundamentalPositionBasis[Any, Literal[1]]],]
+    # basis_x = stacked_basis_as_fundamental_position_basis(kernel["basis"])
+    basis_x = basis_as_fundamental_position_basis(kernel["basis"])  # for 2d and more
 
     n_states: int = basis_x.n
     n = (n_states + 1) // 2 if n is None else n

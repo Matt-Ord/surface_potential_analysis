@@ -98,6 +98,55 @@ def build_isotropic_kernel_from_function(
     return {"basis": displacements["basis"][0], "data": correlation.ravel()}
 
 
+def build_2d_isotropic_kernel_from_function(
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    fn: Callable[
+        [np.ndarray[Any, np.dtype[np.float64]]],
+        np.ndarray[Any, np.dtype[np.complex128]],
+    ],
+) -> tuple[
+    IsotropicNoiseKernel[
+        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    ],
+    IsotropicNoiseKernel[
+        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    ],
+]:
+    """
+    Get an Isotropic Kernel with a correllation beta(x-x').
+
+    Parameters
+    ----------
+    basis : StackedBasisWithVolumeLike[Any, Any, Any]
+    fn : Callable[
+        [np.ndarray[Any, np.dtype[np.float64]]],
+        np.ndarray[Any, np.dtype[np.complex128]],
+    ]
+        beta(x-x'), the correllation as a function of displacement
+
+    Returns
+    -------
+    IsotropicNoiseKernel[
+        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    ]
+    """
+    displacements = np.array([get_displacements_x(basis_i) for basis_i in basis])
+    correlation_x = fn(
+        displacements[0]["data"].reshape(displacements[0]["basis"].shape)[0]
+    )
+    correlation_y = fn(
+        displacements[1]["data"].reshape(displacements[1]["basis"].shape)[0]
+    )
+
+    basis_out = np.array(
+        [displacements_i["basis"][0] for displacements_i in displacements]
+    )
+    kernel_x = {"basis": basis_out[0][0], "data": correlation_x.ravel()}
+    kernel_y = {"basis": basis_out[1][0], "data": correlation_y.ravel()}
+
+    return (kernel_x, kernel_y)
+
+
 def _get_temperature_corrected_operators(
     hamiltonian: SingleBasisOperator[_B1],
     operators: SingleBasisOperatorList[
