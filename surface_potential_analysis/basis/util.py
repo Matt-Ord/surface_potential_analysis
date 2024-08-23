@@ -240,7 +240,8 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
         idx: SingleStackedIndexLike,
         *,
         mode: Literal["raise", "wrap", "clip"] = "raise",
-    ) -> np.int_: ...
+    ) -> np.int_:
+        ...
 
     @overload
     def get_flat_index(
@@ -248,7 +249,8 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
         idx: ArrayStackedIndexLike[Unpack[_TS]],
         *,
         mode: Literal["raise", "wrap", "clip"] = "raise",
-    ) -> ArrayFlatIndexLike[Unpack[_TS]]: ...
+    ) -> ArrayFlatIndexLike[Unpack[_TS]]:
+        ...
 
     def get_flat_index(
         self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
@@ -277,13 +279,15 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
     def get_stacked_index(
         self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
         idx: SingleFlatIndexLike,
-    ) -> SingleStackedIndexLike: ...
+    ) -> SingleStackedIndexLike:
+        ...
 
     @overload
     def get_stacked_index(
         self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
         idx: ArrayFlatIndexLike[Unpack[_TS]],
-    ) -> ArrayStackedIndexLike[Unpack[_TS]]: ...
+    ) -> ArrayStackedIndexLike[Unpack[_TS]]:
+        ...
 
     def get_stacked_index(
         self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]],
@@ -305,12 +309,14 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
     @overload
     def __getitem__(
         self: BasisUtil[TupleBasisLike[*tuple[_B0Inv, ...]]], index: int
-    ) -> BasisLike[Any, Any]: ...
+    ) -> BasisLike[Any, Any]:
+        ...
 
     @overload
     def __getitem__(
         self: BasisUtil[TupleBasisLike[*tuple[Any, ...]]], index: slice
-    ) -> TupleBasisLike[*tuple[Any, ...]]: ...
+    ) -> TupleBasisLike[*tuple[Any, ...]]:
+        ...
 
     def __getitem__(
         self: BasisUtil[TupleBasisLike[*tuple[Any, ...]]], index: int | slice
@@ -328,13 +334,15 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
     @overload
     def get_k_points_at_index(
         self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]], idx: SingleIndexLike
-    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]: ...
+    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+        ...
 
     @overload
     def get_k_points_at_index(
         self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
         idx: ArrayIndexLike[Unpack[_TS]],
-    ) -> np.ndarray[tuple[int, Unpack[_TS]], np.dtype[np.float64]]: ...
+    ) -> np.ndarray[tuple[int, Unpack[_TS]], np.dtype[np.float64]]:
+        ...
 
     def get_k_points_at_index(
         self: BasisUtil[TupleBasisLike[*tuple[_BL0Inv, ...]]],
@@ -363,13 +371,15 @@ class BasisUtil(BasisLike[Any, Any], Generic[_B0_co]):
     @overload
     def get_x_points_at_index(
         self: BasisUtil[TupleBasisLike[*tuple[Any, ...]]], idx: SingleIndexLike
-    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]: ...
+    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+        ...
 
     @overload
     def get_x_points_at_index(
         self: BasisUtil[TupleBasisLike[*tuple[Any, ...]]],
         idx: ArrayIndexLike[Unpack[_TS]],
-    ) -> np.ndarray[tuple[int, Unpack[_TS]], np.dtype[np.float64]]: ...
+    ) -> np.ndarray[tuple[int, Unpack[_TS]], np.dtype[np.float64]]:
+        ...
 
     def get_x_points_at_index(
         self: BasisUtil[TupleBasisLike[*tuple[_BL0_co, ...]]],

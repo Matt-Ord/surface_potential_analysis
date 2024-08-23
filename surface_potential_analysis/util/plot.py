@@ -350,7 +350,8 @@ def plot_data_2d(
 
 def plot_data_2d_k(
     basis: StackedBasisWithVolumeLike[Any, Any, Any],
-    data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
+    data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]]
+    | np.ndarray[tuple[_L0Inv], np.dtype[np.float64]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -414,7 +415,8 @@ def plot_data_2d_k(
 
 def plot_data_2d_x(
     basis: StackedBasisWithVolumeLike[Any, Any, Any],
-    data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
+    data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]]
+    | np.ndarray[tuple[_L0Inv], np.dtype[np.float64]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
