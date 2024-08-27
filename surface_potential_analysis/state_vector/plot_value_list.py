@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 import numpy as np
-import scipy.stats
+import scipy.stats  # type: ignore unkown
 
 from surface_potential_analysis.basis.basis_like import BasisLike
 from surface_potential_analysis.basis.time_basis_like import (
@@ -18,11 +18,11 @@ from surface_potential_analysis.util.plot import (
 from surface_potential_analysis.util.util import get_measured_data
 
 if TYPE_CHECKING:
-    from coherent_rates.isf import MomentumBasis
     from matplotlib.axes import Axes
     from matplotlib.figure import Figure
     from matplotlib.lines import Line2D
 
+    from surface_potential_analysis.basis.momentum_basis_like import MomentumBasis
     from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.state_vector.eigenstate_list import (
         StatisticalValueList,
@@ -99,7 +99,7 @@ def plot_value_list_against_time(
         values["data"], values["basis"].times, scale=scale, measure=measure, ax=ax
     )
 
-    ax.set_xlabel("Times /s")
+    ax.set_xlabel("Times /s")  # type: ignore unkown
     return fig, ax, line
 
 
@@ -141,7 +141,7 @@ def plot_value_list_against_frequency(
         ax=ax,
     )
 
-    ax.set_xlabel("Frequency /w")
+    ax.set_xlabel("Frequency /w")  # type: ignore unkown
     return fig, ax, line
 
 
@@ -182,7 +182,7 @@ def plot_split_value_list_against_time(
             ax=ax,
         )
 
-    ax.set_xlabel("Times /s")
+    ax.set_xlabel("Times /s")  # type: ignore unkown
     return fig, ax
 
 
@@ -233,7 +233,7 @@ def plot_split_value_list_against_frequency(
             ax=ax,
         )
 
-    ax.set_xlabel("Frequency /w")
+    ax.set_xlabel("Frequency /w")  # type: ignore unkown
     return fig, ax
 
 
@@ -307,15 +307,16 @@ def plot_average_value_list_against_time(
         average_data, values["basis"][1].times, scale=scale, measure=measure, ax=ax
     )
     std_data = np.std(measured_data, axis=0) / np.sqrt(values["basis"].shape[0])
-    ax.fill_between(
+    fill = ax.fill_between(  # type: ignore unkown
         values["basis"][1].times,
         average_data - std_data,
         average_data + std_data,
         alpha=0.2,
     )
+    fill.set_color(line.get_color())
 
-    ax.set_xlabel("Times /s")
-    ax.set_ylabel("Distance /m")
+    ax.set_xlabel("Times /s")  # type: ignore unkown
+    ax.set_ylabel("Distance /m")  # type: ignore unkown
     return fig, ax, line
 
 
@@ -358,26 +359,26 @@ def plot_value_list_distribution(
     )
     n_bins = np.max([11, values["data"].size // 100]).item()
 
-    ax.hist(measured_data, n_bins, x_range, density=True)
+    ax.hist(measured_data, n_bins, x_range, density=True)  # type: ignore unkown
 
     if distribution == "normal":
         points = np.linspace(*x_range, 1000)
-        (line,) = ax.plot(points, scipy.stats.norm.pdf(points, loc=average, scale=std))
+        (line,) = ax.plot(points, scipy.stats.norm.pdf(points, loc=average, scale=std))  # type: ignore unkown
         line.set_label("normal fit")
 
     if distribution == "exponential normal":
         points = np.linspace(*x_range, 1000)
-        fit = scipy.stats.exponnorm.fit(measured_data)
-        (line,) = ax.plot(points, scipy.stats.exponnorm.pdf(points, *fit))
+        fit = scipy.stats.exponnorm.fit(measured_data)  # type: ignore unkown
+        (line,) = ax.plot(points, scipy.stats.exponnorm.pdf(points, *fit))  # type: ignore unkown
         line.set_label("exponential normal fit")
 
     if distribution == "skew normal":
         points = np.linspace(*x_range, 1000)
-        fit = scipy.stats.skewnorm.fit(measured_data)
-        (line,) = ax.plot(points, scipy.stats.skewnorm.pdf(points, *fit))
+        fit = scipy.stats.skewnorm.fit(measured_data)  # type: ignore unkown
+        (line,) = ax.plot(points, scipy.stats.skewnorm.pdf(points, *fit))  # type: ignore unkown
         line.set_label("skew normal fit")
 
-    ax.set_ylabel("Occupation")
+    ax.set_ylabel("Occupation")  # type: ignore unkown
     return fig, ax
 
 
@@ -388,6 +389,22 @@ def plot_value_list_against_momentum(
     scale: Scale = "linear",
     measure: Measure = "abs",
 ) -> tuple[Figure, Axes, Line2D]:
+    """Plot a value list against momentum.
+
+    Parameters
+    ----------
+    values : ValueList[MomentumBasis] | StatisticalValueList[MomentumBasis]
+    ax : Axes | None, optional
+        ax, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+    measure : Measure, optional
+        measure, by default "abs"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
     fig, ax, line = plot_data_1d(
         values["data"],
         values["basis"].k_points,
@@ -397,5 +414,5 @@ def plot_value_list_against_momentum(
         ax=ax,
     )
 
-    ax.set_xlabel("$k /m^{-1}$")
+    ax.set_xlabel("$k /m^{-1}$")  # type: ignore unkown
     return fig, ax, line
