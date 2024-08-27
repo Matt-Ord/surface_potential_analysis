@@ -204,7 +204,7 @@ def get_operators_for_real_isotropic_noise(
     # ! data[end:] = np.sqrt(2) * np.imag(np.conj(data[end:]))
     return {
         "basis": TupleBasis(FundamentalBasis(data.shape[0]), TupleBasis(basis, basis)),
-        "data": data.ravel(),
+        "data": data,
     }
 
 
