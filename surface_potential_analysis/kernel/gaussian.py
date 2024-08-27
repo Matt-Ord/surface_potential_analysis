@@ -89,7 +89,7 @@ def get_gaussian_isotropic_noise_kernel(
     return build_isotropic_kernel_from_function(basis, fn)
 
 
-def get_2d_gaussian_isotropic_noise_kernel(
+def get_separate_gaussian_isotropic_noise_kernel(
     basis: TupleBasisWithLengthLike[
         *tuple[StackedBasisWithVolumeLike[Any, Any, Any], ...]
     ],
