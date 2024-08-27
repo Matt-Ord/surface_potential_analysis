@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import (
+    TYPE_CHECKING,
     Any,
     Generic,
     TypedDict,
@@ -14,6 +15,7 @@ from surface_potential_analysis.basis.basis_like import BasisLike
 from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
     TupleBasisLike,
+    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.operator.operator import (
@@ -26,6 +28,9 @@ from surface_potential_analysis.operator.operator_list import (
     as_diagonal_operator_list,
     as_operator_list,
 )
+
+if TYPE_CHECKING:
+    from surface_potential_analysis.basis.basis import FundamentalPositionBasis
 
 _B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
 _B1_co = TypeVar("_B1_co", bound=BasisLike[Any, Any], covariant=True)
@@ -470,3 +475,27 @@ def get_isotropic_kernel_from_operators(
         as_diagonal_noise_operators_from_full(operators),
         assert_isotropic=assert_isotropic,
     )
+
+
+def outer_product(*arrays):
+    grids = np.meshgrid(*arrays, indexing="ij")
+    return np.prod(grids, axis=0)
+
+
+def get_full_kernel_from_independent(
+    kernels: tuple[
+        IsotropicNoiseKernel[
+            TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+        ],
+        ...,
+    ],
+) -> IsotropicNoiseKernel[
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
+]:
+    full_basis = tuple(kernel_i["basis"] for kernel_i in kernels)
+    full_data = tuple(kernel_i["data"].ravel() for kernel_i in kernels)
+
+    return {
+        "basis": TupleBasis(*full_basis),
+        "data": outer_product(*full_data).ravel(),
+    }
