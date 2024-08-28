@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
-import scipy
-import scipy.signal
+import scipy  # type: ignore unknown
+import scipy.signal  # type: ignore unknown
 from matplotlib.animation import ArtistAnimation
 
 from surface_potential_analysis.basis.stacked_basis import (
@@ -146,7 +146,7 @@ def plot_state_1d_k(
         scale=scale,
         measure=measure,
     )
-    ax.set_ylabel("State /Au")
+    ax.set_ylabel("State /Au")  # type: ignore unknown
     return fig, ax, line
 
 
@@ -189,7 +189,7 @@ def plot_state_1d_x(
         scale=scale,
         measure=measure,
     )
-    ax.set_ylabel("State /Au")
+    ax.set_ylabel("State /Au")  # type: ignore unknown
     line.set_label(f"{measure} state")
     return fig, ax, line
 
@@ -237,7 +237,7 @@ def animate_state_over_list_1d_x(
         scale=scale,
         measure=measure,
     )
-    ax.set_ylabel("State /Au")
+    ax.set_ylabel("State /Au")  # type: ignore unknown
     return fig, ax, ani
 
 
@@ -284,7 +284,7 @@ def animate_state_over_list_2d_k(
         scale=scale,
         measure=measure,
     )
-    ax.set_ylabel("State /Au")
+    ax.set_ylabel("State /Au")  # type: ignore unknown
     return fig, ax, ani
 
 
@@ -331,7 +331,7 @@ def animate_state_over_list_2d_x(
         scale=scale,
         measure=measure,
     )
-    ax.set_ylabel("State /Au")
+    ax.set_ylabel("State /Au")  # type: ignore unknown
     return fig, ax, ani
 
 
@@ -378,7 +378,7 @@ def animate_state_over_list_1d_k(
         scale=scale,
         measure=measure,
     )
-    ax.set_ylabel("State /Au")
+    ax.set_ylabel("State /Au")  # type: ignore unknown
     return fig, ax, ani
 
 
@@ -682,9 +682,9 @@ def plot_state_along_path(
         path,
         wrap_distances=wrap_distances,  # type: ignore[arg-type]
     )
-    (line,) = ax.plot(distances, data)
-    ax.set_yscale(scale)
-    ax.set_xlabel("distance /m")
+    (line,) = ax.plot(distances, data)  # type: ignore unknown
+    ax.set_yscale(scale)  # type: ignore unknown
+    ax.set_xlabel("distance /m")  # type: ignore unknown
     return fig, ax, line
 
 
@@ -732,13 +732,13 @@ def plot_all_eigenstate_occupations(
     n_states = states["basis"][0].n
     for i, occupation in enumerate(occupations["data"].reshape(n_states, -1)):
         measured = np.abs(occupation) ** 2
-        (line,) = ax.plot(energies, measured)
+        (line,) = ax.plot(energies, measured)  # type: ignore unknown
         line.set_label(f"state {i} occupation")
 
-    ax.set_yscale(scale)
-    ax.set_xlabel("Occupation")
-    ax.set_xlabel("Energy /J")
-    ax.set_title("Plot of Occupation against Energy")
+    ax.set_yscale(scale)  # type: ignore unknown
+    ax.set_xlabel("Occupation")  # type: ignore unknown
+    ax.set_xlabel("Energy /J")  # type: ignore unknown
+    ax.set_title("Plot of Occupation against Energy")  # type: ignore unknown
 
     return fig, ax
 
@@ -775,16 +775,16 @@ def animate_all_eigenstate_occupations(
     n_states = states["basis"][0].n
     for i, occupation in enumerate(occupations["data"].reshape(n_states, -1)):
         measured = np.abs(occupation) ** 2
-        (line,) = ax.plot(energies, measured)
+        (line,) = ax.plot(energies, measured)  # type: ignore unknown
         line.set_label(f"state {i} occupation")
         frames.append([line])
         line.set_color(frames[0][0].get_color())
 
     ani = ArtistAnimation(fig, frames)
-    ax.set_yscale(scale)
-    ax.set_xlabel("Occupation")
-    ax.set_xlabel("Energy /J")
-    ax.set_title("Plot of Occupation against Energy")
+    ax.set_yscale(scale)  # type: ignore unknown
+    ax.set_xlabel("Occupation")  # type: ignore unknown
+    ax.set_xlabel("Energy /J")  # type: ignore unknown
+    ax.set_title("Plot of Occupation against Energy")  # type: ignore unknown
 
     return fig, ax, ani
 
@@ -849,11 +849,11 @@ def plot_average_eigenstate_occupation(
     probabilities = np.abs(occupations["data"].reshape(n_states, -1)) ** 2
     average = np.average(probabilities, axis=0)
 
-    (line,) = ax.plot(energies, average)
+    (line,) = ax.plot(energies, average)  # type: ignore unknown
 
-    ax.set_yscale(scale)
-    ax.set_xlabel("Occupation")
-    ax.set_xlabel("Energy /J")
+    ax.set_yscale(scale)  # type: ignore unknown
+    ax.set_xlabel("Occupation")  # type: ignore unknown
+    ax.set_xlabel("Energy /J")  # type: ignore unknown
 
     return fig, ax, line
 
@@ -899,11 +899,11 @@ def plot_total_band_occupation_against_energy(
         scale=scale,
         measure=measure,
     )
-    ax.set_xlabel("Average Band Energy /J")
-    ax.set_ylabel("Total Band Occupation")
+    ax.set_xlabel("Average Band Energy /J")  # type: ignore unknown
+    ax.set_ylabel("Total Band Occupation")  # type: ignore unknown
 
     average_energy = np.average(hamiltonian_data, weights=occupation).item()
-    average_line = ax.axvline(average_energy)
+    average_line = ax.axvline(average_energy)  # type: ignore unknown
     average_line.set_color(line.get_color())
     average_line.set_linestyle("--")
 
@@ -932,7 +932,7 @@ def get_periodic_x_operator(
     util = BasisUtil(basis_x)
     dk = tuple(n / f for (n, f) in zip(direction, util.shape))
 
-    phi = (2 * np.pi) * np.einsum(
+    phi = (2 * np.pi) * np.einsum(  # type: ignore unknown
         "ij,i->j",
         util.stacked_nx_points,
         dk,
@@ -1036,7 +1036,7 @@ def plot_periodic_averaged_occupation_1d_x(
     """
     occupation_x = _get_restored_x(states, axes[0])
     fig, ax = plot_all_value_list_against_time(occupation_x, ax=ax, measure=measure)
-    ax.set_ylabel("Distance /m")
+    ax.set_ylabel("Distance /m")  # type: ignore unknown
     return fig, ax
 
 
@@ -1108,7 +1108,7 @@ def plot_averaged_occupation_1d_x(
     """
     occupation_x = _get_average_x(states, axes[0])
     fig, ax = plot_all_value_list_against_time(occupation_x, ax=ax, measure=measure)
-    ax.set_ylabel("Distance /m")
+    ax.set_ylabel("Distance /m")  # type: ignore unknown
     return fig, ax
 
 
@@ -1184,7 +1184,7 @@ def plot_spread_1d(
     spread_x = _get_x_spread(states, axes[0])
     fig, ax = plot_all_value_list_against_time(spread_x, ax=ax, measure=measure)
 
-    ax.set_ylabel("Distance /m")
+    ax.set_ylabel("Distance /m")  # type: ignore unknown
     return fig, ax
 
 
@@ -1221,7 +1221,7 @@ def plot_spread_distribution_1d(
         spread_x, ax=ax, measure=measure, distribution="skew normal"
     )
 
-    ax.set_xlabel("Distance /m")
+    ax.set_xlabel("Distance /m")  # type: ignore unknown
     return fig, ax
 
 
@@ -1267,6 +1267,36 @@ def _get_average_k(
     return calculate_expectation_list(operator, states)
 
 
+def plot_averaged_occupation_1d_k(
+    states: StateVectorList[TupleBasisLike[Any, _BT0], _SBV0],
+    axes: tuple[int] = (0,),
+    *,
+    ax: Axes | None = None,
+    measure: Measure = "real",
+) -> tuple[Figure, Axes]:
+    """
+    Plot the max occupation against time in 1d for each trajectory against time.
+
+    Parameters
+    ----------
+    states : StateVectorList[ TupleBasisLike[Any, _BT0], TupleBasisLike[_
+    axes : tuple[int], optional
+        direction to plot along, by default (0,)
+    ax : Axes | None, optional
+        plot axis, by default None
+    unravel : bool, optional
+        should the trajectories be unravelled, by default False
+
+    Returns
+    -------
+    tuple[Figure, Axes]
+    """
+    occupation_x = _get_average_k(states, axes[0])
+    fig, ax = plot_all_value_list_against_time(occupation_x, ax=ax, measure=measure)
+    ax.set_ylabel("momentum /m^-1")  # type: ignore unknown
+    return fig, ax
+
+
 def plot_spread_against_k(
     states: StateVectorList[
         TupleBasisLike[Any, _BT0],
@@ -1299,10 +1329,10 @@ def plot_spread_against_k(
     spread_x = _get_x_spread(states, axes[0])
     k = _get_average_k(states, axes[0])
 
-    ax.plot(k["data"], spread_x["data"])
+    ax.plot(k["data"], spread_x["data"])  # type: ignore unknown
 
-    ax.set_xlabel("Momentum /$m^{-1}$")
-    ax.set_ylabel("Spread /m")
+    ax.set_xlabel("Momentum /$m^{-1}$")  # type: ignore unknown
+    ax.set_ylabel("Spread /m")  # type: ignore unknown
     return fig, ax
 
 
@@ -1338,10 +1368,10 @@ def plot_spread_against_x(
     spread_x = _get_x_spread(states, axes[0])
     x = _get_average_x_periodic(states, axes[0])
 
-    ax.plot(x["data"], spread_x["data"])
+    ax.plot(x["data"], spread_x["data"])  # type: ignore unknown
 
-    ax.set_xlabel("Displacement /m")
-    ax.set_ylabel("Spread /m")
+    ax.set_xlabel("Displacement /m")  # type: ignore unknown
+    ax.set_ylabel("Spread /m")  # type: ignore unknown
     return fig, ax
 
 
@@ -1378,7 +1408,7 @@ def plot_k_distribution_1d(
         k_values, ax=ax, measure=measure, distribution="normal"
     )
 
-    ax.set_xlabel("Momentum /$m^{-1}$")
+    ax.set_xlabel("Momentum /$m^{-1}$")  # type: ignore unknown
     return fig, ax
 
 
@@ -1413,7 +1443,7 @@ def plot_x_distribution_1d(
     x_values = _get_average_x(states, axes[0])
     fig, ax = plot_value_list_distribution(x_values, ax=ax, measure=measure)
 
-    ax.set_xlabel("Displacement /m$")
+    ax.set_xlabel("Displacement /m$")  # type: ignore unknown
     return fig, ax
 
 
@@ -1448,7 +1478,7 @@ def plot_periodic_x_distribution_1d(
     x_values = _get_average_x_periodic(states, axes[0])
     fig, ax = plot_value_list_distribution(x_values, ax=ax, measure=measure)
 
-    ax.set_xlabel("Displacement /m$")
+    ax.set_xlabel("Displacement /m$")  # type: ignore unknown
     return fig, ax
 
 
@@ -1461,14 +1491,14 @@ def _get_average_displacements(
     total = np.cumsum(squared_positions + squared_positions[:, ::-1], axis=1)[:, ::-1]
 
     convolution = np.apply_along_axis(
-        lambda m: scipy.signal.correlate(m, m, mode="full")[basis.shape[1] - 1 :],
+        lambda m: scipy.signal.correlate(m, m, mode="full")[basis.shape[1] - 1 :],  # type: ignore unknown
         axis=1,
         arr=stacked,
     ).astype(np.float64)
 
-    squared_diff = (total - 2 * convolution) / (1 + np.arange(basis[1].n))[::-1]
-    out_basis = EvenlySpacedTimeBasis(basis[1].n, 1, 0, basis[1].dt * (basis[1].n))
-    return {"basis": TupleBasis(basis[0], out_basis), "data": squared_diff.ravel()}
+    squared_diff = (total - 2 * convolution) / (1 + np.arange(basis[1].n))[::-1]  # type: ignore unknown
+    out_basis = EvenlySpacedTimeBasis(basis[1].n, 1, 0, basis[1].dt * (basis[1].n))  # type: ignore unknown
+    return {"basis": TupleBasis(basis[0], out_basis), "data": squared_diff.ravel()}  # type: ignore unknown
 
 
 def plot_average_displacement_1d_x(

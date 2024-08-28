@@ -163,9 +163,12 @@ def plot_data_1d(
     fig, ax = get_figure(ax)
 
     measured_data = get_measured_data(data, measure)
-    # The data is periodic, so we repeat the first point at the end
+    # The data is periodic and evenly spaced
+    # so we repeat the first point at the end
     if periodic:
-        coordinates = np.append(coordinates, coordinates[-1] + coordinates[1])
+        # Seperation between the coordinates (assume evenly spaced and repeating)
+        d_coord = coordinates[1] - coordinates[0]
+        coordinates = np.append(coordinates, coordinates[-1] + d_coord)
         measured_data = np.append(measured_data, measured_data[0])
 
     container = ax.errorbar(coordinates, measured_data, yerr=y_errors)
@@ -350,7 +353,8 @@ def plot_data_2d(
 
 def plot_data_2d_k(
     basis: StackedBasisWithVolumeLike[Any, Any, Any],
-    data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
+    data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]]
+    | np.ndarray[tuple[_L0Inv], np.dtype[np.float64]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -414,7 +418,8 @@ def plot_data_2d_k(
 
 def plot_data_2d_x(
     basis: StackedBasisWithVolumeLike[Any, Any, Any],
-    data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
+    data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]]
+    | np.ndarray[tuple[_L0Inv], np.dtype[np.float64]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
