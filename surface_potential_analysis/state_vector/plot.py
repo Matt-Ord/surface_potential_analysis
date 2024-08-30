@@ -860,7 +860,7 @@ def plot_average_eigenstate_occupation(
 
 def plot_total_band_occupation_against_energy(
     hamiltonian: SingleBasisDiagonalOperator[_ESB0],
-    state: StateVector[BasisLike[Any, Any]],
+    state: StateVector[_B0],
     *,
     ax: Axes | None = None,
     scale: Scale = "linear",

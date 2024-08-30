@@ -132,8 +132,11 @@ def _set_ymargin(ax: Axes, bottom: float = 0.0, top: float = 0.3) -> None:
     ax.set_ylim(bottom, top)
 
 
+_DType = TypeVar("_DType", bound=np.floating[Any] | np.complexfloating[Any, Any])
+
+
 def plot_data_1d(
-    data: np.ndarray[tuple[int], np.dtype[np.complex128]],
+    data: np.ndarray[tuple[int], np.dtype[_DType]],
     coordinates: np.ndarray[tuple[int], np.dtype[np.float64]],
     y_errors: np.ndarray[tuple[int], np.dtype[np.float64]] | None = None,
     *,
@@ -183,7 +186,7 @@ def plot_data_1d(
 
 def plot_data_1d_k(
     basis: StackedBasisWithVolumeLike[Any, Any, Any],
-    data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
+    data: np.ndarray[tuple[_L0Inv], np.dtype[_DType]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -239,7 +242,7 @@ def plot_data_1d_k(
 
 def plot_data_1d_x(
     basis: StackedBasisWithVolumeLike[Any, Any, Any],
-    data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
+    data: np.ndarray[tuple[_L0Inv], np.dtype[_DType]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -302,7 +305,7 @@ def _has_colorbar(axis: Axes) -> bool:
 
 @overload
 def plot_data_2d(
-    data: np.ndarray[tuple[int], np.dtype[np.complex128]],
+    data: np.ndarray[tuple[int], np.dtype[_DType]],
     coordinates: np.ndarray[tuple[int, int], np.dtype[np.float64]],
     *,
     ax: Axes | None = None,
@@ -314,7 +317,7 @@ def plot_data_2d(
 
 @overload
 def plot_data_2d(
-    data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
+    data: np.ndarray[tuple[int, int], np.dtype[_DType]],
     coordinates: None = None,
     *,
     ax: Axes | None = None,
@@ -325,7 +328,7 @@ def plot_data_2d(
 
 
 def plot_data_2d(
-    data: np.ndarray[Any, np.dtype[np.complex128]],
+    data: np.ndarray[Any, np.dtype[_DType]],
     coordinates: np.ndarray[tuple[int, int], np.dtype[np.float64]] | None = None,
     *,
     ax: Axes | None = None,
@@ -353,8 +356,7 @@ def plot_data_2d(
 
 def plot_data_2d_k(
     basis: StackedBasisWithVolumeLike[Any, Any, Any],
-    data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]]
-    | np.ndarray[tuple[_L0Inv], np.dtype[np.float64]],
+    data: np.ndarray[tuple[_L0Inv], np.dtype[_DType]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -418,8 +420,7 @@ def plot_data_2d_k(
 
 def plot_data_2d_x(
     basis: StackedBasisWithVolumeLike[Any, Any, Any],
-    data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]]
-    | np.ndarray[tuple[_L0Inv], np.dtype[np.float64]],
+    data: np.ndarray[tuple[_L0Inv], np.dtype[_DType]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
