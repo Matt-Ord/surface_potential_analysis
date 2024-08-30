@@ -95,8 +95,8 @@ def build_isotropic_kernel_from_function(
     return {"basis": displacements["basis"][0][0], "data": correlation.ravel()}
 
 
-def build_isotropic_kernels_from_function(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+def build_isotropic_kernel_stacked_from_function(
+    basis: tuple[StackedBasisWithVolumeLike[Any, Any, Any], ...],
     fn: Callable[
         [np.ndarray[Any, np.dtype[np.float64]]],
         np.ndarray[Any, np.dtype[np.complex128]],

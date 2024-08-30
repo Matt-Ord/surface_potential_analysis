@@ -22,6 +22,8 @@ from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.kernel.kernel import (
     DiagonalNoiseKernel,
     DiagonalNoiseOperatorList,
+    get_axis_kernels_from_full_kernel,
+    get_full_noise_operators,
 )
 from surface_potential_analysis.stacked_basis.build import (
     fundamental_stacked_basis_from_shape,
@@ -437,7 +439,7 @@ def get_operators_for_real_isotropic_stacked_noise(
 
     return {
         "basis": complex_operators["basis"],
-        "data": data.ravel(),
+        "data": data,
     }
 
 
@@ -602,6 +604,43 @@ def get_noise_operators_real_isotropic_taylor_expansion(
         "data": operators["data"],
         "eigenvalue": operator_coefficients,
     }
+
+
+def get_stacked_noise_operators_real_isotropic_taylor_expansion(
+    kernel: IsotropicNoiseKernel[
+        TupleBasis[*tuple[FundamentalPositionBasis[Any, Any]]]
+    ],
+    *,
+    n: tuple[int, ...] | None = None,
+) -> SingleBasisDiagonalNoiseOperatorList[
+    FundamentalBasis[int],
+    FundamentalPositionBasis[Any, Literal[1]],
+]:
+    """Calculate the noise operators for a general isotropic noise kernel.
+
+    Polynomial fitting to get Taylor expansion.
+
+    Parameters
+    ----------
+    kernel: IsotropicNoiseKernel[TupleBasisWithLengthLike[Any, Any]]
+    n: int, by default 1
+
+    Returns
+    -------
+    The noise operators formed using the 2n+1 lowest fourier terms, and the corresponding coefficients.
+
+    """
+    axis_kernels = get_axis_kernels_from_full_kernel(kernel)
+    n_axis = len(kernel["data"].shape)
+    kernel["data"][tuple(0 for _ in range(n_axis))]
+    operators_list = tuple(
+        get_noise_operators_real_isotropic_taylor_expansion(
+            axis_kernels[i],
+            n=n[i],
+        )
+        for i in range(n_axis)
+    )
+    return get_full_noise_operators(operators_list)
 
 
 def get_noise_operators_eigenvalue(

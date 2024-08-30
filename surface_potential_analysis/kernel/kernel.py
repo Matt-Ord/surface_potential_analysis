@@ -4,6 +4,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
+    Literal,
     TypedDict,
     TypeVar,
     TypeVarTuple,
@@ -15,7 +16,6 @@ from surface_potential_analysis.basis.basis_like import BasisLike
 from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
     TupleBasisLike,
-    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.operator.operator import (
@@ -30,7 +30,10 @@ from surface_potential_analysis.operator.operator_list import (
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis import FundamentalPositionBasis
+    from surface_potential_analysis.basis.basis import (
+        FundamentalBasis,
+        FundamentalPositionBasis,
+    )
 
 _B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
 _B1_co = TypeVar("_B1_co", bound=BasisLike[Any, Any], covariant=True)
@@ -477,25 +480,83 @@ def get_isotropic_kernel_from_operators(
     )
 
 
-def outer_product(*arrays):
-    grids = np.meshgrid(*arrays, indexing="ij")
-    return np.prod(grids, axis=0)
-
-
-def get_full_kernel_from_independent(
+def get_full_kernel_from_axis_kernels(
     kernels: tuple[
-        IsotropicNoiseKernel[
-            TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
-        ],
+        IsotropicNoiseKernel[FundamentalPositionBasis[Any, Any]],
         ...,
     ],
-) -> IsotropicNoiseKernel[
-    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
-]:
+) -> IsotropicNoiseKernel[TupleBasis[*tuple[FundamentalPositionBasis[Any, Any]]]]:
     full_basis = tuple(kernel_i["basis"] for kernel_i in kernels)
     full_data = tuple(kernel_i["data"].ravel() for kernel_i in kernels)
 
+    def _outer_product(*arrays):
+        grids = np.meshgrid(*arrays, indexing="ij")
+        return np.prod(grids, axis=0)
+
     return {
         "basis": TupleBasis(*full_basis),
-        "data": outer_product(*full_data).ravel(),
+        "data": _outer_product(*full_data),
+    }
+
+
+def get_axis_kernels_from_full_kernel(
+    kernel: IsotropicNoiseKernel[
+        TupleBasis[*tuple[FundamentalPositionBasis[Any, Any]]]
+    ],
+) -> tuple[IsotropicNoiseKernel[FundamentalPositionBasis[Any, Any]], ...]:
+    n_axis = len(kernel["data"].shape)
+    const_term = kernel["data"][tuple(0 for _ in range(n_axis))]
+    basis = tuple(kernel["basis"][i] for i in range(n_axis))
+    slices: list[np.ndarray[tuple[int], np.dtype[np.complex128]]] = []
+    for dim in range(n_axis):
+        slice_tuple = tuple(0 if i != dim else slice(None) for i in range(n_axis))
+        slices.append(kernel["data"][slice_tuple])
+
+    scaling = const_term ** ((n_axis - 1) / n_axis)
+    return tuple(
+        {
+            "basis": axis_basis,
+            "data": axis_data / scaling,
+        }
+        for axis_basis, axis_data in zip(basis, slices)
+    )
+
+
+def get_full_noise_operators(
+    operators_list: tuple[
+        SingleBasisDiagonalNoiseOperatorList[
+            FundamentalBasis[int],
+            FundamentalPositionBasis[Any, Literal[1]],
+        ],
+        ...,
+    ],
+) -> SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[int], BasisLike[int, int]]:
+    full_basis_shape = TupleBasis(
+        *tuple(operators["basis"][0] for operators in operators_list),
+    )
+    full_basis_x = TupleBasis(
+        *tuple(operators["basis"][1][0] for operators in operators_list),
+    )
+
+    subscripts_list = [chr(ord("i") + i) for i in range(len(operators_list) * 2)]
+    subscripts_list = [
+        subscripts_list[i : (i + 2)] for i in range(0, len(operators_list) * 2, 2)
+    ]
+    input_subscripts = ",".join(["".join(subscripts) for subscripts in subscripts_list])
+    output_subscript = "".join("".join(group) for group in list(zip(*subscripts_list)))
+    einsum_string = f"{input_subscripts}->{output_subscript}"
+
+    full_data = tuple(operators["data"] for operators in operators_list)
+    full_coefficients = tuple(
+        operators["eigenvalue"].ravel() for operators in operators_list
+    )
+
+    def _outer_product(*arrays):
+        grids = np.meshgrid(*arrays, indexing="ij")
+        return np.prod(grids, axis=0)
+
+    return {
+        "basis": TupleBasis(full_basis_shape, TupleBasis(full_basis_x, full_basis_x)),
+        "data": np.einsum(einsum_string, *full_data).ravel(),
+        "eigenvalue": _outer_product(*full_coefficients).ravel(),
     }
