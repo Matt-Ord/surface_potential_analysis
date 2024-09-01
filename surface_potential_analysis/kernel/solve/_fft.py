@@ -6,24 +6,29 @@ import numpy as np
 
 from surface_potential_analysis.basis.basis import (
     FundamentalBasis,
+    FundamentalPositionBasis,
 )
 from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisLike,
+    StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisLike,
-    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
+from surface_potential_analysis.kernel.kernel import (
+    get_diagonal_noise_operators_from_axis,
+)
+from surface_potential_analysis.kernel.solve._util import (
+    get_fundamental_axis_kernels_from_isotropic,
+)
 from surface_potential_analysis.stacked_basis.build import (
     fundamental_stacked_basis_from_shape,
 )
 from surface_potential_analysis.util.interpolation import pad_ft_points
-from surface_potential_analysis.util.util import slice_along_axis
 
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis_like import (
         BasisLike,
-        BasisWithLengthLike,
     )
     from surface_potential_analysis.kernel.kernel import (
         IsotropicNoiseKernel,
@@ -34,15 +39,11 @@ if TYPE_CHECKING:
     )
     from surface_potential_analysis.state_vector.eigenstate_list import ValueList
 
-    _TBL0 = TypeVar("_TBL0", bound=TupleBasisWithLengthLike[*tuple[Any, ...]])
-
-    _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
-
     _B0 = TypeVar("_B0", bound=BasisLike[int, int])
-    _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
 
     _TB0 = TypeVar("_TB0", bound=TupleBasisLike[*tuple[Any, ...]])
     _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
+    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
 
 def _assert_periodic_sample(
@@ -365,104 +366,37 @@ def get_noise_operators_isotropic_stacked_fft(
     }
 
 
-def get_operators_for_real_isotropic_stacked_noise(
-    basis: _SB0,
+def get_noise_operators_real_isotropic_stacked_fft(
+    kernel: IsotropicNoiseKernel[_SBV0],
     *,
-    shape: tuple[int, ...] | None = None,
-    fundamental_shape: tuple[int, ...] | None = None,
+    fundamental_shape: tuple[int | None, ...] | None = None,
     assert_periodic: bool = True,
-) -> SingleBasisDiagonalOperatorList[
-    TupleBasisLike[*tuple[FundamentalBasis[int], ...]], _SB0
+) -> SingleBasisDiagonalNoiseOperatorList[
+    TupleBasis[*tuple[FundamentalBasis[int], ...]],
+    TupleBasis[*tuple[FundamentalPositionBasis[Any, Any], ...]],
 ]:
-    """Get operators used for real isotropic noise.
+    """Calculate the noise operators for a general isotropic noise kernel.
+
+    Polynomial fitting to get Taylor expansion.
 
     Parameters
     ----------
-    basis : _B0
-        _description_
-    n_terms : int | None, optional
-        _description_, by default None
+    kernel: IsotropicNoiseKernel[TupleBasisWithLengthLike[Any, Any]]
+    n: int, by default 1
 
     Returns
     -------
-    SingleBasisDiagonalOperatorList[FundamentalBasis[int], _B0]
-        _description_
+    The noise operators formed using the 2n+1 lowest fourier terms, and the corresponding coefficients.
+
     """
-    fundamental_shape = basis.shape if fundamental_shape is None else fundamental_shape
-    complex_operators = _get_operators_for_isotropic_stacked_noise(
-        basis,
-        shape=shape,
-        fundamental_shape=fundamental_shape,
-        assert_periodic=assert_periodic,
+    axis_kernels = get_fundamental_axis_kernels_from_isotropic(kernel)
+
+    operators = tuple(
+        get_noise_operators_isotropic_fft(
+            kernel,
+            fundamental_n=None if (fundamental_shape is None) else fundamental_shape[i],
+            assert_periodic=assert_periodic,
+        )
+        for (i, kernel) in enumerate(axis_kernels)
     )
-    data = (
-        complex_operators["data"]
-        .reshape(*complex_operators["basis"][0].shape, -1)
-        .copy()
-    )
-
-    for axis, (n, basis_n) in enumerate(zip(fundamental_shape, basis.shape)):
-        cloned = data.copy()
-        # Build (e^(ikx) +- e^(-ikx)) operators
-        # Index of highest frequency positive
-        max_cos_idx = n // 2
-
-        # Note we ignore the N / 2 frequency
-        # ie the last operator if we have even
-        cos_end_idx = min(max_cos_idx, (basis_n + 1) // 2 - 1)
-        sin_start_idx = max(max_cos_idx + 1, n - (basis_n + 1) // 2 + 1)
-        # If n != basis_n, we must have an odd number of points
-        assert n == basis_n or n % 2 == 1
-
-        cos_slice = slice_along_axis(slice(1, cos_end_idx + 1), axis)
-        conj_cos_slice = slice_along_axis(slice(None, sin_start_idx - 1, -1), axis)
-        data[cos_slice] = (cloned[cos_slice] + cloned[conj_cos_slice]) / np.sqrt(2)
-
-        sin_slice = slice_along_axis(slice(sin_start_idx, None), axis)
-        conj_sin_slice = slice_along_axis(slice(cos_end_idx, 0, -1), axis)
-        data[sin_slice] = (cloned[sin_slice] - cloned[conj_sin_slice]) * 1j / np.sqrt(2)
-
-    return {
-        "basis": complex_operators["basis"],
-        "data": data,
-    }
-
-
-def get_noise_operators_real_isotropic_stacked_fft(
-    kernel: IsotropicNoiseKernel[_TB0],
-    *,
-    shape: tuple[int, ...] | None = None,
-    assert_periodic: bool = True,
-) -> SingleBasisDiagonalNoiseOperatorList[
-    TupleBasisLike[*tuple[FundamentalBasis[int], ...]], _TB0
-]:
-    """
-    Get the noise operators, expanding the kernel about each axis individually.
-
-    Returns
-    -------
-    SingleBasisDiagonalNoiseOperatorList[
-        TupleBasisLike[*tuple[FundamentalBasis[int], ...]], _TB0
-    ]
-    """
-    np.testing.assert_allclose(np.imag(kernel["data"]), 0)
-
-    fundamental_shape = (
-        kernel["basis"].shape if shape is None else tuple(2 * n + 1 for n in shape)
-    )
-
-    operators = get_operators_for_real_isotropic_stacked_noise(
-        kernel["basis"],
-        fundamental_shape=fundamental_shape,
-        assert_periodic=assert_periodic,
-    )
-    # TODO(matt): assert has correct symmetry  # noqa: FIX002
-    eigenvalues = _get_noise_eigenvalues_isotropic_stacked_fft(
-        kernel, fundamental_shape=fundamental_shape
-    )
-
-    return {
-        "basis": operators["basis"],
-        "data": operators["data"],
-        "eigenvalue": eigenvalues["data"],
-    }
+    return get_diagonal_noise_operators_from_axis(operators)
