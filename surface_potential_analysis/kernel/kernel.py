@@ -348,6 +348,7 @@ def _outer_product(
 def as_isotropic_kernel_from_axis(
     kernels: AxisKernel[_B0],
 ) -> IsotropicNoiseKernel[TupleBasis[*tuple[_B0, ...]]]:
+    """Convert an axis kernel to an isotropic kernel."""
     full_basis = tuple(kernel_i["basis"] for kernel_i in kernels)
     full_data = tuple(kernel_i["data"].ravel() for kernel_i in kernels)
 
@@ -360,6 +361,7 @@ def as_isotropic_kernel_from_axis(
 def as_axis_kernel_from_isotropic(
     kernels: IsotropicNoiseKernel[TupleBasisLike[*tuple[_B0, ...]]],
 ) -> AxisKernel[_B0]:
+    """Convert an isotropic kernel to an axis kernel."""
     n_axis = kernels["basis"].ndim
 
     data_stacked = kernels["data"].reshape(kernels["basis"].shape)
@@ -554,7 +556,7 @@ def get_isotropic_kernel_from_operators(
     )
 
 
-def get_full_noise_operators_from_axis_operators(
+def get_diagonal_noise_operators_from_axis(
     operators_list: tuple[
         SingleBasisDiagonalNoiseOperatorList[
             _B0,
@@ -565,6 +567,7 @@ def get_full_noise_operators_from_axis_operators(
 ) -> SingleBasisDiagonalNoiseOperatorList[
     TupleBasis[*tuple[_B0, ...]], TupleBasis[*tuple[_B1, ...]]
 ]:
+    """Convert axis operators into full operators."""
     full_basis_shape = TupleBasis(
         *tuple(operators["basis"][0] for operators in operators_list),
     )
@@ -572,12 +575,13 @@ def get_full_noise_operators_from_axis_operators(
         *tuple(operators["basis"][1][0] for operators in operators_list),
     )
 
-    subscripts_list = [chr(ord("i") + i) for i in range(len(operators_list) * 2)]
-    subscripts_list = [
-        subscripts_list[i : (i + 2)] for i in range(0, len(operators_list) * 2, 2)
-    ]
-    input_subscripts = ",".join(["".join(subscripts) for subscripts in subscripts_list])
-    output_subscript = "".join("".join(group) for group in list(zip(*subscripts_list)))
+    # for example, in 2d this is ij,kl -> ikjl
+    subscripts = tuple(
+        (chr(ord("i") + i), chr(ord("i") + i + 1))
+        for i in range(0, len(operators_list) * 2, 2)
+    )
+    input_subscripts = ",".join(["".join(group) for group in subscripts])
+    output_subscript = "".join("".join(group) for group in zip(*subscripts))
     einsum_string = f"{input_subscripts}->{output_subscript}"
 
     full_data = tuple(operators["data"] for operators in operators_list)
@@ -587,6 +591,6 @@ def get_full_noise_operators_from_axis_operators(
 
     return {
         "basis": TupleBasis(full_basis_shape, TupleBasis(full_basis_x, full_basis_x)),
-        "data": np.einsum(einsum_string, *full_data).ravel(),
+        "data": np.einsum(einsum_string, *full_data).ravel(),  # type: ignore unknown
         "eigenvalue": _outer_product(*full_coefficients).ravel(),
     }

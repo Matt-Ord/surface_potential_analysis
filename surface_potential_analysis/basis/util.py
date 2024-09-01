@@ -537,7 +537,7 @@ def get_twice_average_nx(
     )
 
 
-def get_displacements_nx(
+def get_displacements_nx_stacked(
     basis: StackedBasisLike[Any, Any, Any],
 ) -> tuple[np.ndarray[tuple[int, int], np.dtype[np.int_]], ...]:
     """
@@ -563,7 +563,7 @@ def get_displacements_nx(
     )
 
 
-def get_displacements_1d_nx(
+def get_displacements_nx(
     basis: BasisLike[_NF0Inv, Any],
 ) -> np.ndarray[tuple[int, int], np.dtype[np.int_]]:
     """
@@ -586,7 +586,7 @@ def get_displacements_1d_nx(
     )
 
 
-def get_displacements_x(
+def get_displacements_x_stacked(
     basis: StackedBasisWithVolumeLike[Any, Any, Any],
 ) -> ValueList[
     TupleBasisLike[
@@ -608,7 +608,7 @@ def get_displacements_x(
         _description_
     """
     basis_x = stacked_basis_as_fundamental_position_basis(basis)
-    step = get_displacements_nx(basis_x)
+    step = get_displacements_nx_stacked(basis_x)
     util = BasisUtil(basis_x)
     return {
         "basis": TupleBasis(basis_x, basis_x),
@@ -619,7 +619,7 @@ def get_displacements_x(
     }
 
 
-def get_displacements_1d_x(
+def get_displacements_x(
     basis: BasisWithLengthLike[Any, Any, Any],
 ) -> ValueList[
     TupleBasisLike[
@@ -641,7 +641,7 @@ def get_displacements_1d_x(
         _description_
     """
     basis_x = basis_as_fundamental_position_basis(basis)
-    step = get_displacements_1d_nx(basis_x)
+    step = get_displacements_nx(basis_x)
     dx = np.linalg.norm(BasisUtil(basis_x).fundamental_dx)
     return {
         "basis": TupleBasis(basis_x, basis_x),

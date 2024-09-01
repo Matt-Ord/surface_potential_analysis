@@ -13,7 +13,7 @@ from surface_potential_analysis.kernel.conversion import (
 )
 from surface_potential_analysis.kernel.kernel import (
     as_axis_kernel_from_isotropic,
-    get_full_noise_operators_from_axis_operators,
+    get_diagonal_noise_operators_from_axis,
 )
 from surface_potential_analysis.kernel.solve._fft import (
     get_operators_for_real_isotropic_noise,
@@ -180,7 +180,7 @@ def _get_fundamental_axis_kernels_from_isotropic(
     return as_axis_kernel_from_isotropic(converted)
 
 
-def get_stacked_noise_operators_real_isotropic_taylor_expansion(
+def get_noise_operators_real_isotropic_stacked_taylor_expansion(
     kernel: IsotropicNoiseKernel[_SBV0],
     *,
     shape: tuple[int | None, ...] | None = None,
@@ -212,4 +212,4 @@ def get_stacked_noise_operators_real_isotropic_taylor_expansion(
         )
         for (kernel, n) in zip(axis_kernels, shape)
     )
-    return get_full_noise_operators_from_axis_operators(operators_list)
+    return get_diagonal_noise_operators_from_axis(operators_list)
