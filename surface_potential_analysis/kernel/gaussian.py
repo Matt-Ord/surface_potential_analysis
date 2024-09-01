@@ -8,6 +8,7 @@ from scipy.special import factorial
 
 from surface_potential_analysis.basis.basis import (
     FundamentalBasis,
+    FundamentalPositionBasis,
 )
 from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisWithVolumeLike,
@@ -16,8 +17,8 @@ from surface_potential_analysis.basis.stacked_basis import (
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.kernel.build import (
-    build_isotropic_kernel_from_function,
-    build_isotropic_kernel_stacked_from_function,
+    build_axis_kernel_from_function_stacked,
+    build_isotropic_kernel_from_function_stacked,
     get_temperature_corrected_diagonal_noise_operators,
     truncate_diagonal_noise_operator_list,
 )
@@ -25,29 +26,27 @@ from surface_potential_analysis.kernel.conversion import (
     convert_noise_operator_list_to_basis,
 )
 from surface_potential_analysis.kernel.kernel import (
+    AxisKernel,
+    DiagonalNoiseOperatorList,
     SingleBasisDiagonalNoiseOperatorList,
     as_diagonal_kernel_from_isotropic,
-    get_full_kernel_from_axis_kernels,
-    get_full_noise_operators,
+    get_full_noise_operators_from_axis_operators,
 )
-from surface_potential_analysis.kernel.solve import (
-    get_noise_operators_explicit_taylor_expansion,
+from surface_potential_analysis.kernel.solve._fft import (
     get_noise_operators_real_isotropic_stacked_fft,
+)
+from surface_potential_analysis.kernel.solve.taylor import (
+    get_noise_operators_explicit_taylor_expansion,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_position_basis,
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis import (
-        FundamentalPositionBasis,
-    )
     from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisWithVolumeLike,
-        TupleBasisWithLengthLike,
     )
     from surface_potential_analysis.kernel.kernel import (
-        DiagonalNoiseOperatorList,
         IsotropicNoiseKernel,
         SingleBasisDiagonalNoiseKernel,
         SingleBasisNoiseOperatorList,
@@ -91,19 +90,14 @@ def get_gaussian_isotropic_noise_kernel(
             np.complex128,
         )
 
-    return build_isotropic_kernel_from_function(basis, fn)
+    return build_isotropic_kernel_from_function_stacked(basis, fn)
 
 
-def get_axis_gaussian_isotropic_noise_kernels(
-    basis: TupleBasisWithLengthLike[
-        *tuple[StackedBasisWithVolumeLike[Any, Any, Any], ...]
-    ],
+def get_gaussian_axis_noise_kernel(
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     a: float,
     lambda_: float,
-) -> tuple[
-    IsotropicNoiseKernel[FundamentalPositionBasis[Any, Any]],
-    ...,
-]:
+) -> AxisKernel[FundamentalPositionBasis[Any, Any]]:
     """
     Get the noise kernel for a gaussian correllated surface.
 
@@ -131,29 +125,7 @@ def get_axis_gaussian_isotropic_noise_kernels(
             np.complex128,
         )
 
-    return build_isotropic_kernel_stacked_from_function(basis, fn)
-
-
-def get_stacked_gaussian_isotropic_noise_kernels(
-    kernels: tuple[
-        IsotropicNoiseKernel[FundamentalPositionBasis[Any, Any]],
-        ...,
-    ],
-) -> IsotropicNoiseKernel[TupleBasis[*tuple[FundamentalPositionBasis[Any, Any]]]]:
-    """
-    Get the stacked noise kernel for a gaussian correllated surface.
-
-    Parameters
-    ----------
-    kernels : tuple[IsotropicNoiseKernel[FundamentalPositionBasis[Any, Any]], ...]
-        _description_
-
-    Returns
-    -------
-    SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]] ]
-        _description_
-    """
-    return get_full_kernel_from_axis_kernels(kernels)
+    return build_axis_kernel_from_function_stacked(basis, fn)
 
 
 def get_gaussian_noise_kernel(
@@ -228,7 +200,7 @@ def get_effective_gaussian_parameters(
 
 
 def get_2d_effective_gaussian_parameters(
-    basis: TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     eta: float,
     temperature: float,
     *,
@@ -258,11 +230,9 @@ def get_2d_effective_gaussian_parameters(
     tuple[float, float]
         (A, lambda_)
     """
-    displacement: list[float] = []
-    for item in basis:
-        util = BasisUtil(item)
-        displacement.append(np.linalg.norm(util.delta_x_stacked, axis=1) / 2)
-    smallest_max_displacement = np.min(displacement)
+    displacements = np.linalg.norm(BasisUtil(basis).delta_x_stacked, axis=1)
+
+    smallest_max_displacement = np.min(displacements)
     lambda_ = smallest_max_displacement / lambda_factor
     # mu = A / lambda
     mu = np.sqrt(2 * eta * Boltzmann * temperature / hbar**2)
@@ -528,7 +498,7 @@ def get_stacked_gaussian_operators_explicit_taylor(
     n_terms: tuple[int, ...] | None = None,
 ) -> SingleBasisDiagonalNoiseOperatorList[
     FundamentalBasis[int],
-    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[int, Any], ...]],
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
 ]:
     """Calculate the noise operators for an isotropic gaussian noise kernel, using an explicit Taylor expansion.
 
@@ -549,18 +519,38 @@ def get_stacked_gaussian_operators_explicit_taylor(
         )
         for i in range(n_axis)
     )
-    operators_list = tuple(
-        {
-            "basis": TupleBasis(
-                FundamentalBasis(operators["basis"][0].n),
-                TupleBasis(
-                    operators["basis"][1][0][0],
-                    operators["basis"][1][0][0],
+    # operators_list = tuple[
+    #     SingleBasisDiagonalNoiseOperatorList[
+    #         FundamentalBasis[int],
+    #         TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[int, Any], ...]],
+    #     ]
+    # ](
+    #     {
+    #         "basis": TupleBasis(
+    #             FundamentalBasis(operators["basis"][0].n),
+    #             TupleBasis(
+    #                 operators["basis"][1][0][0],
+    #                 operators["basis"][1][0][0],
+    #             ),
+    #         ),
+    #         "data": operators["data"],
+    #         "eigenvalue": operators["eigenvalue"],
+    #     }
+    #     for operators in operators_list
+    # )
+    a = get_full_noise_operators_from_axis_operators(
+        tuple(
+            {
+                "basis": TupleBasis(
+                    FundamentalBasis(operators["basis"][0].n),
+                    TupleBasis(
+                        operators["basis"][1][0][0],
+                        operators["basis"][1][0][0],
+                    ),
                 ),
-            ),
-            "data": operators["data"],
-            "eigenvalue": operators["eigenvalue"],
-        }
-        for operators in operators_list
+                "data": operators["data"],
+                "eigenvalue": operators["eigenvalue"],
+            }
+            for operators in operators_list
+        )
     )
-    return get_full_noise_operators(operators_list)

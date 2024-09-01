@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING,
     Any,
     Generic,
-    Literal,
     TypedDict,
     TypeVar,
     TypeVarTuple,
@@ -28,12 +26,7 @@ from surface_potential_analysis.operator.operator_list import (
     as_diagonal_operator_list,
     as_operator_list,
 )
-
-if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis import (
-        FundamentalBasis,
-        FundamentalPositionBasis,
-    )
+from surface_potential_analysis.util.util import slice_ignoring_axes
 
 _B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
 _B1_co = TypeVar("_B1_co", bound=BasisLike[Any, Any], covariant=True)
@@ -233,7 +226,7 @@ def as_diagonal_kernel_from_isotropic(
 
 
 def as_isotropic_kernel_from_diagonal(
-    kernel: DiagonalNoiseKernel[_B0, _B0, _B0, _B0], *, assert_isotropic: bool = True
+    kernel: SingleBasisDiagonalNoiseKernel[_B0], *, assert_isotropic: bool = True
 ) -> IsotropicNoiseKernel[_B0]:
     """
     Convert a diagonal kernel into an isotropic kernel.
@@ -302,6 +295,87 @@ def as_diagonal_kernel_from_isotropic_stacked(
         ),
         "data": data.ravel(),
     }
+
+
+def as_isotropic_kernel_from_diagonal_stacked(
+    kernel: SingleBasisDiagonalNoiseKernel[TupleBasisLike[*_B0s]],
+    *,
+    assert_isotropic: bool = True,
+) -> IsotropicNoiseKernel[TupleBasisLike[*_B0s]]:
+    """
+    Convert a diagonal kernel into an isotropic kernel.
+
+    By convention, we take the kernel corresponding to state 0
+
+    Parameters
+    ----------
+    kernel : DiagonalNoiseKernel[_B0, _B0, _B0, _B0]
+
+    Returns
+    -------
+    IsotropicNoiseKernel[_B0]
+    """
+    data = kernel["data"].reshape(kernel["basis"][0].shape)[:, 0]
+    out: IsotropicNoiseKernel[TupleBasisLike[*_B0s]] = {
+        "basis": kernel["basis"][0][0],
+        "data": data.ravel(),
+    }
+
+    if assert_isotropic:
+        np.testing.assert_allclose(
+            as_diagonal_kernel_from_isotropic_stacked(out)["data"].reshape(
+                kernel["basis"][0].shape
+            ),
+            kernel["data"].reshape(kernel["basis"][0].shape),
+        )
+
+    return out
+
+
+AxisKernel = tuple[
+    IsotropicNoiseKernel[_B0],
+    ...,
+]
+
+
+def _outer_product(
+    *arrays: np.ndarray[Any, np.dtype[np.complex128]],
+) -> np.ndarray[Any, np.dtype[np.complex128]]:
+    grids = np.meshgrid(*arrays, indexing="ij")
+    return np.prod(grids, axis=0)
+
+
+def as_isotropic_kernel_from_axis(
+    kernels: AxisKernel[_B0],
+) -> IsotropicNoiseKernel[TupleBasis[*tuple[_B0, ...]]]:
+    full_basis = tuple(kernel_i["basis"] for kernel_i in kernels)
+    full_data = tuple(kernel_i["data"].ravel() for kernel_i in kernels)
+
+    return {
+        "basis": TupleBasis(*full_basis),
+        "data": _outer_product(*full_data).ravel(),
+    }
+
+
+def as_axis_kernel_from_isotropic(
+    kernels: IsotropicNoiseKernel[TupleBasisLike[*tuple[_B0, ...]]],
+) -> AxisKernel[_B0]:
+    n_axis = kernels["basis"].ndim
+
+    data_stacked = kernels["data"].reshape(kernels["basis"].shape)
+    slice_without_idx = tuple(0 for _ in range(n_axis - 1))
+
+    prefactor = kernels["data"][0] ** ((1 - n_axis) / n_axis)
+    return tuple(
+        {
+            "basis": axis_basis,
+            "data": prefactor
+            * data_stacked[slice_ignoring_axes(slice_without_idx, (i,))],
+        }
+        for i, axis_basis in enumerate(
+            tuple(kernels["basis"][i] for i in range(n_axis))
+        )
+    )
 
 
 def as_diagonal_noise_operators_from_full(
@@ -480,57 +554,17 @@ def get_isotropic_kernel_from_operators(
     )
 
 
-def get_full_kernel_from_axis_kernels(
-    kernels: tuple[
-        IsotropicNoiseKernel[FundamentalPositionBasis[Any, Any]],
-        ...,
-    ],
-) -> IsotropicNoiseKernel[TupleBasis[*tuple[FundamentalPositionBasis[Any, Any]]]]:
-    full_basis = tuple(kernel_i["basis"] for kernel_i in kernels)
-    full_data = tuple(kernel_i["data"].ravel() for kernel_i in kernels)
-
-    def _outer_product(*arrays):
-        grids = np.meshgrid(*arrays, indexing="ij")
-        return np.prod(grids, axis=0)
-
-    return {
-        "basis": TupleBasis(*full_basis),
-        "data": _outer_product(*full_data),
-    }
-
-
-def get_axis_kernels_from_full_kernel(
-    kernel: IsotropicNoiseKernel[
-        TupleBasis[*tuple[FundamentalPositionBasis[Any, Any]]]
-    ],
-) -> tuple[IsotropicNoiseKernel[FundamentalPositionBasis[Any, Any]], ...]:
-    n_axis = len(kernel["data"].shape)
-    const_term = kernel["data"][tuple(0 for _ in range(n_axis))]
-    basis = tuple(kernel["basis"][i] for i in range(n_axis))
-    slices: list[np.ndarray[tuple[int], np.dtype[np.complex128]]] = []
-    for dim in range(n_axis):
-        slice_tuple = tuple(0 if i != dim else slice(None) for i in range(n_axis))
-        slices.append(kernel["data"][slice_tuple])
-
-    scaling = const_term ** ((n_axis - 1) / n_axis)
-    return tuple(
-        {
-            "basis": axis_basis,
-            "data": axis_data / scaling,
-        }
-        for axis_basis, axis_data in zip(basis, slices)
-    )
-
-
-def get_full_noise_operators(
+def get_full_noise_operators_from_axis_operators(
     operators_list: tuple[
         SingleBasisDiagonalNoiseOperatorList[
-            FundamentalBasis[int],
-            FundamentalPositionBasis[Any, Literal[1]],
+            _B0,
+            _B1,
         ],
         ...,
     ],
-) -> SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[int], BasisLike[int, int]]:
+) -> SingleBasisDiagonalNoiseOperatorList[
+    TupleBasis[*tuple[_B0, ...]], TupleBasis[*tuple[_B1, ...]]
+]:
     full_basis_shape = TupleBasis(
         *tuple(operators["basis"][0] for operators in operators_list),
     )
@@ -550,10 +584,6 @@ def get_full_noise_operators(
     full_coefficients = tuple(
         operators["eigenvalue"].ravel() for operators in operators_list
     )
-
-    def _outer_product(*arrays):
-        grids = np.meshgrid(*arrays, indexing="ij")
-        return np.prod(grids, axis=0)
 
     return {
         "basis": TupleBasis(full_basis_shape, TupleBasis(full_basis_x, full_basis_x)),

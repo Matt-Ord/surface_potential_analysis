@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 from surface_potential_analysis.basis.basis import (
     FundamentalBasis,
@@ -77,7 +77,7 @@ def basis_as_fundamental_transformed_basis(
 
 
 def basis_as_fundamental_basis(
-    axis: BasisLike[_NF0Inv, _N0Inv],
+    axis: BasisLike[_NF0Inv, Any],
 ) -> FundamentalBasis[_NF0Inv]:
     """
     Get the fundamental momentum axis for a given axis.

@@ -10,14 +10,17 @@ from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
     TupleBasisWithLengthLike,
 )
+from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.kernel.build import (
     truncate_diagonal_noise_operator_list,
 )
 from surface_potential_analysis.kernel.conversion import (
+    convert_diagonal_kernel_to_basis,
     convert_isotropic_kernel_to_basis,
     convert_noise_operator_list_to_basis,
 )
 from surface_potential_analysis.kernel.kernel import (
+    as_diagonal_kernel_from_full,
     as_diagonal_noise_operators_from_full,
 )
 from surface_potential_analysis.kernel.solve import (
@@ -557,7 +560,7 @@ def _get_noise_kernel_percentage_error(
     }
 
 
-def plot_isotropic_kernel_error(
+def plot_isotropic_kernel_error_1d_x(
     true_kernel: IsotropicNoiseKernel[_SBV0],
     fitted_kernel: IsotropicNoiseKernel[_SBV1],
     *,
@@ -568,3 +571,43 @@ def plot_isotropic_kernel_error(
         "data"
     ]
     return plot_data_1d_x(true_kernel["basis"], percentage_error, ax=ax, measure="real")
+
+
+def plot_isotropic_kernel_error_1d(
+    true_kernel: IsotropicNoiseKernel[_B0],
+    fitted_kernel: IsotropicNoiseKernel[_B1],
+    *,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes, Line2D]:
+    """Compare the errors between true kernel and fitted kernel."""
+    percentage_error = _get_noise_kernel_percentage_error(true_kernel, fitted_kernel)[
+        "data"
+    ]
+    return plot_data_1d(
+        percentage_error,
+        np.arange(int(true_kernel["basis"].n), dtype=np.float64),
+        ax=ax,
+        measure="real",
+    )
+
+
+def plot_diagonal_kernel_error(
+    true_kernel: SingleBasisDiagonalNoiseKernel[_B0],
+    fitted_kernel: SingleBasisDiagonalNoiseKernel[_B1],
+    *,
+    ax: Axes | None = None,
+) -> tuple[Figure, Axes, Line2D]:
+    """Compare the errors between true kernel and fitted kernel."""
+    converted = as_diagonal_kernel_from_full(
+        convert_diagonal_kernel_to_basis(fitted_kernel, true_kernel["basis"])
+    )
+    percentage_error = (
+        (converted["data"] - true_kernel["data"]) * 100 / true_kernel["data"]
+    )
+
+    return plot_data_2d(
+        percentage_error,
+        BasisUtil(true_kernel["basis"]).stacked_nx_points,
+        ax=ax,
+        measure="real",
+    )
