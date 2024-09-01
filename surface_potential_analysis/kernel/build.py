@@ -17,15 +17,11 @@ from surface_potential_analysis.basis.util import (
     get_displacements_1d_x,
     get_displacements_x,
 )
-from surface_potential_analysis.kernel.conversion import (
-    convert_isotropic_kernel_to_basis,
-)
 from surface_potential_analysis.kernel.kernel import (
     AxisKernel,
     DiagonalNoiseKernel,
     IsotropicNoiseKernel,
     SingleBasisNoiseOperatorList,
-    as_axis_kernel_from_isotropic,
     get_diagonal_kernel_from_operators,
     get_full_kernel_from_operators,
 )
@@ -73,8 +69,6 @@ if TYPE_CHECKING:
     _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
     _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
     _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
-
-    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
 
 def build_isotropic_kernel_from_function(
@@ -369,13 +363,3 @@ def truncate_diagonal_noise_kernel(
 
     truncated = truncate_diagonal_noise_operator_list(operators, truncation)
     return get_diagonal_kernel_from_operators(truncated)
-
-
-def get_fundamental_axis_kernels_from_isotropic(
-    kernel: IsotropicNoiseKernel[_SBV0],
-) -> tuple[IsotropicNoiseKernel[FundamentalPositionBasis[Any, Any]], ...]:
-    converted = convert_isotropic_kernel_to_basis(
-        kernel, stacked_basis_as_fundamental_position_basis(kernel["basis"])
-    )
-
-    return as_axis_kernel_from_isotropic(converted)

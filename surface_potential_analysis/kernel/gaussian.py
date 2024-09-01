@@ -35,7 +35,7 @@ from surface_potential_analysis.kernel.kernel import (
 from surface_potential_analysis.kernel.solve._fft import (
     get_noise_operators_real_isotropic_stacked_fft,
 )
-from surface_potential_analysis.kernel.solve.taylor import (
+from surface_potential_analysis.kernel.solve._taylor import (
     get_noise_operators_explicit_taylor_expansion,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
