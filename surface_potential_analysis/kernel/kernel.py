@@ -26,6 +26,7 @@ from surface_potential_analysis.operator.operator_list import (
     as_diagonal_operator_list,
     as_operator_list,
 )
+from surface_potential_analysis.util.util import slice_ignoring_axes
 
 _B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
 _B1_co = TypeVar("_B1_co", bound=BasisLike[Any, Any], covariant=True)
@@ -225,7 +226,7 @@ def as_diagonal_kernel_from_isotropic(
 
 
 def as_isotropic_kernel_from_diagonal(
-    kernel: DiagonalNoiseKernel[_B0, _B0, _B0, _B0], *, assert_isotropic: bool = True
+    kernel: SingleBasisDiagonalNoiseKernel[_B0], *, assert_isotropic: bool = True
 ) -> IsotropicNoiseKernel[_B0]:
     """
     Convert a diagonal kernel into an isotropic kernel.
@@ -294,6 +295,89 @@ def as_diagonal_kernel_from_isotropic_stacked(
         ),
         "data": data.ravel(),
     }
+
+
+def as_isotropic_kernel_from_diagonal_stacked(
+    kernel: SingleBasisDiagonalNoiseKernel[TupleBasisLike[*_B0s]],
+    *,
+    assert_isotropic: bool = True,
+) -> IsotropicNoiseKernel[TupleBasisLike[*_B0s]]:
+    """
+    Convert a diagonal kernel into an isotropic kernel.
+
+    By convention, we take the kernel corresponding to state 0
+
+    Parameters
+    ----------
+    kernel : DiagonalNoiseKernel[_B0, _B0, _B0, _B0]
+
+    Returns
+    -------
+    IsotropicNoiseKernel[_B0]
+    """
+    data = kernel["data"].reshape(kernel["basis"][0].shape)[:, 0]
+    out: IsotropicNoiseKernel[TupleBasisLike[*_B0s]] = {
+        "basis": kernel["basis"][0][0],
+        "data": data.ravel(),
+    }
+
+    if assert_isotropic:
+        np.testing.assert_allclose(
+            as_diagonal_kernel_from_isotropic_stacked(out)["data"].reshape(
+                kernel["basis"][0].shape
+            ),
+            kernel["data"].reshape(kernel["basis"][0].shape),
+        )
+
+    return out
+
+
+AxisKernel = tuple[
+    IsotropicNoiseKernel[_B0],
+    ...,
+]
+
+
+def _outer_product(
+    *arrays: np.ndarray[Any, np.dtype[np.complex128]],
+) -> np.ndarray[Any, np.dtype[np.complex128]]:
+    grids = np.meshgrid(*arrays, indexing="ij")
+    return np.prod(grids, axis=0)
+
+
+def as_isotropic_kernel_from_axis(
+    kernels: AxisKernel[_B0],
+) -> IsotropicNoiseKernel[TupleBasis[*tuple[_B0, ...]]]:
+    """Convert an axis kernel to an isotropic kernel."""
+    full_basis = tuple(kernel_i["basis"] for kernel_i in kernels)
+    full_data = tuple(kernel_i["data"].ravel() for kernel_i in kernels)
+
+    return {
+        "basis": TupleBasis(*full_basis),
+        "data": _outer_product(*full_data).ravel(),
+    }
+
+
+def as_axis_kernel_from_isotropic(
+    kernels: IsotropicNoiseKernel[TupleBasisLike[*tuple[_B0, ...]]],
+) -> AxisKernel[_B0]:
+    """Convert an isotropic kernel to an axis kernel."""
+    n_axis = kernels["basis"].ndim
+
+    data_stacked = kernels["data"].reshape(kernels["basis"].shape)
+    slice_without_idx = tuple(0 for _ in range(n_axis - 1))
+
+    prefactor = kernels["data"][0] ** ((1 - n_axis) / n_axis)
+    return tuple(
+        {
+            "basis": axis_basis,
+            "data": prefactor
+            * data_stacked[slice_ignoring_axes(slice_without_idx, (i,))],
+        }
+        for i, axis_basis in enumerate(
+            tuple(kernels["basis"][i] for i in range(n_axis))
+        )
+    )
 
 
 def as_diagonal_noise_operators_from_full(
@@ -470,3 +554,43 @@ def get_isotropic_kernel_from_operators(
         as_diagonal_noise_operators_from_full(operators),
         assert_isotropic=assert_isotropic,
     )
+
+
+def get_diagonal_noise_operators_from_axis(
+    operators_list: tuple[
+        SingleBasisDiagonalNoiseOperatorList[
+            _B0,
+            _B1,
+        ],
+        ...,
+    ],
+) -> SingleBasisDiagonalNoiseOperatorList[
+    TupleBasis[*tuple[_B0, ...]], TupleBasis[*tuple[_B1, ...]]
+]:
+    """Convert axis operators into full operators."""
+    full_basis_shape = TupleBasis(
+        *tuple(operators["basis"][0] for operators in operators_list),
+    )
+    full_basis_x = TupleBasis(
+        *tuple(operators["basis"][1][0] for operators in operators_list),
+    )
+
+    # for example, in 2d this is ij,kl -> ikjl
+    subscripts = tuple(
+        (chr(ord("i") + i), chr(ord("i") + i + 1))
+        for i in range(0, len(operators_list) * 2, 2)
+    )
+    input_subscripts = ",".join(["".join(group) for group in subscripts])
+    output_subscript = "".join("".join(group) for group in zip(*subscripts))
+    einsum_string = f"{input_subscripts}->{output_subscript}"
+
+    full_data = tuple(operators["data"] for operators in operators_list)
+    full_coefficients = tuple(
+        operators["eigenvalue"].ravel() for operators in operators_list
+    )
+
+    return {
+        "basis": TupleBasis(full_basis_shape, TupleBasis(full_basis_x, full_basis_x)),
+        "data": np.einsum(einsum_string, *full_data).ravel(),  # type: ignore unknown
+        "eigenvalue": _outer_product(*full_coefficients).ravel(),
+    }

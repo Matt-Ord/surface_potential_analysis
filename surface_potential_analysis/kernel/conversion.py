@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 from surface_potential_analysis.basis.basis_like import convert_vector
 from surface_potential_analysis.kernel.kernel import get_full_kernel_from_operators
-from surface_potential_analysis.kernel.solve import (
+from surface_potential_analysis.kernel.solve._eigenvalue import (
     get_noise_operators_diagonal_eigenvalue,
     get_noise_operators_eigenvalue,
 )

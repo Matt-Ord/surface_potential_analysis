@@ -5,16 +5,27 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable, TypeVar
 import numpy as np
 from scipy.constants import Boltzmann  # type: ignore no stub
 
-from surface_potential_analysis.basis.basis import FundamentalBasis
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
-from surface_potential_analysis.basis.util import get_displacements_x
+from surface_potential_analysis.basis.basis import (
+    FundamentalBasis,
+    FundamentalPositionBasis,
+)
+from surface_potential_analysis.basis.stacked_basis import (
+    TupleBasis,
+    TupleBasisWithLengthLike,
+)
+from surface_potential_analysis.basis.util import (
+    get_displacements_x,
+    get_displacements_x_stacked,
+)
 from surface_potential_analysis.kernel.kernel import (
+    AxisKernel,
     DiagonalNoiseKernel,
+    IsotropicNoiseKernel,
     SingleBasisNoiseOperatorList,
     get_diagonal_kernel_from_operators,
     get_full_kernel_from_operators,
 )
-from surface_potential_analysis.kernel.solve import (
+from surface_potential_analysis.kernel.solve._eigenvalue import (
     get_noise_operators_diagonal_eigenvalue,
     get_noise_operators_eigenvalue,
 )
@@ -27,13 +38,18 @@ from surface_potential_analysis.operator.operations import (
 )
 from surface_potential_analysis.operator.operator import SingleBasisOperator
 from surface_potential_analysis.operator.operator_list import as_operator_list
+from surface_potential_analysis.stacked_basis.conversion import (
+    stacked_basis_as_fundamental_position_basis,
+)
 
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis import FundamentalPositionBasis
-    from surface_potential_analysis.basis.basis_like import BasisLike
+    from surface_potential_analysis.basis.basis_like import (
+        BasisLike,
+        BasisWithLengthLike,
+    )
     from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisWithVolumeLike,
-        TupleBasisWithLengthLike,
     )
     from surface_potential_analysis.kernel.kernel import (
         DiagonalNoiseOperatorList,
@@ -50,30 +66,18 @@ if TYPE_CHECKING:
         SingleBasisOperatorList,
     )
 
-    _B1 = TypeVar(
-        "_B1",
-        bound=BasisLike[Any, Any],
-    )
-
-    _B0 = TypeVar(
-        "_B0",
-        bound=BasisLike[Any, Any],
-    )
-    _B2 = TypeVar(
-        "_B2",
-        bound=BasisLike[Any, Any],
-    )
+    _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
+    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
+    _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
 
 
 def build_isotropic_kernel_from_function(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    basis: BasisWithLengthLike[Any, Any, Any],
     fn: Callable[
         [np.ndarray[Any, np.dtype[np.float64]]],
         np.ndarray[Any, np.dtype[np.complex128]],
     ],
-) -> IsotropicNoiseKernel[
-    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
-]:
+) -> IsotropicNoiseKernel[FundamentalPositionBasis[Any, Any],]:
     """
     Get an Isotropic Kernel with a correllation beta(x-x').
 
@@ -96,6 +100,71 @@ def build_isotropic_kernel_from_function(
     correlation = fn(displacements["data"].reshape(displacements["basis"].shape)[0])
 
     return {"basis": displacements["basis"][0], "data": correlation.ravel()}
+
+
+def build_isotropic_kernel_from_function_stacked(
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    fn: Callable[
+        [np.ndarray[Any, np.dtype[np.float64]]],
+        np.ndarray[Any, np.dtype[np.complex128]],
+    ],
+) -> IsotropicNoiseKernel[
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
+]:
+    """
+    Get an Isotropic Kernel with a correllation beta(x-x').
+
+    Parameters
+    ----------
+    basis : StackedBasisWithVolumeLike[Any, Any, Any]
+    fn : Callable[
+        [np.ndarray[Any, np.dtype[np.float64]]],
+        np.ndarray[Any, np.dtype[np.complex128]],
+    ]
+        beta(x-x'), the correllation as a function of displacement
+
+    Returns
+    -------
+    IsotropicNoiseKernel[
+        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    ]
+    """
+    displacements = get_displacements_x_stacked(basis)
+    correlation = fn(displacements["data"].reshape(displacements["basis"].shape)[0])
+
+    return {"basis": displacements["basis"][0], "data": correlation.ravel()}
+
+
+def build_axis_kernel_from_function_stacked(
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    fn: Callable[
+        [np.ndarray[Any, np.dtype[np.float64]]],
+        np.ndarray[Any, np.dtype[np.complex128]],
+    ],
+) -> AxisKernel[FundamentalPositionBasis[Any, Any]]:
+    """
+    Get an Isotropic Kernel with a correllation beta(x-x').
+
+    Parameters
+    ----------
+    basis : StackedBasisWithVolumeLike[Any, Any, Any]
+    fn : Callable[
+        [np.ndarray[Any, np.dtype[np.float64]]],
+        np.ndarray[Any, np.dtype[np.complex128]],
+    ]
+        beta(x-x'), the correllation as a function of displacement
+
+    Returns
+    -------
+    IsotropicNoiseKernel[
+        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    ]
+    """
+    fundamental = stacked_basis_as_fundamental_position_basis(basis)
+    return tuple(
+        build_isotropic_kernel_from_function(fundamental[i], fn)
+        for i in range(basis.ndim)
+    )
 
 
 def _get_temperature_corrected_operators(
