@@ -614,7 +614,10 @@ def get_diagonal_noise_operators_from_axis(
     output_subscript = "".join("".join(group) for group in zip(*subscripts))
     einsum_string = f"{input_subscripts}->{output_subscript}"
 
-    full_data = tuple(operators["data"] for operators in operators_list)
+    full_data = tuple(
+        operators["data"].reshape(operators["basis"][0].n, -1)
+        for operators in operators_list
+    )
     full_coefficients = tuple(
         operators["eigenvalue"].ravel() for operators in operators_list
     )
