@@ -37,6 +37,8 @@ _B0 = TypeVar("_B0", bound=BasisLike[int, int])
 _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
 _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
 
+_TB0 = TypeVar("_TB0", bound=TupleBasisLike[*tuple[Any, ...]])
+
 
 class NoiseKernel(TypedDict, Generic[_B0_co, _B1_co, _B2_co, _B3_co]):
     r"""
@@ -298,10 +300,10 @@ def as_diagonal_kernel_from_isotropic_stacked(
 
 
 def as_isotropic_kernel_from_diagonal_stacked(
-    kernel: SingleBasisDiagonalNoiseKernel[TupleBasisLike[*_B0s]],
+    kernel: SingleBasisDiagonalNoiseKernel[_TB0],
     *,
     assert_isotropic: bool = True,
-) -> IsotropicNoiseKernel[TupleBasisLike[*_B0s]]:
+) -> IsotropicNoiseKernel[_TB0]:
     """
     Convert a diagonal kernel into an isotropic kernel.
 
@@ -316,7 +318,7 @@ def as_isotropic_kernel_from_diagonal_stacked(
     IsotropicNoiseKernel[_B0]
     """
     data = kernel["data"].reshape(kernel["basis"][0].shape)[:, 0]
-    out: IsotropicNoiseKernel[TupleBasisLike[*_B0s]] = {
+    out: IsotropicNoiseKernel[_TB0] = {
         "basis": kernel["basis"][0][0],
         "data": data.ravel(),
     }
@@ -523,6 +525,34 @@ def get_isotropic_kernel_from_diagonal_operators(
     IsotropicNoiseKernel[_B1]
     """
     return as_isotropic_kernel_from_diagonal(
+        get_diagonal_kernel_from_diagonal_operators(operators),
+        assert_isotropic=assert_isotropic,
+    )
+
+
+def get_isotropic_kernel_from_diagonal_operators_stacked(
+    operators: SingleBasisDiagonalNoiseOperatorList[
+        _B0,
+        _TB0,
+    ],
+    *,
+    assert_isotropic: bool = True,
+) -> IsotropicNoiseKernel[_TB0]:
+    """
+    Build a isotropic kernel from operators.
+
+    Parameters
+    ----------
+    operators: SingleBasisDiagonalNoiseOperatorList[
+        _B0,
+        _B1,
+    ]
+
+    Returns
+    -------
+    IsotropicNoiseKernel[_B1]
+    """
+    return as_isotropic_kernel_from_diagonal_stacked(
         get_diagonal_kernel_from_diagonal_operators(operators),
         assert_isotropic=assert_isotropic,
     )

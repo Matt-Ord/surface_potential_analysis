@@ -6,7 +6,9 @@ import numpy as np
 from scipy.constants import Boltzmann, hbar  # type: ignore no stub
 
 from surface_potential_analysis.basis.util import BasisUtil
-from surface_potential_analysis.kernel.build import build_isotropic_kernel_from_function
+from surface_potential_analysis.kernel.build import (
+    build_isotropic_kernel_from_function_stacked,
+)
 from surface_potential_analysis.kernel.solve import (
     get_noise_operators_explicit_taylor_expansion,
 )
@@ -94,7 +96,7 @@ def get_lorentzian_isotropic_noise_kernel(
     ) -> np.ndarray[Any, np.dtype[np.complex128]]:
         return a**2 * lambda_**2 / (displacements**2 + lambda_**2).astype(np.complex128)
 
-    return build_isotropic_kernel_from_function(basis, fn)
+    return build_isotropic_kernel_from_function_stacked(basis, fn)
 
 
 def _get_explicit_taylor_coefficients_lorentzian(

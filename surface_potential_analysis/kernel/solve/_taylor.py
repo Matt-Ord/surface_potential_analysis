@@ -8,18 +8,14 @@ from scipy.special import factorial  # type:ignore bad stb file
 from surface_potential_analysis.basis.conversion import (
     basis_as_fundamental_position_basis,
 )
-from surface_potential_analysis.kernel.conversion import (
-    convert_isotropic_kernel_to_basis,
-)
 from surface_potential_analysis.kernel.kernel import (
-    as_axis_kernel_from_isotropic,
     get_diagonal_noise_operators_from_axis,
 )
 from surface_potential_analysis.kernel.solve._fft import (
     get_operators_for_real_isotropic_noise,
 )
-from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_position_basis,
+from surface_potential_analysis.kernel.solve._util import (
+    get_fundamental_axis_kernels_from_isotropic,
 )
 from surface_potential_analysis.util.interpolation import pad_ft_points
 
@@ -170,16 +166,6 @@ def get_noise_operators_real_isotropic_taylor_expansion(
     }
 
 
-def _get_fundamental_axis_kernels_from_isotropic(
-    kernel: IsotropicNoiseKernel[_SBV0],
-) -> tuple[IsotropicNoiseKernel[FundamentalPositionBasis[Any, Any]], ...]:
-    converted = convert_isotropic_kernel_to_basis(
-        kernel, stacked_basis_as_fundamental_position_basis(kernel["basis"])
-    )
-
-    return as_axis_kernel_from_isotropic(converted)
-
-
 def get_noise_operators_real_isotropic_stacked_taylor_expansion(
     kernel: IsotropicNoiseKernel[_SBV0],
     *,
@@ -202,14 +188,13 @@ def get_noise_operators_real_isotropic_stacked_taylor_expansion(
     The noise operators formed using the 2n+1 lowest fourier terms, and the corresponding coefficients.
 
     """
-    axis_kernels = _get_fundamental_axis_kernels_from_isotropic(kernel)
-    shape = tuple(None for _ in axis_kernels) if shape is None else shape
+    axis_kernels = get_fundamental_axis_kernels_from_isotropic(kernel)
 
     operators_list = tuple(
         get_noise_operators_real_isotropic_taylor_expansion(
             kernel,
-            n=n,
+            n=None if shape is None else shape[i],
         )
-        for (kernel, n) in zip(axis_kernels, shape)
+        for (i, kernel) in enumerate(axis_kernels)
     )
     return get_diagonal_noise_operators_from_axis(operators_list)
