@@ -384,7 +384,10 @@ def plot_wavepacket_transformed_energy_1d(
 
     nx_points = BasisUtil(wavepacket["basis"][0]).nx_points[bands]
     fig, ax, line = plot_data_1d(
-        data[:, *tuple(1 if i == axes[0] else 0 for i in range(list_basis.ndim))],
+        data[
+            :,
+            *tuple(1 if i == axes[0] else 0 for i in range(list_basis.ndim)),
+        ],
         nx_points.astype(np.float64),
         ax=ax,
         scale=scale,

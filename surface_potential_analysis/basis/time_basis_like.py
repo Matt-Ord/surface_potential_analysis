@@ -32,9 +32,12 @@ class BasisWithTimeLike(BasisLike[_N1_co, _N0_co], Protocol[_N1_co, _N0_co]):  #
     def delta_t(self) -> float:
         return self.fundamental_times[1] - self.fundamental_times[0]  # type: ignore[no-any-return]
 
+    def __hash__(self) -> int:
+        return hash((self.delta_t, self.n, self.fundamental_n))
+
 
 class EvenlySpacedTimeBasis(
-    EvenlySpacedBasis[_N0_co, _N1_co, _N2_co], BasisWithTimeLike[_N0_co, Any]
+    EvenlySpacedBasis[_N0_co, _N1_co, _N2_co], BasisWithTimeLike[int, _N0_co]
 ):
     """A axis with vectors that are the fundamental position states."""
 
@@ -65,6 +68,9 @@ class EvenlySpacedTimeBasis(
     @property
     def nt_points(self) -> np.ndarray[tuple[int], np.dtype[np.int_]]:
         return np.arange(self.offset, self.n * self.step + self.offset, self.step)
+
+    def __hash__(self) -> int:
+        return hash((self.delta_t, self.n, self.step, self.offset))
 
 
 class FundamentalTimeBasis(EvenlySpacedTimeBasis[_N0_co, Literal[1], Literal[0]]):
