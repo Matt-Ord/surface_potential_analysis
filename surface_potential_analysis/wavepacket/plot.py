@@ -14,6 +14,7 @@ from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_basis,
 )
 from surface_potential_analysis.state_vector.plot import (
+    _get_average_band_energy,
     animate_state_3d_x,
     plot_state_1d_k,
     plot_state_1d_x,
@@ -44,6 +45,7 @@ from surface_potential_analysis.wavepacket.eigenstate_conversion import (
 )
 from surface_potential_analysis.wavepacket.get_eigenstate import (
     get_all_wavepacket_states,
+    get_full_bloch_hamiltonian,
 )
 
 from .wavepacket import (
@@ -460,7 +462,56 @@ def get_wavepacket_effective_mass(
     return {"basis": wavepacket["basis"][0][0], "data": effective_mass}
 
 
-def plot_wavepacket_transformed_energy_effective_mass_1d(
+def plot_wavepacket_transformed_energy_effective_mass_against_energy(
+    wavepacket: BlochWavefunctionListWithEigenvaluesList[
+        _B0,
+        _SB0,
+        _SBV0,
+    ],
+    axes: tuple[int,] = (0,),
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "real",
+) -> tuple[Figure, Axes, Line2D]:
+    """Plot the energy of the eigenstates in a wavepacket.
+
+    Parameters
+    ----------
+    wavepacket : BlochWavefunctionListWithEigenvaluesList[
+        _B0,
+        _SB0,
+        _SBV0,
+    ]
+    ax : Axes | None, optional
+        plot axis, by default None
+    scale : Literal[&quot;symlog&quot;, &quot;linear&quot;], optional
+        scale, by default "linear"
+
+    Returns
+    -------
+    tuple[Figure, Axes, QuadMesh]
+
+    """
+    energies = _get_average_band_energy(get_full_bloch_hamiltonian(wavepacket))["data"]
+    masses = get_wavepacket_effective_mass(wavepacket, axes[0])
+    fig, ax, line = plot_data_1d(
+        masses["data"],
+        np.real(energies),
+        ax=ax,
+        scale=scale,
+        measure=measure,
+    )
+    line.set_label("Effective Mass")
+
+    ax.set_xlabel("Average Band Energy /J")  # type: ignore library type
+    ax.set_ylabel("Mass / kg")  # type: ignore library type
+    ax.set_ylim((0.0, ax.get_ylim()[1]))
+
+    return fig, ax, line
+
+
+def plot_wavepacket_transformed_energy_effective_mass_against_band(
     wavepacket: BlochWavefunctionListWithEigenvaluesList[
         _B0,
         _SB0,
@@ -951,6 +1002,45 @@ def plot_occupation_against_band(
     """
     fig, ax, line = plot_value_list_against_nx(
         get_wavepacket_band_occupation(wavepacket, temperature),
+        ax=ax,
+        scale=scale,
+        measure=measure,
+    )
+    line.set_label("Occupation")
+    ax.set_xlabel("Band Idx")
+    ax.set_ylabel("Occupation / Au")
+    return fig, ax, line
+
+
+def plot_occupation_against_band_average_energy(
+    wavepacket: BlochWavefunctionListWithEigenvaluesList[_B0, _SB0, _SBV0],
+    temperature: float,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "abs",
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot the eigenvalues in an eigenstate collection against their projected phases.
+
+    Parameters
+    ----------
+    collection : EigenstateColllection[_B0Inv, _L0Inv]
+    direction : np.ndarray[tuple[int], np.dtype[np.float_]]
+    band : int, optional
+        band to plot, by default 0
+    ax : Axes | None, optional
+        axis, by default None
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    fig, ax, line = plot_data_1d(
+        get_wavepacket_band_occupation(wavepacket, temperature)["data"],
+        _get_average_band_energy(get_full_bloch_hamiltonian(wavepacket))["data"].astype(
+            np.float64
+        ),
         ax=ax,
         scale=scale,
         measure=measure,
