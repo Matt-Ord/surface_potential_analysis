@@ -101,6 +101,7 @@ if TYPE_CHECKING:
     _SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
     _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
+    _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
 
 
 # ruff: noqa: PLR0913
@@ -866,7 +867,7 @@ def _get_average_band_energy(
 
 
 def plot_total_band_occupation_against_energy(
-    hamiltonian: SingleBasisDiagonalOperator[BlochBasis[_B0]],
+    hamiltonian: SingleBasisDiagonalOperator[BlochBasis[_B1]],
     state: StateVector[_B0],
     *,
     ax: Axes | None = None,
