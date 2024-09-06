@@ -64,7 +64,7 @@ from surface_potential_analysis.wavepacket.wavepacket import (
     BlochWavefunctionListList,
     BlochWavefunctionListWithEigenvalues,
     BlochWavefunctionListWithEigenvaluesList,
-    get_sample_basis,
+    get_fundamental_sample_basis,
     get_wavepacket_basis,
 )
 
@@ -124,7 +124,7 @@ def _get_sampled_basis(
 def get_wavepacket_state_vector(
     wavepacket: BlochWavefunctionList[_SB0, _SBV0], idx: SingleIndexLike
 ) -> StateVector[
-    TupleBasisLike[
+    TupleBasisWithLengthLike[
         *tuple[EvenlySpacedTransformedPositionBasis[Any, Any, Any, Any], ...]
     ]
 ]:
@@ -203,7 +203,7 @@ def get_all_eigenstates(
             wavepacket["basis"][0]
         ),
     )
-    util = BasisUtil(get_sample_basis(converted["basis"]))
+    util = BasisUtil(get_fundamental_sample_basis(converted["basis"]))
     return [
         {
             "basis": _get_sampled_basis(
@@ -241,7 +241,7 @@ def get_all_wavepacket_states(
             wavepacket["basis"][0]
         ),
     )
-    util = BasisUtil(get_sample_basis(converted["basis"]))
+    util = BasisUtil(get_fundamental_sample_basis(converted["basis"]))
     return [
         {
             "basis": _get_sampled_basis(
@@ -346,7 +346,7 @@ def get_states_at_bloch_idx(
     return {
         "basis": TupleBasis(
             converted["basis"][0][0],
-            _get_sampled_basis(get_wavepacket_basis(converted), offset),
+            _get_sampled_basis(get_wavepacket_basis(converted["basis"]), offset),
         ),
         "data": converted["data"]
         .reshape(*converted["basis"][0].shape, -1)[:, idx]

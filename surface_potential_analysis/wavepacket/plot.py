@@ -3,19 +3,16 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
-from scipy.constants import Boltzmann, hbar
+from scipy.constants import Boltzmann, hbar  # type: ignore lib
 
-from surface_potential_analysis.basis.block_fraction_basis import (
-    ExplicitBlockFractionBasis,
-)
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_basis,
+    stacked_basis_as_fundamental_transformed_basis,
 )
 from surface_potential_analysis.state_vector.plot import (
-    _get_average_band_energy,
     animate_state_3d_x,
+    get_average_band_energy,
     plot_state_1d_k,
     plot_state_1d_x,
     plot_state_2d_k,
@@ -29,6 +26,8 @@ from surface_potential_analysis.state_vector.plot_value_list import (
 from surface_potential_analysis.util.plot import (
     get_figure,
     plot_data_1d,
+    plot_data_1d_k,
+    plot_data_1d_x,
     plot_data_2d_k,
     plot_data_2d_x,
 )
@@ -52,9 +51,9 @@ from .wavepacket import (
     BlochWavefunctionList,
     BlochWavefunctionListWithEigenvalues,
     BlochWavefunctionListWithEigenvaluesList,
-    get_sample_basis,
-    get_wavepacket_sample_fractions,
-    get_wavepacket_sample_frequencies,
+    get_fundamental_sample_basis,
+    get_wavepacket_basis,
+    get_wavepacket_fundamental_sample_frequencies,
 )
 
 if TYPE_CHECKING:
@@ -86,8 +85,8 @@ if TYPE_CHECKING:
     )
     from surface_potential_analysis.util.plot import Scale
 
-    _TB0Inv = TypeVar("_TB0Inv", bound=TupleBasisLike[*tuple[Any, ...]])
-    _TB1Inv = TypeVar("_TB1Inv", bound=TupleBasisLike[*tuple[Any, ...]])
+    _SB1 = TypeVar("_SB1", bound=StackedBasisLike[Any, Any, Any])
+    _SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike[Any, Any, Any])
     _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
     _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
     _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
@@ -100,7 +99,7 @@ if TYPE_CHECKING:
 def plot_wavepacket_sample_frequencies(
     wavepacket: BlochWavefunctionList[
         TupleBasisLike[*tuple[Any, ...]],
-        TupleBasisLike[*tuple[Any, ...]],
+        TupleBasisWithLengthLike[*tuple[Any, ...]],
     ],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
@@ -124,25 +123,24 @@ def plot_wavepacket_sample_frequencies(
     util = BasisUtil(wavepacket["basis"])
     idx = tuple(0 for _ in range(util.ndim - len(axes))) if idx is None else idx
 
-    frequencies = get_wavepacket_sample_frequencies(wavepacket["basis"]).reshape(
-        -1, *wavepacket["basis"][0].shape
-    )
-    frequencies = frequencies[list(axes), slice_ignoring_axes(idx, axes)]
-    (line,) = ax.plot(*frequencies.reshape(2, -1))
+    frequencies = get_wavepacket_fundamental_sample_frequencies(
+        wavepacket["basis"]
+    ).reshape(-1, *wavepacket["basis"][0].shape)
+    frequencies = frequencies[list(axes), *slice_ignoring_axes(idx, axes)]
+    (line,) = ax.plot(*frequencies.reshape(2, -1))  # type: ignore lib
     line.set_marker("x")
     line.set_linestyle("")
 
-    ax.set_xlabel(f"k{axes[0]} /$m^{-1}$")
-    ax.set_ylabel(f"k{axes[1]} /$m^{-1}$")
-    ax.set_title("Plot of sample points in the wavepacket")
+    ax.set_xlabel(f"k{axes[0]} /$m^{-1}$")  # type: ignore lib
+    ax.set_ylabel(f"k{axes[1]} /$m^{-1}$")  # type: ignore lib
+    ax.set_title("Plot of sample points in the wavepacket")  # type: ignore lib
 
     return fig, ax, line
 
 
 def plot_wavepacket_eigenvalues_2d_k(
     wavepacket: BlochWavefunctionListWithEigenvalues[
-        TupleBasisLike[*tuple[Any, ...]],
-        TupleBasisWithLengthLike[*tuple[Any, ...]],
+        TupleBasisLike[*tuple[Any, ...]], _SBV0
     ],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
@@ -166,13 +164,12 @@ def plot_wavepacket_eigenvalues_2d_k(
     -------
     tuple[Figure, Axes, QuadMesh]
     """
-    basis = get_sample_basis(wavepacket["basis"])
-    data = np.fft.ifftshift(wavepacket["eigenvalue"])
+    basis = get_fundamental_sample_basis(wavepacket["basis"])
 
     fig, ax, mesh = plot_data_2d_k(
-        basis, data, axes, idx, ax=ax, scale=scale, measure=measure
+        basis, wavepacket["eigenvalue"], axes, idx, ax=ax, scale=scale, measure=measure
     )
-    ax.set_title("Plot of the band energies against momentum")
+    ax.set_title("Plot of band energies against momentum")  # type: ignore lib
     return fig, ax, mesh
 
 
@@ -235,8 +232,8 @@ def plot_uneven_wavepacket_eigenvalues_1d_k(
         )
         line.set_linestyle("--")
         line.set_marker("x")
-    ax.set_xlabel("Bloch Phase")
-    ax.set_ylabel("Energy / J")
+    ax.set_xlabel("Bloch Phase")  # type: ignore lib
+    ax.set_ylabel("Energy / J")  # type: ignore lib
 
     return (fig, ax)
 
@@ -269,26 +266,34 @@ def plot_wavepacket_eigenvalues_1d_k(
     -------
     tuple[Figure, Axes, QuadMesh]
     """
-    bloch_fractions = get_wavepacket_sample_fractions(wavepacket["basis"][0][1])
-
-    return plot_uneven_wavepacket_eigenvalues_1d_k(
-        {
-            "basis": TupleBasis(
-                TupleBasis(
-                    wavepacket["basis"][0][0],
-                    ExplicitBlockFractionBasis(bloch_fractions),
-                ),
-                wavepacket["basis"][1],
-            ),
-            "data": wavepacket["data"],
-            "eigenvalue": wavepacket["eigenvalue"],
-        },
-        axes,
-        bands,
-        ax=ax,
-        measure=measure,
-        scale=scale,
+    converted = convert_wavepacket_with_eigenvalues_to_basis(
+        wavepacket,
+        list_basis=stacked_basis_as_fundamental_transformed_basis(
+            wavepacket["basis"][0][1]
+        ),
     )
+
+    bands = list(range(converted["basis"][0][0].n)) if bands is None else bands
+    data = converted["eigenvalue"].reshape(converted["basis"][0][0].n, -1)[bands, :]
+
+    fig, ax = get_figure(ax)
+
+    basis = get_fundamental_sample_basis(get_wavepacket_basis(wavepacket["basis"]))
+    for band_data in data:
+        _, _, line = plot_data_1d_k(
+            basis,
+            band_data,
+            axes=axes,
+            ax=ax,
+            scale=scale,
+            measure=measure,
+        )
+        line.set_linestyle("--")
+        line.set_marker("x")
+    ax.set_xlabel("K")  # type: ignore lib
+    ax.set_ylabel("Energy / J")  # type: ignore lib
+
+    return fig, ax
 
 
 def plot_wavepacket_eigenvalues_1d_x(
@@ -321,26 +326,30 @@ def plot_wavepacket_eigenvalues_1d_x(
     """
     converted = convert_wavepacket_with_eigenvalues_to_basis(
         wavepacket,
-        list_basis=stacked_basis_as_fundamental_basis(wavepacket["basis"][0][1]),
+        list_basis=stacked_basis_as_fundamental_transformed_basis(
+            wavepacket["basis"][0][1]
+        ),
     )
 
     bands = list(range(converted["basis"][0][0].n)) if bands is None else bands
-    data = converted["eigenvalue"].reshape(converted["basis"][0].shape)[bands, :]
+    data = converted["eigenvalue"].reshape(converted["basis"][0][0].n, -1)[bands, :]
 
     fig, ax = get_figure(ax)
-    nx_points = BasisUtil(converted["basis"][0][1][axes[0]]).fundamental_nx_points
+
+    basis = get_fundamental_sample_basis(get_wavepacket_basis(wavepacket["basis"]))
     for band_data in data:
-        _, _, line = plot_data_1d(
+        _, _, line = plot_data_1d_x(
+            basis,
             band_data,
-            nx_points.astype(np.float64),
+            axes=axes,
             ax=ax,
             scale=scale,
             measure=measure,
         )
         line.set_linestyle("--")
         line.set_marker("x")
-    ax.set_xlabel("Delta X")
-    ax.set_ylabel("Energy / J")
+    ax.set_xlabel("Delta X")  # type: ignore lib
+    ax.set_ylabel("Energy / J")  # type: ignore lib
 
     return (fig, ax)
 
@@ -380,7 +389,9 @@ def plot_wavepacket_transformed_energy_1d(
     )
 
     bands = list(range(converted["basis"][0][0].n)) if bands is None else bands
-    data = converted["eigenvalue"].reshape(converted["basis"][0].shape)[bands, :]
+    data = converted["eigenvalue"].reshape(
+        converted["basis"][0][0].n, *converted["basis"][0][1].shape
+    )[bands, :]
 
     list_basis = converted["basis"][0][1]
 
@@ -399,8 +410,8 @@ def plot_wavepacket_transformed_energy_1d(
     line.set_marker("x")
     line.set_label("lowest fourier componet")
 
-    ax.set_xlabel("Band Index")
-    ax.set_ylabel("Energy / J")
+    ax.set_xlabel("Band Index")  # type: ignore lib
+    ax.set_ylabel("Energy / J")  # type: ignore lib
 
     if free_mass is not None:
         delta_x = np.linalg.norm(wavepacket["basis"][1].delta_x_stacked[axes[0]])
@@ -413,7 +424,7 @@ def plot_wavepacket_transformed_energy_1d(
         offset = norm * ((4 * np.pi * hbar**2) / (2 * free_mass * delta_x**3))
         points = (2 * nx_points + 1) * offset
 
-        (line,) = ax.plot(nx_points, points)
+        (line,) = ax.plot(nx_points, points)  # type: ignore lib
         line.set_label("free particle")
 
     return fig, ax, line
@@ -493,7 +504,7 @@ def plot_wavepacket_transformed_energy_effective_mass_against_energy(
     tuple[Figure, Axes, QuadMesh]
 
     """
-    energies = _get_average_band_energy(get_full_bloch_hamiltonian(wavepacket))["data"]
+    energies = get_average_band_energy(get_full_bloch_hamiltonian(wavepacket))["data"]
     masses = get_wavepacket_effective_mass(wavepacket, axes[0])
     fig, ax, line = plot_data_1d(
         masses["data"],
@@ -547,9 +558,9 @@ def plot_wavepacket_transformed_energy_effective_mass_against_band(
     line.set_marker("x")
     line.set_label("Effective Mass")
 
-    ax.set_xlabel("Band Index")
-    ax.set_ylabel("Mass / Kg")
-    ax.set_ylim([0, ax.get_ylim()[1]])
+    ax.set_xlabel("Band Index")  # type: ignore lib
+    ax.set_ylabel("Mass / Kg")  # type: ignore lib
+    ax.set_ylim([0, ax.get_ylim()[1]])  # type: ignore lib
 
     return fig, ax, line
 
@@ -557,7 +568,7 @@ def plot_wavepacket_transformed_energy_effective_mass_against_band(
 def plot_wavepacket_eigenvalues_2d_x(
     wavepacket: BlochWavefunctionListWithEigenvalues[
         TupleBasisLike[*tuple[Any, ...]],
-        TupleBasisWithLengthLike[*tuple[Any, ...]],
+        _SBV0,
     ],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
@@ -583,21 +594,18 @@ def plot_wavepacket_eigenvalues_2d_x(
     -------
     tuple[Figure, Axes, QuadMesh]
     """
-    basis = get_sample_basis(wavepacket["basis"])
-
-    data = np.fft.ifft2(wavepacket["eigenvalue"])
-    data[0, 0] = 0
+    basis = get_fundamental_sample_basis(wavepacket["basis"])
 
     fig, ax, mesh = plot_data_2d_x(
-        basis, data, axes, idx, ax=ax, scale=scale, measure=measure
+        basis, wavepacket["eigenvalue"], axes, idx, ax=ax, scale=scale, measure=measure
     )
-    ax.set_title("Plot of the fourier transform of the band energies against position")
+    ax.set_title("Plot of the fourier transform of the band energies against position")  # type: ignore lib
     return fig, ax, mesh
 
 
 def plot_eigenvalues_1d_x(
     wavepacket: BlochWavefunctionListWithEigenvalues[
-        TupleBasisLike[*tuple[Any, ...]], TupleBasisWithLengthLike[*tuple[Any, ...]]
+        TupleBasisLike[*tuple[Any, ...]], _SBV0
     ],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -628,17 +636,15 @@ def plot_eigenvalues_1d_x(
     eigenvalues = get_data_in_axes(
         wavepacket["eigenvalue"].reshape(wavepacket["basis"][0].shape), axes, idx
     )
-    (line,) = ax.plot(eigenvalues)
-    ax.set_yscale(scale)
-    ax.set_xlabel("Bloch Phase")
-    ax.set_ylabel("Energy / J")
+    (line,) = ax.plot(eigenvalues)  # type: ignore lib
+    ax.set_yscale(scale)  # type: ignore lib
+    ax.set_xlabel("Bloch Phase")  # type: ignore lib
+    ax.set_ylabel("Energy / J")  # type: ignore lib
     return fig, ax, line
 
 
 def plot_wavepacket_1d_x(
-    wavepacket: BlochWavefunctionList[
-        TupleBasisLike[*tuple[Any, ...]], TupleBasisWithLengthLike[*tuple[Any, ...]]
-    ],
+    wavepacket: BlochWavefunctionList[TupleBasisLike[*tuple[Any, ...]], _SBV0],
     axes: tuple[int] = (0,),
     idx: tuple[int, ...] | None = None,
     *,
@@ -672,9 +678,7 @@ def plot_wavepacket_1d_x(
 
 
 def plot_wavepacket_1d_k(
-    wavepacket: BlochWavefunctionList[
-        TupleBasisLike[*tuple[Any, ...]], TupleBasisWithLengthLike[*tuple[Any, ...]]
-    ],
+    wavepacket: BlochWavefunctionList[TupleBasisLike[*tuple[Any, ...]], _SBV0],
     axes: tuple[int] = (0,),
     idx: tuple[int, ...] | None = None,
     *,
@@ -708,9 +712,7 @@ def plot_wavepacket_1d_k(
 
 
 def plot_wavepacket_2d_k(
-    wavepacket: BlochWavefunctionList[
-        TupleBasisLike[*tuple[Any, ...]], TupleBasisWithLengthLike[*tuple[Any, ...]]
-    ],
+    wavepacket: BlochWavefunctionList[TupleBasisLike[*tuple[Any, ...]], _SBV0],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -742,9 +744,7 @@ def plot_wavepacket_2d_k(
 
 
 def plot_all_wavepacket_states_2d_k(
-    wavepacket: BlochWavefunctionList[
-        TupleBasisLike[*tuple[Any, ...]], TupleBasisWithLengthLike[*tuple[Any, ...]]
-    ],
+    wavepacket: BlochWavefunctionList[TupleBasisLike[*tuple[Any, ...]], _SBV0],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -778,9 +778,7 @@ def plot_all_wavepacket_states_2d_k(
 
 
 def plot_wavepacket_2d_x(
-    wavepacket: BlochWavefunctionList[
-        TupleBasisLike[*tuple[Any, ...]], TupleBasisWithLengthLike[*tuple[Any, ...]]
-    ],
+    wavepacket: BlochWavefunctionList[TupleBasisLike[*tuple[Any, ...]], _SBV0],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -812,9 +810,7 @@ def plot_wavepacket_2d_x(
 
 
 def plot_all_wavepacket_states_2d_x(
-    wavepacket: BlochWavefunctionList[
-        TupleBasisLike[*tuple[Any, ...]], TupleBasisWithLengthLike[*tuple[Any, ...]]
-    ],
+    wavepacket: BlochWavefunctionList[TupleBasisLike[*tuple[Any, ...]], _SBV0],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -848,8 +844,8 @@ def plot_all_wavepacket_states_2d_x(
 
 
 def plot_wavepacket_difference_2d_x(
-    wavepacket_0: BlochWavefunctionList[_TB0Inv, _TB1Inv],
-    wavepacket_1: BlochWavefunctionList[_TB0Inv, _TB1Inv],
+    wavepacket_0: BlochWavefunctionList[_SB0, _SBV0],
+    wavepacket_1: BlochWavefunctionList[_SB1, _SBV1],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -890,9 +886,7 @@ def plot_wavepacket_difference_2d_x(
 
 
 def animate_wavepacket_3d_x(
-    wavepacket: BlochWavefunctionList[
-        TupleBasisLike[*tuple[Any, ...]], TupleBasisWithLengthLike[*tuple[Any, ...]]
-    ],
+    wavepacket: BlochWavefunctionList[TupleBasisLike[*tuple[Any, ...]], _SBV0],
     axes: tuple[int, int, int] = (0, 1, 2),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -918,7 +912,7 @@ def animate_wavepacket_3d_x(
     tuple[Figure, Axes, ArtistAnimation]
     """
     state = unfurl_wavepacket(wavepacket)
-    return animate_state_3d_x(state, axes, idx, ax=ax, measure=measure, scale=scale)  # type: ignore[arg-type]
+    return animate_state_3d_x(state, axes, idx, ax=ax, measure=measure, scale=scale)
 
 
 def plot_wavepacket_along_path(
@@ -1007,8 +1001,8 @@ def plot_occupation_against_band(
         measure=measure,
     )
     line.set_label("Occupation")
-    ax.set_xlabel("Band Idx")
-    ax.set_ylabel("Occupation / Au")
+    ax.set_xlabel("Band Idx")  # type:ignore lib
+    ax.set_ylabel("Occupation / Au")  # type:ignore lib
     return fig, ax, line
 
 
@@ -1038,7 +1032,7 @@ def plot_occupation_against_band_average_energy(
     """
     fig, ax, line = plot_data_1d(
         get_wavepacket_band_occupation(wavepacket, temperature)["data"],
-        _get_average_band_energy(get_full_bloch_hamiltonian(wavepacket))["data"].astype(
+        get_average_band_energy(get_full_bloch_hamiltonian(wavepacket))["data"].astype(
             np.float64
         ),
         ax=ax,
@@ -1046,6 +1040,6 @@ def plot_occupation_against_band_average_energy(
         measure=measure,
     )
     line.set_label("Occupation")
-    ax.set_xlabel("Band Idx")
-    ax.set_ylabel("Occupation / Au")
+    ax.set_xlabel("Band Idx")  # type:ignore lib
+    ax.set_ylabel("Occupation / Au")  # type:ignore lib
     return fig, ax, line

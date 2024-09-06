@@ -856,9 +856,20 @@ def plot_average_eigenstate_occupation(
     return fig, ax, line
 
 
-def _get_average_band_energy(
+def get_average_band_energy(
     hamiltonian: SingleBasisDiagonalOperator[BlochBasis[_B0]],
 ) -> ValueList[_B0]:
+    """
+    Get the average energy of each band.
+
+    Parameters
+    ----------
+    hamiltonian : SingleBasisDiagonalOperator[BlochBasis[_B0]]
+
+    Returns
+    -------
+    ValueList[_B0]
+    """
     basis = hamiltonian["basis"][1].wavefunctions["basis"][0][0]
 
     hamiltonian_data = np.real(hamiltonian["data"].reshape(basis.n, -1))
@@ -891,7 +902,7 @@ def plot_total_band_occupation_against_energy(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    band_energies = _get_average_band_energy(hamiltonian)["data"].astype(np.float64)
+    band_energies = get_average_band_energy(hamiltonian)["data"].astype(np.float64)
 
     converted = convert_state_vector_to_basis(state, hamiltonian["basis"][1])
 
