@@ -125,24 +125,56 @@ class NPYCachedFunction(Generic[_P, _RD]):
         self.load_pickle = load_pickle
         self.save_pickle = save_pickle
 
-    def __call__(self, *args: _P.args, **kw: _P.kwargs) -> _RD:
-        """Call the function using the cache."""
+    def _get_cache_path(self, *args: _P.args, **kw: _P.kwargs) -> Path | None:
         cache_path = self._path(*args, **kw) if callable(self._path) else self._path
         if cache_path is None:
-            return self.call_uncached(*args, **kw)
-        cache_path = cache_path.with_suffix(".npz")
-        try:
-            data = np.load(cache_path, allow_pickle=self.load_pickle)
-            obj: _RD = {f: data[f][()] for f in data.files}  # type: ignore not _RD
-        except FileNotFoundError:
-            obj = self.call_uncached(*args, **kw)
-            np.savez(cache_path, **obj)
-
-        return obj
+            return None
+        return cache_path.with_suffix(".npz")
 
     def call_uncached(self, *args: _P.args, **kw: _P.kwargs) -> _RD:
         """Call the function, without using the cache."""
         return self._inner(*args, **kw)
+
+    def call_cached(self, *args: _P.args, **kw: _P.kwargs) -> _RD:
+        """Call the function, and save the result to the cache."""
+        obj = self.call_uncached(*args, **kw)
+        cache_path = self._get_cache_path(*args, **kw)
+        if cache_path is not None:
+            np.savez(cache_path, **obj)
+        return obj
+
+    def _load_cache(self, *args: _P.args, **kw: _P.kwargs) -> _RD | None:
+        """Call the function, delete and ."""
+        cache_path = self._get_cache_path(*args, **kw)
+        if cache_path is None:
+            return None
+        try:
+            data = np.load(cache_path, allow_pickle=self.load_pickle)
+            return {f: data[f][()] for f in data.files}  # type: ignore not _RD
+        except FileNotFoundError:
+            return None
+
+    def load_or_call_uncached(self, *args: _P.args, **kw: _P.kwargs) -> _RD:
+        """Call the function uncached, using the cached data if available."""
+        obj = self._load_cache(*args, **kw)
+
+        if obj is None:
+            obj = self.call_uncached(*args, **kw)
+        return obj
+
+    def load_or_call_cached(self, *args: _P.args, **kw: _P.kwargs) -> _RD:
+        """Call the function cached, using the cached data if available."""
+        obj = self._load_cache(*args, **kw)
+
+        if obj is None:
+            obj = self.call_cached(*args, **kw)
+        return obj
+
+        return obj
+
+    def __call__(self, *args: _P.args, **kw: _P.kwargs) -> _RD:
+        """Call the function using the cache."""
+        return self.load_or_call_cached(*args, **kw)
 
 
 @overload

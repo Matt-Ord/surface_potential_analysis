@@ -81,9 +81,6 @@ if TYPE_CHECKING:
         FundamentalBasis,
         FundamentalPositionBasis,
     )
-    from surface_potential_analysis.basis.explicit_basis import (
-        ExplicitStackedBasisWithLength,
-    )
     from surface_potential_analysis.operator.operator import (
         Operator,
         SingleBasisOperator,
@@ -97,9 +94,9 @@ if TYPE_CHECKING:
         SingleStackedIndexLike,
     )
     from surface_potential_analysis.util.plot import Scale
+    from surface_potential_analysis.wavepacket.get_eigenstate import BlochBasis
 
     _B0Inv = TypeVar("_B0Inv", bound=BasisLike[Any, Any])
-    _ESB0 = TypeVar("_ESB0", bound=ExplicitStackedBasisWithLength[Any, Any])
     _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
     _SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
@@ -858,8 +855,18 @@ def plot_average_eigenstate_occupation(
     return fig, ax, line
 
 
+def _get_average_band_energy(
+    hamiltonian: SingleBasisDiagonalOperator[BlochBasis[_B0]],
+) -> ValueList[_B0]:
+    basis = hamiltonian["basis"][1].wavefunctions["basis"][0][0]
+
+    hamiltonian_data = np.real(hamiltonian["data"].reshape(basis.n, -1))
+    band_energies = np.average(hamiltonian_data, axis=1)
+    return {"basis": basis, "data": band_energies}
+
+
 def plot_total_band_occupation_against_energy(
-    hamiltonian: SingleBasisDiagonalOperator[_ESB0],
+    hamiltonian: SingleBasisDiagonalOperator[BlochBasis[_B0]],
     state: StateVector[_B0],
     *,
     ax: Axes | None = None,
@@ -883,15 +890,14 @@ def plot_total_band_occupation_against_energy(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    n_bands = hamiltonian["basis"][1].vectors["basis"][0][0].n
-
-    hamiltonian_data = np.real(hamiltonian["data"].reshape(n_bands, -1))
-    band_energies = np.average(hamiltonian_data, axis=1)
+    band_energies = _get_average_band_energy(hamiltonian)["data"].astype(np.float64)
 
     converted = convert_state_vector_to_basis(state, hamiltonian["basis"][1])
+
+    n_bands = hamiltonian["basis"][1].wavefunctions["basis"][0][0].n
     occupation = np.square(np.abs(converted["data"])).reshape(n_bands, -1)
 
-    total_band_occupation = np.sum(occupation, axis=1)
+    total_band_occupation = np.asarray(np.sum(occupation, axis=1))
     fig, ax, line = plot_data_1d(
         total_band_occupation,
         band_energies,
@@ -902,7 +908,7 @@ def plot_total_band_occupation_against_energy(
     ax.set_xlabel("Average Band Energy /J")  # type: ignore unknown
     ax.set_ylabel("Total Band Occupation")  # type: ignore unknown
 
-    average_energy = np.average(hamiltonian_data, weights=occupation).item()
+    average_energy = np.average(band_energies, weights=total_band_occupation)
     average_line = ax.axvline(average_energy)  # type: ignore unknown
     average_line.set_color(line.get_color())
     average_line.set_linestyle("--")
