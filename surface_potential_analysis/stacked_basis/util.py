@@ -30,8 +30,10 @@ if TYPE_CHECKING:
         BasisWithLengthLike,
     )
     from surface_potential_analysis.basis.stacked_basis import (
+        StackedBasisLike,
         StackedBasisWithVolumeLike,
         TupleBasisLike,
+        TupleBasisWithLengthLike,
     )
     from surface_potential_analysis.types import (
         ArrayStackedIndexLike,
@@ -48,6 +50,8 @@ if TYPE_CHECKING:
     _NDInv = TypeVar("_NDInv", bound=int)
 
     _TS = TypeVarTuple("_TS")
+
+    _DType = TypeVar("_DType", bound=np.floating[Any] | np.complexfloating[Any, Any])
 
 
 def project_k_points_along_axes(
@@ -208,7 +212,9 @@ def get_x_coordinates_in_axes(
 
 @overload
 def _wrap_distance(
-    distance: float | np.float64, length: FloatLike_co, origin: FloatLike_co = 0
+    distance: FloatLike_co | IntLike_co,
+    length: FloatLike_co | IntLike_co,
+    origin: FloatLike_co | IntLike_co = 0,
 ) -> np.float64:
     ...
 
@@ -216,8 +222,8 @@ def _wrap_distance(
 @overload
 def _wrap_distance(
     distance: np.ndarray[_S0Inv, np.dtype[np.float64]],
-    length: FloatLike_co,
-    origin: FloatLike_co = 0,
+    length: FloatLike_co | IntLike_co,
+    origin: FloatLike_co | IntLike_co = 0,
 ) -> np.ndarray[_S0Inv, np.dtype[np.float64]]:
     ...
 
@@ -248,8 +254,9 @@ def _wrap_index(distance: Any, length: Any, origin: Any = 0) -> Any:
 
 @overload
 def wrap_index_around_origin(
-    basis: TupleBasisLike[*tuple[_B0, ...]],
+    basis: StackedBasisLike[Any, Any, Any],
     idx: SingleStackedIndexLike,
+    *,
     origin: SingleIndexLike | None = None,
     axes: tuple[int, ...] | None = None,
 ) -> SingleStackedIndexLike:
@@ -258,8 +265,9 @@ def wrap_index_around_origin(
 
 @overload
 def wrap_index_around_origin(
-    basis: TupleBasisLike[*tuple[_B0, ...]],
+    basis: StackedBasisLike[Any, Any, Any],
     idx: ArrayStackedIndexLike[_S0Inv],
+    *,
     origin: SingleIndexLike | None = None,
     axes: tuple[int, ...] | None = None,
 ) -> ArrayStackedIndexLike[_S0Inv]:
@@ -267,8 +275,9 @@ def wrap_index_around_origin(
 
 
 def wrap_index_around_origin(
-    basis: TupleBasisLike[*tuple[_B0, ...]],
+    basis: StackedBasisLike[Any, Any, Any],
     idx: StackedIndexLike,
+    *,
     origin: SingleIndexLike | None = None,
     axes: tuple[int, ...] | None = None,
 ) -> StackedIndexLike:
@@ -287,18 +296,18 @@ def wrap_index_around_origin(
     StackedIndexLike
     """
     util = BasisUtil(basis)
-    origin = tuple(0 for _ in basis) if origin is None else origin
+    origin = tuple(0 for _ in range(basis.ndim)) if origin is None else origin
     origin = origin if isinstance(origin, tuple) else util.get_stacked_index(origin)
     return tuple(  # type: ignore[return-value]
-        _wrap_index(idx[ax], util.shape[ax], origin[ax])
+        _wrap_index(idx[ax], basis.shape[ax], origin[ax])
         if axes is None or ax in axes
         else idx[ax]
-        for ax in range(util.ndim)
+        for ax in range(basis.ndim)
     )
 
 
 def wrap_x_point_around_origin(
-    basis: TupleBasisLike[Unpack[tuple[_BL0Inv, ...]]],
+    basis: TupleBasisWithLengthLike[Unpack[tuple[_BL0Inv, ...]]],
     points: np.ndarray[tuple[_NDInv, Unpack[_TS]], np.dtype[np.float64]],
     origin: np.ndarray[tuple[_NDInv], np.dtype[np.float64]] | None = None,
 ) -> np.ndarray[tuple[_NDInv, Unpack[_TS]], np.dtype[np.float64]]:
@@ -320,10 +329,14 @@ def wrap_x_point_around_origin(
     origin = np.zeros(points.shape[0]) if origin is None else origin
 
     distance_along_axes = np.tensordot(
-        np.linalg.inv(util.delta_x_stacked), points, axes=(0, 0)
+        np.linalg.inv(util.delta_x_stacked),
+        points,
+        axes=(0, 0),
     )
     origin_along_axes = np.tensordot(
-        np.linalg.inv(util.delta_x_stacked), origin, axes=(0, 0)
+        np.linalg.inv(util.delta_x_stacked),
+        origin,
+        axes=(0, 0),
     )
     wrapped_distances = np.array(
         [
@@ -367,10 +380,10 @@ def calculate_distances_along_path(
         util = BasisUtil(basis)
         return np.array(
             list(starmap(_wrap_distance, zip(out, util.shape, strict=True))),
-            dtype=np.float64,
+            dtype=np.int_,
         )
 
-    return out  # type:ignore[no-any-return]
+    return out
 
 
 def calculate_cumulative_x_distances_along_path(
@@ -500,7 +513,7 @@ def get_single_point_basis(
 
 def get_max_idx(
     basis: TupleBasisLike[*tuple[Any, ...]],
-    data: np.ndarray[tuple[Any], np.dtype[np.complex128]],
+    data: np.ndarray[tuple[Any], np.dtype[_DType]],
     axes: tuple[int, ...],
 ) -> SingleStackedIndexLike:
     """

@@ -9,6 +9,7 @@ from ._operator import (
 from ._projection import (
     get_evenly_spaced_points,
     get_localization_operator_for_projections,
+    get_localization_operator_tight_binding_projections,
     localize_exponential_decay_projection,
     localize_single_band_wavepacket_projection,
     localize_single_point_projection,
@@ -32,6 +33,7 @@ __all__ = [
     "Wannier90Options",
     "get_evenly_spaced_points",
     "get_localization_operator_for_projections",
+    "get_localization_operator_tight_binding_projections",
     "get_localization_operator_wannier90",
     "get_localization_operator_wannier90_individual_bands",
     "localize_exponential_decay_projection",

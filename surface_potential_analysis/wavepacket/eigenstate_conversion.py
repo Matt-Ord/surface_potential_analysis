@@ -28,8 +28,8 @@ from surface_potential_analysis.wavepacket.conversion import (
 from surface_potential_analysis.wavepacket.wavepacket import (
     BlochWavefunctionList,
     BlochWavefunctionListList,
+    get_fundamental_unfurled_basis,
     get_furled_basis,
-    get_unfurled_basis,
     wavepacket_list_into_iter,
 )
 
@@ -56,9 +56,7 @@ if TYPE_CHECKING:
 
     _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
-    _MB0 = TypeVar("_MB0", bound=FundamentalTransformedPositionBasis[Any, Any])
     _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
-    _FB0 = TypeVar("_FB0", bound=FundamentalBasis[Any])
     _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
 
     _L0Inv = TypeVar("_L0Inv", bound=int)
@@ -67,7 +65,7 @@ if TYPE_CHECKING:
 
 def furl_eigenstate(
     eigenstate: StateVector[
-        TupleBasisLike[
+        TupleBasisWithLengthLike[
             FundamentalTransformedPositionBasis[_L0Inv, Literal[3]],
             FundamentalTransformedPositionBasis[_L1Inv, Literal[3]],
             _A3d2Inv,
@@ -127,10 +125,10 @@ def furl_eigenstate(
 
 def _unfurl_momentum_basis_wavepacket(
     wavepacket: BlochWavefunctionList[
-        TupleBasisLike[*tuple[_FB0, ...]], TupleBasisWithLengthLike[*tuple[_MB0, ...]]
+        TupleBasisLike[*tuple[Any, ...]], TupleBasisWithLengthLike[*tuple[Any, ...]]
     ],
 ) -> StateVector[
-    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
+    TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
 ]:
     list_shape = wavepacket["basis"][0].shape
     states_shape = wavepacket["basis"][1].shape
@@ -160,7 +158,7 @@ def _unfurl_momentum_basis_wavepacket(
     unshifted = np.roll(ravelled, shift, tuple(range(nd)))
     flattened = unshifted.reshape(-1)
 
-    basis = get_unfurled_basis(wavepacket["basis"])
+    basis = get_fundamental_unfurled_basis(wavepacket["basis"])
     return {
         "basis": stacked_basis_as_fundamental_momentum_basis(basis),
         "data": flattened / np.sqrt(np.prod(list_shape)),

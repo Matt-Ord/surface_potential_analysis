@@ -22,6 +22,7 @@ from surface_potential_analysis.basis.basis import (
 )
 from surface_potential_analysis.basis.basis_like import (
     BasisLike,
+    BasisWithLengthLike,
     convert_vector,
 )
 
@@ -120,7 +121,7 @@ class TupleBasisLike(StackedBasisLike[Any, Any, Any], Protocol[*_B0]):
     def __repr__(self: TupleBasisLike[*_B1s]) -> str:
         return f"{self.__class__.__name__}({', '.join(b.__repr__() for b in self.__iter__())})"
 
-    def __iter__(self) -> Iterator[Union[*_B0]]:
+    def __iter__(self) -> Iterator[BasisLike[Any, Any]]:
         ...
 
     @overload
@@ -149,7 +150,9 @@ class TupleBasisLike(StackedBasisLike[Any, Any, Any], Protocol[*_B0]):
         ...
 
     @overload
-    def __getitem__(self, index: slice) -> TupleBasisLike[*tuple[Union[*_B0], ...]]:
+    def __getitem__(
+        self, index: slice
+    ) -> TupleBasisLike[*tuple[BasisLike[Any, Any], ...]]:
         ...
 
 
@@ -158,9 +161,12 @@ class TupleBasisWithLengthLike(
 ):
     """Represents a basis formed from multiple basis, each with a length."""
 
+    def __iter__(self) -> Iterator[BasisWithLengthLike[Any, Any, Any]]:
+        ...
+
     @property
     def delta_x_stacked(
-        self: TupleBasisLike[*_B1s],
+        self: TupleBasisWithLengthLike[*_B1s],
     ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
         # Note: this is only valid if each basis has a length too.
         return np.array([axi.delta_x for axi in self])

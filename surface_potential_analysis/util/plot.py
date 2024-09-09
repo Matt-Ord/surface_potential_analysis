@@ -6,11 +6,11 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.animation import ArtistAnimation
 from matplotlib.axes import Axes
-from matplotlib.colors import Normalize, SymLogNorm
+from matplotlib.colors import LogNorm, Normalize, SymLogNorm
 from matplotlib.figure import Figure
-from matplotlib.scale import LinearScale, ScaleBase, SymmetricalLogScale
+from matplotlib.scale import LinearScale, LogScale, ScaleBase, SymmetricalLogScale
 
-from surface_potential_analysis.basis.basis_like import BasisLike, convert_vector
+from surface_potential_analysis.basis.basis_like import convert_vector
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_momentum_basis,
     stacked_basis_as_fundamental_position_basis,
@@ -33,13 +33,11 @@ if TYPE_CHECKING:
 
     from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisWithVolumeLike,
-        TupleBasisLike,
     )
     from surface_potential_analysis.types import SingleStackedIndexLike
 
 
-Scale = Literal["symlog", "linear", "squared"]
-_B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
+Scale = Literal["symlog", "linear", "squared", "log"]
 
 
 def get_figure(ax: Axes | None) -> tuple[Figure, Axes]:
@@ -92,6 +90,8 @@ def _get_norm_with_lim(
     match scale:
         case "linear":
             return Normalize(vmin=lim[0], vmax=lim[1])
+        case "log":
+            return LogNorm(vmin=lim[0], vmax=lim[1])
         case "symlog":
             max_abs = max([np.abs(lim[0]), np.abs(lim[1])])
             return SymLogNorm(
@@ -116,6 +116,9 @@ def _get_scale_with_lim(
                 axis=None,
                 linthresh=1 if max_abs <= 0 else 1e-3 * max_abs,
             )
+        case "log":
+            max_abs = max([np.abs(lim[0]), np.abs(lim[1])])
+            return LogScale(axis=None)
         case "squared":
             return SquaredScale(axis=None)
 
@@ -174,13 +177,13 @@ def plot_data_1d(
         coordinates = np.append(coordinates, coordinates[-1] + d_coord)
         measured_data = np.append(measured_data, measured_data[0])
 
-    container = ax.errorbar(coordinates, measured_data, yerr=y_errors)
+    container = ax.errorbar(coordinates, measured_data, yerr=y_errors)  # type: ignore lib
     line = container.lines[0]
     ax.set_xmargin(0)
     _set_ymargin(ax, 0, 0.05)
     if measure == "abs":
         ax.set_ylim(0, ax.get_ylim()[1])
-    ax.set_yscale(_get_scale_with_lim(scale, ax.get_ylim()))
+    ax.set_yscale(_get_scale_with_lim(scale, ax.get_ylim()))  # type: ignore lib
     return fig, ax, line
 
 
@@ -236,7 +239,7 @@ def plot_data_1d_k(
         periodic=True,
     )
 
-    ax.set_xlabel(f"k{(axes[0] % 3)} axis")
+    ax.set_xlabel(f"k{(axes[0] % 3)} axis")  # type: ignore lib
     return fig, ax, line
 
 
@@ -291,7 +294,7 @@ def plot_data_1d_x(
         periodic=True,
     )
 
-    ax.set_xlabel(f"x{(axes[0] % 3)} axis")
+    ax.set_xlabel(f"x{(axes[0] % 3)} axis")  # type: ignore lib
 
     return fig, ax, line
 
@@ -335,14 +338,15 @@ def plot_data_2d(
     scale: Scale = "linear",
     measure: Measure = "abs",
 ) -> tuple[Figure, Axes, QuadMesh]:
+    """Plot data in 2d."""
     fig, ax = get_figure(ax)
 
     measured_data = get_measured_data(data, measure)
 
     mesh = (
-        ax.pcolormesh(measured_data)
+        ax.pcolormesh(measured_data)  # type: ignore lib
         if coordinates is None
-        else ax.pcolormesh(*coordinates, measured_data, shading="nearest")
+        else ax.pcolormesh(*coordinates, measured_data, shading="nearest")  # type: ignore lib
     )
     clim = _get_lim((None, None), measure, measured_data)
     norm = _get_norm_with_lim(scale, clim)
@@ -350,7 +354,7 @@ def plot_data_2d(
     mesh.set_clim(*clim)
     ax.set_aspect("equal", adjustable="box")
     if not _has_colorbar(ax):
-        fig.colorbar(mesh, ax=ax, format="%4.1e")
+        fig.colorbar(mesh, ax=ax, format="%4.1e")  # type: ignore lib
     return fig, ax, mesh
 
 
@@ -405,9 +409,9 @@ def plot_data_2d_k(
         measure=measure,
     )
 
-    ax.set_xlabel(f"k{axes[0]} axis")
-    ax.set_ylabel(f"k{axes[1]} axis")
-    ax.text(
+    ax.set_xlabel(f"k{axes[0]} axis")  # type: ignore lib
+    ax.set_ylabel(f"k{axes[1]} axis")  # type: ignore lib
+    ax.text(  # type: ignore lib
         0.05,
         0.95,
         f"k = {idx}",
@@ -468,9 +472,9 @@ def plot_data_2d_x(
         measure=measure,
     )
 
-    ax.set_xlabel(f"x{axes[0]} axis")
-    ax.set_ylabel(f"x{axes[1]} axis")
-    ax.text(
+    ax.set_xlabel(f"x{axes[0]} axis")  # type: ignore lib
+    ax.set_ylabel(f"x{axes[1]} axis")  # type: ignore lib
+    ax.text(  # type: ignore lib
         0.05,
         0.95,
         f"x = {idx}",
@@ -575,7 +579,7 @@ def animate_data_through_surface_x(
     measured_data = get_measured_data(data_in_axis, measure)
 
     fig, ax, ani = build_animation(
-        lambda i, ax: ax.pcolormesh(
+        lambda i, ax: ax.pcolormesh(  # type: ignore lib
             *coordinates[:2, :, :, i],
             measured_data[:, :, i],
             shading="nearest",
@@ -588,8 +592,8 @@ def animate_data_through_surface_x(
     ax.set_aspect("equal", adjustable="box")
     fig.colorbar(ax.collections[0], ax=ax, format="%4.1e")  # type: ignore Type of "collections" is unknown
 
-    ax.set_xlabel(f"x{axes[0]} axis")
-    ax.set_ylabel(f"x{axes[1]} axis")
+    ax.set_xlabel(f"x{axes[0]} axis")  # type: ignore lib
+    ax.set_ylabel(f"x{axes[1]} axis")  # type: ignore lib
     return fig, ax, ani
 
 
@@ -641,7 +645,7 @@ def animate_data_through_list_1d_x(
 
 
 def animate_data_through_list_2d_k(
-    basis: TupleBasisLike[*tuple[Any, ...]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
@@ -692,7 +696,7 @@ def animate_data_through_list_2d_k(
 
 
 def animate_data_through_list_2d_x(
-    basis: TupleBasisLike[*tuple[Any, ...]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
