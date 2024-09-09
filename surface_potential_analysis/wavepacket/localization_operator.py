@@ -31,15 +31,16 @@ LocalizationOperator = OperatorList[_B0, _B1, _B2]
 A list of operators, acting on each bloch k
 
 List over the bloch k, each operator maps a series of
-states at each band _B2 into the localised states made from
+states at each band _B2 into the localized states made from
 a mixture of each band _B1.
 
 Note that the mixing between states of different bloch k
-that is required to form the set of localised states is implicit.
-The 'fundamental' loclised states are a sum of the contribution from
+that is required to form the set of localized states is implicit.
+The 'fundamental' localized states are a sum of the contribution from
 each bloch k, and all other states can be found by translating the
 states by a unit cell.
 """
+
 
 _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
 _SB1 = TypeVar("_SB1", bound=StackedBasisLike[Any, Any, Any])
@@ -73,8 +74,7 @@ def get_localized_wavepackets(
     vectors = wavepackets["data"].reshape(*wavepackets["basis"][0].shape, -1)
 
     # Sum over the bloch idx
-    # data = np.einsum("kil,ljk->ijk", stacked_operator, vectors)
-    data = np.einsum("jil,ljk->ijk", stacked_operator, vectors)
+    data = np.einsum("jil,ljk->ijk", stacked_operator, vectors)  # type:ignore lib
 
     return {
         "basis": TupleBasis(
@@ -101,6 +101,21 @@ def get_localized_hamiltonian_from_eigenvalues(
     -------
     OperatorList[_SB1, _B1, _B1]
     """
+    converted = np.einsum(  # type: ignore lib
+        "dic,cd,djc->dij",
+        operator["data"].reshape(-1, *operator["basis"][1].shape),
+        hamiltonian["data"].reshape(
+            hamiltonian["basis"][0].n, hamiltonian["basis"][1].shape[0]
+        ),
+        np.conj(operator["data"].reshape(-1, *operator["basis"][1].shape)),
+    )
+    return {
+        "basis": TupleBasis(
+            hamiltonian["basis"][1][0],
+            TupleBasis(operator["basis"][1][0], operator["basis"][1][0]),
+        ),
+        "data": converted.ravel(),
+    }
     hamiltonian_stacked = hamiltonian["data"].reshape(
         hamiltonian["basis"][0].n, hamiltonian["basis"][1][0].n
     )

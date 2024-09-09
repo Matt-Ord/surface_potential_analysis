@@ -30,6 +30,7 @@ if TYPE_CHECKING:
         BasisWithLengthLike,
     )
     from surface_potential_analysis.basis.stacked_basis import (
+        StackedBasisLike,
         StackedBasisWithVolumeLike,
         TupleBasisLike,
         TupleBasisWithLengthLike,
@@ -253,8 +254,9 @@ def _wrap_index(distance: Any, length: Any, origin: Any = 0) -> Any:
 
 @overload
 def wrap_index_around_origin(
-    basis: TupleBasisLike[*tuple[_B0, ...]],
+    basis: StackedBasisLike[Any, Any, Any],
     idx: SingleStackedIndexLike,
+    *,
     origin: SingleIndexLike | None = None,
     axes: tuple[int, ...] | None = None,
 ) -> SingleStackedIndexLike:
@@ -263,8 +265,9 @@ def wrap_index_around_origin(
 
 @overload
 def wrap_index_around_origin(
-    basis: TupleBasisLike[*tuple[_B0, ...]],
+    basis: StackedBasisLike[Any, Any, Any],
     idx: ArrayStackedIndexLike[_S0Inv],
+    *,
     origin: SingleIndexLike | None = None,
     axes: tuple[int, ...] | None = None,
 ) -> ArrayStackedIndexLike[_S0Inv]:
@@ -272,8 +275,9 @@ def wrap_index_around_origin(
 
 
 def wrap_index_around_origin(
-    basis: TupleBasisLike[*tuple[_B0, ...]],
+    basis: StackedBasisLike[Any, Any, Any],
     idx: StackedIndexLike,
+    *,
     origin: SingleIndexLike | None = None,
     axes: tuple[int, ...] | None = None,
 ) -> StackedIndexLike:
@@ -292,13 +296,13 @@ def wrap_index_around_origin(
     StackedIndexLike
     """
     util = BasisUtil(basis)
-    origin = tuple(0 for _ in basis) if origin is None else origin
+    origin = tuple(0 for _ in range(basis.ndim)) if origin is None else origin
     origin = origin if isinstance(origin, tuple) else util.get_stacked_index(origin)
     return tuple(  # type: ignore[return-value]
-        _wrap_index(idx[ax], util.shape[ax], origin[ax])
+        _wrap_index(idx[ax], basis.shape[ax], origin[ax])
         if axes is None or ax in axes
         else idx[ax]
-        for ax in range(util.ndim)
+        for ax in range(basis.ndim)
     )
 
 

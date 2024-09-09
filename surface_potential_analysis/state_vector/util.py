@@ -11,7 +11,10 @@ from surface_potential_analysis.basis.basis import (
     TransformedPositionBasis,
 )
 from surface_potential_analysis.basis.stacked_basis import (
+    StackedBasisLike,
+    StackedBasisWithVolumeLike,
     TupleBasis,
+    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.probability_vector.probability_vector import (
@@ -26,14 +29,13 @@ from surface_potential_analysis.wavepacket.eigenstate_conversion import (
 )
 from surface_potential_analysis.wavepacket.wavepacket import (
     BlochWavefunctionListList,
-    get_unfurled_basis,
+    get_fundamental_unfurled_basis,
     get_wavepackets,
 )
 
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis_like import (
         BasisLike,
-        BasisWithLengthLike,
     )
     from surface_potential_analysis.basis.stacked_basis import (
         TupleBasisLike,
@@ -51,30 +53,32 @@ if TYPE_CHECKING:
     )
 
     _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-    _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
-    _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
-    _SBL0 = TypeVar("_SBL0", bound=TupleBasisLike[*tuple[Any, ...]])
+    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
+    _TBL0 = TypeVar("_TBL0", bound=TupleBasisWithLengthLike[*tuple[Any, ...]])
     _L0Inv = TypeVar("_L0Inv", bound=int)
 
 
 def get_single_point_state_vector_excact(
     basis: _B0, idx: SingleFlatIndexLike
 ) -> StateVector[_B0]:
+    """Get the state which is nonzero at idx."""
     data = np.zeros(basis.n, dtype=np.complex128)
     data[idx] = 1
     return {"basis": basis, "data": data}
 
 
 def get_single_point_state_vectors(
-    basis: BlochWavefunctionListBasis[
-        TupleBasisLike[*tuple[_B0, ...]], TupleBasisLike[*tuple[_BL0, ...]]
-    ],
+    basis: BlochWavefunctionListBasis[_SB0, _SBV0],
     n_bands: _L0Inv,
 ) -> StateVectorList[
     FundamentalBasis[_L0Inv],
     TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
 ]:
-    converted = stacked_basis_as_fundamental_position_basis(get_unfurled_basis(basis))
+    """Get the state which are nonzero at idx."""
+    converted = stacked_basis_as_fundamental_position_basis(
+        get_fundamental_unfurled_basis(basis)
+    )
     data = np.zeros((n_bands, converted.n), dtype=np.complex128)
     for i, n in enumerate(np.linspace(0, basis[1].n, n_bands, endpoint=False)):
         data[i, n] = 1
@@ -85,11 +89,11 @@ def get_single_point_state_vectors(
 
 
 def get_most_localized_free_state_vectors(
-    basis: BlochWavefunctionListBasis[_SB0, _SBL0],
+    basis: BlochWavefunctionListBasis[_SB0, _TBL0],
     shape: tuple[IntLike_co, ...],
 ) -> StateVectorList[
     TupleBasisLike[*tuple[FundamentalBasis[int], ...]],
-    TupleBasisLike[*tuple[TransformedPositionBasis[Any, Any, Any], ...]],
+    TupleBasisWithLengthLike[*tuple[TransformedPositionBasis[Any, Any, Any], ...]],
 ]:
     """
     Get the most localized free states on the surface.
@@ -108,14 +112,14 @@ def get_most_localized_free_state_vectors(
     sample_basis = TupleBasis(
         *tuple(
             TransformedPositionBasis(
-                b0.fundamental_n * b1.delta_x,
+                basis[0].fundamental_shape[i] * basis[1].delta_x_stacked[i],
                 # TODO: is this correct threshold k when not in 1D,
                 # or do we need a bigger or smaller width than n_bands?
                 # best in Cu when multiplying by 3
-                b0.fundamental_n * s,
-                b0.fundamental_n * b1.fundamental_n,
+                basis[0].fundamental_shape[i] * s,
+                basis[0].fundamental_shape[i] * basis[1].fundamental_shape[i],
             )
-            for (b0, b1, s) in zip(basis[0], basis[1], shape, strict=True)
+            for (i, s) in enumerate(shape)
         )
     )
     bands_basis = TupleBasis(*tuple(FundamentalBasis(int(n)) for n in shape))
@@ -139,7 +143,7 @@ def get_most_localized_free_state_vectors(
 
 
 def get_most_localized_state_vectors_from_probability(
-    wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBL0],
+    wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBV0],
     fractions: tuple[np.ndarray[tuple[int], np.dtype[np.float64]], ...],
 ) -> StateVectorList[
     FundamentalBasis[int],

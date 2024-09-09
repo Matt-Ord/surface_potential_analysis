@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 
@@ -8,6 +8,8 @@ from surface_potential_analysis.basis.basis import (
     FundamentalBasis,
 )
 from surface_potential_analysis.basis.stacked_basis import (
+    StackedBasisLike,
+    StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisWithLengthLike,
 )
@@ -37,9 +39,8 @@ from surface_potential_analysis.wavepacket.eigenstate_conversion import (
 )
 from surface_potential_analysis.wavepacket.get_eigenstate import get_all_eigenstates
 from surface_potential_analysis.wavepacket.wavepacket import (
-    BlochWavefunctionListBasis,
     BlochWavefunctionListWithEigenvalues,
-    get_unfurled_basis,
+    get_fundamental_unfurled_basis,
 )
 
 if TYPE_CHECKING:
@@ -52,18 +53,19 @@ if TYPE_CHECKING:
     )
     from surface_potential_analysis.operator.operator import SingleBasisOperator
 
-    _B1Inv = TypeVar("_B1Inv", bound=TupleBasisLike[*tuple[Any, ...]])
-    _B2Inv = TypeVar("_B2Inv", bound=TupleBasisLike[*tuple[Any, ...]])
-    _B0Inv = TypeVar("_B0Inv", bound=TupleBasisLike[*tuple[Any, ...]])
+    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
+
+    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+    _SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
     _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
     _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
 
 
-def _get_position_operator(basis: _B1Inv) -> SingleBasisOperator[_B1Inv]:
+def _get_position_operator(basis: _SBV0) -> SingleBasisOperator[_SBV0]:
     util = BasisUtil(basis)
     # We only get the location in the x0 direction here
-    locations = util.x_points_stacked[0]
+    locations = util.fundamental_x_points_stacked[0]
 
     basis_position = stacked_basis_as_fundamental_position_basis(basis)
     operator: SingleBasisOperator[Any] = {
@@ -75,7 +77,7 @@ def _get_position_operator(basis: _B1Inv) -> SingleBasisOperator[_B1Inv]:
 
 @timed
 def _get_operator_between_states(
-    states: list[StateVector[_B1Inv]], operator: SingleBasisOperator[_B1Inv]
+    states: list[StateVector[_SB0]], operator: SingleBasisOperator[_SB0]
 ) -> SingleBasisOperator[FundamentalBasis[Any]]:
     n_states = len(states)
     array = np.zeros((n_states, n_states), dtype=np.complex128)
@@ -92,9 +94,9 @@ def _get_operator_between_states(
 
 
 def _localize_operator(
-    wavepacket: BlochWavefunctionListWithEigenvalues[_B0Inv, _B1Inv],
-    operator: SingleBasisOperator[_B2Inv],
-) -> list[BlochWavefunctionListWithEigenvalues[_B0Inv, _B1Inv]]:
+    wavepacket: BlochWavefunctionListWithEigenvalues[_SB0, _SBV0],
+    operator: SingleBasisOperator[_SBV1],
+) -> list[BlochWavefunctionListWithEigenvalues[_SB0, _SBV0]]:
     states = [
         convert_state_vector_to_basis(state, operator["basis"][0])
         for state in get_all_eigenstates(wavepacket)
@@ -112,8 +114,8 @@ def _localize_operator(
 
 
 def localize_position_operator(
-    wavepacket: BlochWavefunctionListWithEigenvalues[_B0Inv, _B1Inv],
-) -> list[BlochWavefunctionListWithEigenvalues[_B0Inv, _B1Inv]]:
+    wavepacket: BlochWavefunctionListWithEigenvalues[_SB0, _SBV0],
+) -> list[BlochWavefunctionListWithEigenvalues[_SB0, _SBV0]]:
     """
     Given a wavepacket generate a set of normalized wavepackets using the operator method.
 
@@ -126,9 +128,7 @@ def localize_position_operator(
     list[Wavepacket[_S0Inv, _B0Inv]]
     """
     basis = stacked_basis_as_fundamental_position_basis(
-        get_unfurled_basis(
-            cast(BlochWavefunctionListBasis[Any, Any], wavepacket["basis"])
-        )
+        get_fundamental_unfurled_basis(wavepacket["basis"])
     )
     operator_position = _get_position_operator(basis)
     return _localize_operator(wavepacket, operator_position)
@@ -154,7 +154,7 @@ def localize_position_operator_many_band(
     list[StateVector[Any]]
     """
     basis = stacked_basis_as_fundamental_position_basis(
-        get_unfurled_basis(wavepackets[0]["basis"])
+        get_fundamental_unfurled_basis(wavepackets[0]["basis"])
     )
     states = [
         convert_state_vector_to_basis(state, basis)
@@ -175,7 +175,7 @@ def localize_position_operator_many_band(
 
 
 def localize_position_operator_many_band_individual(
-    wavepackets: list[BlochWavefunctionListWithEigenvalues[_B0Inv, _B1Inv]],
+    wavepackets: list[BlochWavefunctionListWithEigenvalues[_SB0, _SBV0]],
 ) -> list[StateVector[Any]]:
     """
     Given a wavepacket generate a set of normalized wavepackets using the operator method.

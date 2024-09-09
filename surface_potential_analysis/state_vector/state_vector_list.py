@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar, cast, overload
 
 import numpy as np
 
@@ -8,7 +8,8 @@ from surface_potential_analysis.basis.basis import FundamentalBasis
 from surface_potential_analysis.basis.basis_like import (
     BasisLike,
 )
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
+from surface_potential_analysis.basis.stacked_basis import TupleBasis, TupleBasisLike
+from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.state_vector.conversion import (
     convert_state_vector_list_to_basis,
 )
@@ -17,7 +18,6 @@ from surface_potential_analysis.util.util import get_data_in_axes
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.operator.operator import Operator
     from surface_potential_analysis.state_vector.eigenstate_list import (
         EigenstateList,
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
     _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
     _B3 = TypeVar("_B3", bound=BasisLike[Any, Any])
-    _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
+    _TB0 = TypeVar("_TB0", bound=TupleBasisLike[*tuple[Any, ...]])
 
 _B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
 _B1_co = TypeVar("_B1_co", bound=BasisLike[Any, Any], covariant=True)
@@ -54,8 +54,25 @@ class StateVectorList(TypedDict, Generic[_B0_co, _B1_co]):
     """A list of state vectors"""
 
 
+@overload
 def get_state_vector(
-    state_list: StateVectorList[_B0, _B1], idx: SingleFlatIndexLike
+    state_list: StateVectorList[_TB0, _B1],
+    idx: SingleFlatIndexLike | SingleStackedIndexLike,
+) -> StateVector[_B1]:
+    ...
+
+
+@overload
+def get_state_vector(
+    state_list: StateVectorList[_B0, _B1],
+    idx: SingleFlatIndexLike,
+) -> StateVector[_B1]:
+    ...
+
+
+def get_state_vector(
+    state_list: StateVectorList[_B0, _B1],
+    idx: SingleFlatIndexLike | SingleStackedIndexLike,
 ) -> StateVector[_B1]:
     """
     Get a single state vector from a list of states.
@@ -69,6 +86,13 @@ def get_state_vector(
     -------
     Eigenstate[_B0Inv]
     """
+    idx = (
+        BasisUtil(
+            cast(TupleBasisLike[*tuple[Any, ...]], state_list["basis"][0])
+        ).get_flat_index(idx, mode="wrap")
+        if isinstance(idx, tuple)
+        else idx
+    )
     return {
         "basis": state_list["basis"][1],
         "data": state_list["data"].reshape(state_list["basis"].shape)[idx],
@@ -147,6 +171,7 @@ def state_vector_list_into_iter(
 def as_state_vector_list(
     states: Iterable[StateVector[_B1]],
 ) -> StateVectorList[FundamentalBasis[int], _B1]:
+    """Convert an iterator of states into a state vector list."""
     states = list(states)
     return {
         "basis": TupleBasis(FundamentalBasis(len(states)), states[0]["basis"]),
@@ -173,7 +198,7 @@ def calculate_inner_products(
     converted = convert_state_vector_list_to_basis(state_1, state_0["basis"][1])
     return {
         "basis": TupleBasis(state_0["basis"][0], state_1["basis"][0]),
-        "data": np.einsum(
+        "data": np.einsum(  # type: ignore lib
             "ik, jk -> ij",
             np.conj(state_0["data"]).reshape(state_0["basis"].shape),
             converted["data"].reshape(converted["basis"].shape),
@@ -200,7 +225,7 @@ def calculate_inner_products_elementwise(
     converted = convert_state_vector_list_to_basis(state_1, state_0["basis"][1])
     return {
         "basis": state_0["basis"][0],
-        "data": np.einsum(
+        "data": np.einsum(  # type: ignore lib
             "ik, ik -> i",
             np.conj(state_0["data"]).reshape(state_0["basis"].shape),
             converted["data"].reshape(converted["basis"].shape),
@@ -226,7 +251,7 @@ def calculate_inner_products_eigenvalues(
     """
     return {
         "basis": TupleBasis(state_0["basis"][0], state_1["basis"][0]),
-        "data": np.einsum(
+        "data": np.einsum(  # type: ignore lib
             "ik, jk, i, j -> ij",
             np.conj(state_0["data"]).reshape(state_0["basis"].shape),
             state_1["data"].reshape(state_1["basis"].shape),
@@ -237,7 +262,7 @@ def calculate_inner_products_eigenvalues(
 
 
 def average_state_vector(
-    probabilities: StateVectorList[_SB0, _B1],
+    probabilities: StateVectorList[_TB0, _B1],
     axis: tuple[int, ...] | None = None,
     *,
     weights: np.ndarray[tuple[int], np.dtype[np.float64]] | None = None,
@@ -290,7 +315,7 @@ def get_basis_states(
 
 
 def get_state_along_axis(
-    states: StateVectorList[_SB0, _B1],
+    states: StateVectorList[_TB0, _B1],
     axes: tuple[int, ...] = (0,),
     idx: SingleStackedIndexLike | None = None,
 ) -> StateVectorList[Any, _B1]:

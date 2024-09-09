@@ -169,7 +169,7 @@ def localize_tightly_bound_wavepacket_idx(
 def get_wavepacket_two_points(
     wavepacket: BlochWavefunctionList[
         TupleBasisLike[_FB0, _FB1, FundamentalBasis[Literal[1]]],
-        TupleBasisLike[_BL0, _BL1, _BL2],
+        TupleBasisWithLengthLike[_BL0, _BL1, _BL2],
     ],
     offset: tuple[int, int] = (0, 0),
 ) -> tuple[SingleStackedIndexLike, SingleStackedIndexLike]:
@@ -197,9 +197,9 @@ def get_wavepacket_two_points(
         SingleStackedIndexLike,
         converted_util.get_stacked_index(np.argmax(np.abs(converted["data"]), axis=-1)),
     )
-    idx_0 = wrap_index_around_origin(wavepacket["basis"][1], idx_0, origin, (0, 1))
+    idx_0 = wrap_index_around_origin(wavepacket["basis"][1], idx_0, origin=origin)
     idx_1 = get_x01_mirrored_index(idx_0)
-    idx_1 = wrap_index_around_origin(wavepacket["basis"][1], idx_1, origin, (0, 1))
+    idx_1 = wrap_index_around_origin(wavepacket["basis"][1], idx_1, origin=origin)
     return (idx_0, idx_1)
 
 
@@ -213,7 +213,7 @@ def _wrap_phases(
 def localize_tightly_bound_wavepacket_two_point_max(
     wavepacket: BlochWavefunctionList[
         TupleBasisLike[_FB0, _FB1, FundamentalBasis[Literal[1]]],
-        TupleBasisLike[_BL0, _BL1, _BL2],
+        TupleBasisWithLengthLike[_BL0, _BL1, _BL2],
     ],
     offset: tuple[int, int] = (0, 0),
     angle: float = 0,

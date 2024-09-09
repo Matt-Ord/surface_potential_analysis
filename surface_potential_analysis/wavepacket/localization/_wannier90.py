@@ -10,15 +10,15 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
-    Literal,
     TypedDict,
     TypeVar,
     TypeVarTuple,
     cast,
+    overload,
 )
 
 import numpy as np
-import scipy.ndimage
+import scipy.ndimage  # type:ignore lib
 
 from surface_potential_analysis.basis.basis import (
     FundamentalBasis,
@@ -32,6 +32,7 @@ from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisLike,
+    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import (
     BasisUtil,
@@ -84,7 +85,7 @@ if TYPE_CHECKING:
     )
     _FB0 = TypeVar("_FB0", bound=FundamentalBasis[Any])
 
-    _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
+    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
 
     _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
 
@@ -175,7 +176,7 @@ write_u_matrices = .true.
 num_wann = {wavepackets["basis"][0][0].n}
 {_build_real_lattice_block(util.delta_x_stacked)}
 {_build_k_points_block(wavepackets["basis"][0][1])}
-search_shells = 100
+search_shells = 500
 """
 
 
@@ -236,7 +237,7 @@ def _get_offset_bloch_state(
 
 def _build_mmn_file_block(
     wavepackets: BlochWavefunctionListList[
-        _B0, _SB0, TupleBasisLike[*tuple[_PB1Inv, ...]]
+        _B0, _SB0, TupleBasisWithLengthLike[*tuple[_PB1Inv, ...]]
     ],
     k: tuple[int, int, int, int, int],
     *,
@@ -284,7 +285,7 @@ def _parse_nnk_points_file(
 
 def _build_mmn_file(
     wavepackets: BlochWavefunctionListList[
-        _B0, _SB0, TupleBasisLike[*tuple[_PB1Inv, ...]]
+        _B0, _SB0, TupleBasisWithLengthLike[*tuple[_PB1Inv, ...]]
     ],
     nnk_points_file: str,
     *,
@@ -316,7 +317,7 @@ def _build_amn_file(
     wavepackets: BlochWavefunctionListList[
         _B0,
         TupleBasisLike[*tuple[Any, ...]],
-        TupleBasisLike[*tuple[_PB1Inv, ...]],
+        TupleBasisWithLengthLike[*tuple[_PB1Inv, ...]],
     ],
     projections: StateVectorList[_B1, _B2],
 ) -> str:
@@ -367,7 +368,7 @@ def x0x1_symmetry_op(
 def _get_fundamental_k_points(
     basis: TupleBasisLike[*tuple[_FB0, ...]], symmetry: Sequence[SymmetryOp[Any]]
 ) -> ArrayFlatIndexLike[tuple[int]]:
-    fundamental_idx = np.arange(basis.n)
+    fundamental_idx = np.arange(cast(int, basis.n))
     for op in symmetry:
         b = op(fundamental_idx, basis.shape)
         fundamental_idx = np.minimum(b, fundamental_idx)
@@ -379,7 +380,7 @@ def _build_dmn_file(
     wavepackets: BlochWavefunctionListList[
         _B0,
         TupleBasisLike[*tuple[_FB0, ...]],
-        TupleBasisLike[*tuple[_PB1Inv, ...]],
+        TupleBasisWithLengthLike[*tuple[_PB1Inv, ...]],
     ],
     symmetry: Sequence[SymmetryOp[Any]],
 ) -> str:
@@ -559,11 +560,29 @@ def _run_wannier90_in_container(directory: Path) -> None:
     )
 
 
+@overload
 def get_localization_operator_wannier90(
-    wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBL0],
+    wavefunctions: BlochWavefunctionListList[_B0, _SB0, _SBL0],
     *,
     options: Wannier90Options[_B1],
 ) -> LocalizationOperator[_SB0, _B1, _B0]:
+    ...
+
+
+@overload
+def get_localization_operator_wannier90(
+    wavefunctions: BlochWavefunctionListList[_B0, _SB0, _SBL0],
+    *,
+    options: None = None,
+) -> LocalizationOperator[_SB0, FundamentalBasis[int], _B0]:
+    ...
+
+
+def get_localization_operator_wannier90(
+    wavefunctions: BlochWavefunctionListList[_B0, _SB0, _SBL0],
+    *,
+    options: Wannier90Options[Any] | None = None,
+) -> LocalizationOperator[_SB0, Any, _B0]:
     """
     Localizes a set of wavepackets using wannier 90.
 
@@ -584,11 +603,22 @@ def get_localization_operator_wannier90(
     WavepacketList[_B1, _SB0, _SBL0]
         Localized wavepackets, with each wavepacket corresponding to a different projection
     """
+    options = (
+        Wannier90Options[FundamentalBasis[int]](
+            projection={
+                "basis": TupleBasis(
+                    FundamentalBasis(wavefunctions["basis"][0][0].n),
+                ),
+            },
+        )
+        if options is None
+        else options
+    )
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_dir_path = Path(tmp_dir)
 
         # Build Files for initial Setup
-        _write_setup_files_wannier90(wavepackets, tmp_dir_path, options=options)
+        _write_setup_files_wannier90(wavefunctions, tmp_dir_path, options=options)
         try:
             _run_wannier90(tmp_dir_path)
         except Exception:  # noqa: BLE001
@@ -601,7 +631,7 @@ def get_localization_operator_wannier90(
 
         # Build Files for localisation
         _write_localization_files_wannier90(
-            wavepackets,
+            wavefunctions,
             tmp_dir_path,
             n_nkp_file,
             options=options,  # type: ignore should be fundamental basis, but we have no way of ensuring this in the type system
@@ -617,7 +647,7 @@ def get_localization_operator_wannier90(
             u_mat_file = f.read()
 
     return _get_localization_operator_from_u_mat_file(
-        wavepackets["basis"][0], options.projection["basis"][0], u_mat_file
+        wavefunctions["basis"][0], options.projection["basis"][0], u_mat_file
     )
 
 
@@ -653,7 +683,7 @@ def localize_wavepacket_wannier90(
 def get_localization_operator_wannier90_individual_bands(
     wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBL0],
 ) -> LocalizationOperator[_SB0, _B0, _B0]:
-    options = Wannier90Options[FundamentalBasis[Literal[1]]](
+    options = Wannier90Options[FundamentalBasis[int]](
         projection={"basis": TupleBasis(FundamentalBasis(1))},
         convergence_tolerance=1e-20,
         ignore_axes=(2,),

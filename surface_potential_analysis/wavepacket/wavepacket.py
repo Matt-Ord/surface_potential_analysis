@@ -72,8 +72,6 @@ _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
 _TRB0 = TypeVar(
     "_TRB0", bound=TruncatedBasis[Any, Any] | EvenlySpacedBasis[Any, Any, Any]
 )
-_BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
-
 _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
 _SB1 = TypeVar("_SB1", bound=StackedBasisLike[Any, Any, Any])
 _TB0 = TypeVar("_TB0", bound=TupleBasisLike[*tuple[Any, ...]])
@@ -174,10 +172,8 @@ class UnfurledBasis(TupleBasis[_B0, BasisWithLengthLike[_L0Inv, _L1Inv, _ND0Inv]
         return self[1].delta_x * self[0].n  # type: ignore[no-any-return]
 
 
-def get_unfurled_basis(
-    basis: BlochWavefunctionListBasis[
-        _TB0, TupleBasisWithLengthLike[*tuple[_BL0, ...]]
-    ],
+def get_fundamental_unfurled_basis(
+    basis: BlochWavefunctionListBasis[_SB0, _SBV0],
 ) -> TupleBasisWithLengthLike[*tuple[UnfurledBasis[Any, Any, Any, Any], ...]]:
     """
     Given the basis for a wavepacket, get the basis for the unfurled wavepacket.
@@ -191,13 +187,15 @@ def get_unfurled_basis(
     -------
     Basis[_ND0Inv]
     """
+    basis_0 = stacked_basis_as_fundamental_transformed_basis(basis[0])
+    basis_1 = stacked_basis_as_fundamental_momentum_basis(basis[1])
     return TupleBasis(
-        *tuple(starmap(UnfurledBasis, zip(basis[0], basis[1], strict=True)))
+        *tuple(starmap(UnfurledBasis, zip(basis_0, basis_1, strict=True)))
     )
 
 
 def get_furled_basis(
-    basis: TupleBasisWithLengthLike[*tuple[_BL0, ...]],
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
     shape: ShapeLike,
 ) -> TupleBasis[*tuple[FundamentalPositionBasis[Any, Any], ...]]:
     """
@@ -214,8 +212,10 @@ def get_furled_basis(
     """
     return TupleBasis(
         *tuple(
-            FundamentalPositionBasis(ax.delta_x // n, ax.n // n)
-            for (ax, n) in zip(basis, shape, strict=True)
+            FundamentalPositionBasis(delta_x // n, n_0 // n)
+            for (delta_x, n_0, n) in zip(
+                basis.delta_x_stacked, basis.shape, shape, strict=True
+            )
         )
     )
 
