@@ -39,7 +39,6 @@ from surface_potential_analysis.wavepacket.eigenstate_conversion import (
 )
 from surface_potential_analysis.wavepacket.get_eigenstate import get_all_eigenstates
 from surface_potential_analysis.wavepacket.wavepacket import (
-    BlochWavefunctionListWithEigenvalues,
     get_fundamental_unfurled_basis,
 )
 
@@ -52,6 +51,9 @@ if TYPE_CHECKING:
         TupleBasisLike,
     )
     from surface_potential_analysis.operator.operator import SingleBasisOperator
+    from surface_potential_analysis.wavepacket.wavepacket import (
+        BlochWavefunctionListWithEigenvalues,
+    )
 
     _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
 
