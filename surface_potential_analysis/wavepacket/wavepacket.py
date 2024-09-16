@@ -1,19 +1,16 @@
 from __future__ import annotations
 
 import warnings
-from itertools import starmap
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 
 from surface_potential_analysis.basis.basis import (
     FundamentalBasis,
-    FundamentalPositionBasis,
     FundamentalTransformedPositionBasis,
     TruncatedBasis,
 )
 from surface_potential_analysis.basis.basis_like import (
-    AxisVector,
     BasisLike,
     BasisWithLengthLike,
     convert_vector,
@@ -31,7 +28,6 @@ from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisLike,
-    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import (
     BasisUtil,
@@ -59,12 +55,10 @@ if TYPE_CHECKING:
 
     from surface_potential_analysis.operator.operator import SingleBasisOperator
     from surface_potential_analysis.types import (
-        ShapeLike,
         SingleFlatIndexLike,
     )
 
-_L0Inv = TypeVar("_L0Inv", bound=int)
-_L1Inv = TypeVar("_L1Inv", bound=int)
+
 _ND0Inv = TypeVar("_ND0Inv", bound=int)
 
 
@@ -164,17 +158,9 @@ def get_fundamental_sample_basis(
     )
 
 
-class UnfurledBasis(TupleBasis[_B0, BasisWithLengthLike[_L0Inv, _L1Inv, _ND0Inv]]):
-    """Represent the basis of an unfurled wavepacket."""
-
-    @property
-    def delta_x(self) -> AxisVector[_ND0Inv]:  # noqa: D102
-        return self[1].delta_x * self[0].n  # type: ignore[no-any-return]
-
-
 def get_fundamental_unfurled_basis(
     basis: BlochWavefunctionListBasis[_SB0, _SBV0],
-) -> TupleBasisWithLengthLike[*tuple[UnfurledBasis[Any, Any, Any, Any], ...]]:
+) -> TupleBasis[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]:
     """
     Given the basis for a wavepacket, get the basis for the unfurled wavepacket.
 
@@ -189,33 +175,14 @@ def get_fundamental_unfurled_basis(
     """
     basis_0 = stacked_basis_as_fundamental_transformed_basis(basis[0])
     basis_1 = stacked_basis_as_fundamental_momentum_basis(basis[1])
-    return TupleBasis(
-        *tuple(starmap(UnfurledBasis, zip(basis_0, basis_1, strict=True)))
-    )
 
-
-def get_furled_basis(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
-    shape: ShapeLike,
-) -> TupleBasis[*tuple[FundamentalPositionBasis[Any, Any], ...]]:
-    """
-    Given the basis for an eigenstate, get the basis used for the furled wavepacket.
-
-    Parameters
-    ----------
-    basis : Basis[_ND0Inv]
-    shape : _S0Inv
-
-    Returns
-    -------
-    Basis[_ND0Inv]
-    """
     return TupleBasis(
         *tuple(
-            FundamentalPositionBasis(delta_x // n, n_0 // n)
-            for (delta_x, n_0, n) in zip(
-                basis.delta_x_stacked, basis.shape, shape, strict=True
+            FundamentalTransformedPositionBasis(
+                basis_0[i].n * basis_1[i].delta_x,
+                basis_0[i].n * basis_1[i].n,
             )
+            for i in range(basis_0.ndim)
         )
     )
 

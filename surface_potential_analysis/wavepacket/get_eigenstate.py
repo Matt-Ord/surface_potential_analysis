@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar, cast, overload
 
@@ -12,6 +13,7 @@ from surface_potential_analysis.basis.basis import (
 )
 from surface_potential_analysis.basis.basis_like import (
     BasisLike,
+    convert_vector,
 )
 from surface_potential_analysis.basis.evenly_spaced_basis import (
     EvenlySpacedTransformedPositionBasis,
@@ -69,6 +71,7 @@ from surface_potential_analysis.wavepacket.wavepacket import (
     BlochWavefunctionListWithEigenvalues,
     BlochWavefunctionListWithEigenvaluesList,
     get_fundamental_sample_basis,
+    get_fundamental_unfurled_basis,
     get_wavepacket_basis,
     wavepacket_list_into_iter,
 )
@@ -380,7 +383,7 @@ def get_states_at_bloch_idx(
     util = BasisUtil(wavepackets["basis"][0][1])
     idx = util.get_flat_index(idx) if isinstance(idx, tuple) else idx
     offset = util.get_stacked_index(idx)
-    # TODO: support _SB0Inv not in fundamental, and make it so we dont need to convert to momentum basis
+    # we should support _SB0Inv not in fundamental, and make it so we dont need to convert to momentum basis
 
     converted = convert_state_vector_list_to_basis(
         wavepackets,
@@ -406,6 +409,43 @@ def _get_compressed_bloch_states_at_bloch_idx(
         .reshape(*wavepackets["basis"][0].shape, -1)[:, idx, :]
         .ravel(),
     }
+
+
+def _get_fundamental_wavepacket_basis(
+    wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBV0],
+) -> TupleBasisLike[
+    TupleBasisLike[*tuple[FundamentalTransformedBasis[Any], ...]],
+    TupleBasisWithLengthLike[
+        *tuple[FundamentalTransformedPositionBasis[Any, Any], ...]
+    ],
+]:
+    converted_basis = stacked_basis_as_fundamental_momentum_basis(
+        wavepackets["basis"][1]
+    )
+    converted_list_basis = stacked_basis_as_fundamental_transformed_basis(
+        wavepackets["basis"][0][1]
+    )
+    return TupleBasis(converted_list_basis, converted_basis)
+
+
+def get_fundamental_wavepacket(
+    wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBV0],
+) -> BlochWavefunctionListList[
+    _B0,
+    TupleBasisLike[*tuple[FundamentalTransformedBasis[Any], ...]],
+    TupleBasisWithLengthLike[
+        *tuple[FundamentalTransformedPositionBasis[Any, Any], ...]
+    ],
+]:
+    """Get the wavepacket in the fundamental (transformed) basis."""
+    basis = _get_fundamental_wavepacket_basis(wavepackets)
+    converted_basis = basis[1]
+    converted_list_basis = basis[0]
+    return convert_wavepacket_to_basis(
+        wavepackets,
+        basis=converted_basis,
+        list_basis=TupleBasis(wavepackets["basis"][0][0], converted_list_basis),
+    )
 
 
 def get_bloch_states(
@@ -435,31 +475,23 @@ def get_bloch_states(
     TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
     ]
     """
-    converted_basis = stacked_basis_as_fundamental_momentum_basis(
-        wavepackets["basis"][1]
-    )
-    converted_list_basis = stacked_basis_as_fundamental_transformed_basis(
-        wavepackets["basis"][0][1]
-    )
-    converted = convert_wavepacket_to_basis(
-        wavepackets,
-        basis=converted_basis,
-        list_basis=TupleBasis(wavepackets["basis"][0][0], converted_list_basis),
-    )
+    converted = get_fundamental_wavepacket(wavepackets)
 
     decompressed_basis = TupleBasis(
         *tuple(
             FundamentalTransformedPositionBasis[Any, Any](
                 b1.delta_x * b0.n, b0.n * b1.n
             )
-            for (b0, b1) in zip(converted["basis"][0][1], converted_basis, strict=True)
+            for (b0, b1) in zip(
+                converted["basis"][0][1], converted["basis"][1], strict=True
+            )
         )
     )
     out = np.zeros(
         (*wavepackets["basis"][0].shape, decompressed_basis.n), dtype=np.complex128
     )
 
-    util = BasisUtil(converted_list_basis)
+    util = BasisUtil(converted["basis"][0][1])
     # for each bloch k
     for idx in range(converted["basis"][0][1].n):
         offset = util.get_stacked_index(idx)
@@ -471,7 +503,7 @@ def get_bloch_states(
                 "basis": TupleBasis(
                     states["basis"][0],
                     _get_sampled_basis(
-                        TupleBasis(converted_list_basis, converted_basis),
+                        TupleBasis(converted["basis"][0][1], converted["basis"][1]),
                         offset,
                     ),
                 ),
@@ -488,6 +520,9 @@ def get_bloch_states(
         "basis": TupleBasis(converted["basis"][0], decompressed_basis),
         "data": out.ravel(),
     }
+
+
+_S0Inv = TypeVar("_S0Inv", bound=tuple[int, ...])
 
 
 class BlochBasis(
@@ -515,19 +550,6 @@ class BlochBasis(
             list_basis=TupleBasis(wavefunctions["basis"][0][0], converted_list_basis),
         )
 
-    @property
-    def n(self) -> int:
-        # Number of bloch k * number of bands
-        return self.wavefunctions["basis"][0][1].n * self.wavefunctions["basis"][0][0].n
-
-    @property
-    def fundamental_n(self) -> int:
-        # Number of fundmental bloch k * number of states
-        return (
-            self.wavefunctions["basis"][0][1].fundamental_n
-            * self.wavefunctions["basis"][1].fundamental_n
-        )
-
     @cached_property
     def _vectors(
         self: Self,
@@ -541,6 +563,218 @@ class BlochBasis(
     ]:
         return get_bloch_states(self.wavefunctions)
 
+    def __from_fundamental__(
+        self,
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
+        axis: int = -1,
+    ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
+        axis = axis % vectors.ndim
+
+        # The vectors in fundamental unfurled basis [(momentum,list), (momentum,list),...]
+        vectors_in_basis = self.vectors_basis[1].__from_fundamental__(vectors, axis)
+
+        k_shape = self.wavefunctions["basis"][1].fundamental_shape
+        list_shape = self.wavefunctions["basis"][0][1].fundamental_shape
+
+        inner_shape = tuple((n_k, n_list) for (n_k, n_list) in zip(k_shape, list_shape))
+
+        shift = tuple(
+            (n_list // 2 + (n_list * (n_s // 2))) for (n_s, n_list) in inner_shape
+        )
+        shifted = np.roll(
+            vectors_in_basis.reshape(
+                *vectors_in_basis.shape[:axis],
+                *(np.prod(x) for x in inner_shape),
+                *vectors_in_basis.shape[axis + 1 :],
+            ),
+            shift,
+            axis=tuple(range(axis, axis + len(inner_shape))),
+        ).reshape(
+            *vectors_in_basis.shape[:axis],
+            *(itertools.chain(*inner_shape)),
+            *vectors_in_basis.shape[axis + 1 :],
+        )
+
+        # Flip the vectors into basis [(list, list, ...), (momentum, momentum, ...)]
+        flipped = shifted.transpose(
+            *range(axis),
+            *range(axis + 1, axis + 2 * len(inner_shape), 2),
+            *range(axis, axis + 2 * len(inner_shape), 2),
+            *range(axis + 2 * len(inner_shape), shifted.ndim),
+        )
+        unshifted = np.fft.ifftshift(
+            flipped,
+            axes=tuple(range(axis, axis + 2 * len(inner_shape))),
+        )
+        # Convert from fundamental to wavepacket basis
+        converted = convert_vector(
+            unshifted.reshape(vectors_in_basis.shape),
+            _get_fundamental_wavepacket_basis(self.wavefunctions),
+            get_wavepacket_basis(self.wavefunctions["basis"]),
+            axis=axis,
+        )
+
+        if self.vectors["basis"].n < 100 * 90:
+            np.testing.assert_allclose(
+                np.apply_along_axis(
+                    lambda x: np.einsum(  # type: ignore lib
+                        "jk,ijk->ij",
+                        x.reshape(
+                            self.wavefunctions["basis"][0][1].n,
+                            self.wavefunctions["basis"][1].n,
+                        ),
+                        np.conj(
+                            self.wavefunctions["data"].reshape(
+                                *self.wavefunctions["basis"][0].shape,
+                                self.wavefunctions["basis"][1].n,
+                            )
+                        ),
+                    ).ravel(),
+                    axis,
+                    converted,
+                ),
+                ExplicitStackedBasisWithLength(self.vectors).__from_fundamental__(
+                    vectors, axis
+                ),
+                atol=1e-10,
+            )
+
+        return np.apply_along_axis(
+            lambda x: np.einsum(  # type: ignore lib
+                "jk,ijk->ij",
+                x.reshape(
+                    self.wavefunctions["basis"][0][1].n,
+                    self.wavefunctions["basis"][1].n,
+                ),
+                np.conj(
+                    self.wavefunctions["data"].reshape(
+                        *self.wavefunctions["basis"][0].shape,
+                        self.wavefunctions["basis"][1].n,
+                    )
+                ),
+            ).ravel(),
+            axis,
+            converted,
+        )
+
+    def __into_fundamental__(
+        self,
+        vectors: np.ndarray[
+            _S0Inv,
+            np.dtype[np.complex128]
+            | np.dtype[np.float64]
+            | np.dtype[np.float64 | np.complex128],
+        ],
+        axis: int = -1,
+    ) -> np.ndarray[tuple[int, ...], np.dtype[np.complex128]]:
+        axis = axis % vectors.ndim
+
+        vectors_in_basis = np.apply_along_axis(
+            lambda x: np.einsum(  # type: ignore lib
+                "ij,ijk->jk",
+                x.reshape(
+                    self.wavefunctions["basis"][0].shape,
+                ),
+                self.wavefunctions["data"].reshape(
+                    *self.wavefunctions["basis"][0].shape,
+                    self.wavefunctions["basis"][1].n,
+                ),
+            ).ravel(),
+            axis,
+            vectors,
+        )
+        # The vectors in basis [(list, list, ...), (momentum, momentum, ...)]
+        converted = convert_vector(
+            vectors_in_basis,
+            get_wavepacket_basis(self.wavefunctions["basis"]),
+            _get_fundamental_wavepacket_basis(self.wavefunctions),
+            axis=axis,
+        )
+
+        k_shape = self.wavefunctions["basis"][1].shape
+        list_shape = self.wavefunctions["basis"][0][1].shape
+        ndim = len(k_shape)
+
+        inner_shape = tuple(zip(list_shape, k_shape))
+        shifted = np.fft.fftshift(
+            converted.reshape(
+                *vectors_in_basis.shape[:axis],
+                *tuple(item for pair in zip(*inner_shape) for item in pair),
+                *vectors_in_basis.shape[axis + 1 :],
+            ),
+            axes=tuple(range(axis, axis + 2 * ndim)),
+        )
+
+        # Convert the vectors into fundamental unfurled basis
+        # ie [(momentum,list), (momentum,list),...
+        transposed = shifted.transpose(
+            *range(axis),
+            *itertools.chain(*((axis + i + ndim, axis + i) for i in range(ndim))),
+            *range(axis + 2 * len(inner_shape), shifted.ndim),
+        )
+
+        # Shift the 0 frequency back to the start and flatten
+        # Note the ifftshift would shift by (list_shape[i] * states_shape[i]) // 2
+        # Which is wrong in this case
+        shift = tuple(
+            -(n_list // 2 + (n_list * (n_s // 2))) for (n_list, n_s) in inner_shape
+        )
+        unshifted = np.roll(
+            transposed.reshape(
+                *vectors_in_basis.shape[:axis],
+                *tuple(np.prod(x) for x in inner_shape),
+                *vectors_in_basis.shape[axis + 1 :],
+            ),
+            shift,
+            tuple(range(axis, axis + ndim)),
+        )
+        if self.vectors["basis"].n < 100 * 90:
+            np.testing.assert_allclose(
+                self.vectors_basis[1].__into_fundamental__(
+                    unshifted.reshape(vectors_in_basis.shape), axis
+                ),
+                ExplicitStackedBasisWithLength(self.vectors).__into_fundamental__(
+                    vectors, axis
+                ),
+            )
+
+        return self.vectors_basis[1].__into_fundamental__(
+            unshifted.reshape(vectors_in_basis.shape), axis
+        )
+
+    @property
+    def vectors_basis(
+        self: Self,
+    ) -> TupleBasis[
+        TupleBasisLike[
+            _B0, TupleBasisLike[*tuple[FundamentalTransformedBasis[Any], ...]]
+        ],
+        TupleBasisWithLengthLike[
+            *tuple[FundamentalTransformedPositionBasis[Any, Any], ...]
+        ],
+    ]:
+        """Get the basis of the full states list."""
+        return TupleBasis(
+            self.wavefunctions["basis"][0],
+            self.unfurled_basis,
+        )
+
+    @property
+    def unfurled_basis(
+        self: Self,
+    ) -> TupleBasisWithLengthLike[
+        *tuple[FundamentalTransformedPositionBasis[Any, Any], ...]
+    ]:
+        """Get the basis of the full states."""
+        return get_fundamental_unfurled_basis(
+            get_wavepacket_basis(self.wavefunctions["basis"])
+        )
+
     @property
     def wavefunctions(
         self: Self,
@@ -549,6 +783,7 @@ class BlochBasis(
         TupleBasisLike[*tuple[FundamentalTransformedBasis[Any], ...]],
         StackedBasisWithVolumeLike[Any, Any, Any],
     ]:
+        """Get the raw wavefunctions."""
         return self._wavefunctions
 
     def vectors_at_bloch_k(
@@ -557,6 +792,7 @@ class BlochBasis(
         _B0,
         StackedBasisWithVolumeLike[Any, Any, Any],
     ]:
+        """Get the states at bloch idx."""
         util = BasisUtil(self.wavefunctions["basis"][0][1])
         idx = util.get_flat_index(idx, mode="wrap") if isinstance(idx, tuple) else idx
         data = self.wavefunctions["data"].reshape(
@@ -575,6 +811,7 @@ class BlochBasis(
         _B0,
         StackedBasisWithVolumeLike[Any, Any, Any],
     ]:
+        """Get the basis at bloch idx."""
         return ExplicitStackedBasisWithLength(self.vectors_at_bloch_k(idx))
 
 
@@ -646,6 +883,7 @@ def get_wannier_states(
     TupleBasisLike[_B1, _SB0],
     TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
 ]:
+    """Get the wannier states."""
     localized = get_localized_wavepackets(wavefunctions, operator)
 
     fundamental_states = unfurl_wavepacket_list(localized)
@@ -749,12 +987,8 @@ def get_full_wannier_hamiltonian(
     ]
     """
     basis = get_wannier_basis(wavefunctions, operator)
-    hamiltonian = get_full_bloch_hamiltonian(wavefunctions)
-    return convert_diagonal_operator_to_basis(hamiltonian, TupleBasis(basis, basis))
-
-    basis = get_wannier_basis(wavefunctions, operator)
     hamiltonian = get_wannier_hamiltonian(wavefunctions, operator)
-    hamiltonian_2d = np.einsum(
+    hamiltonian_2d = np.einsum(  # type: ignore lib
         "ik,ij->ijk",
         hamiltonian["data"].reshape(hamiltonian["basis"][0].n, -1),
         np.eye(hamiltonian["basis"][0].n),
@@ -765,7 +999,7 @@ def get_full_wannier_hamiltonian(
         *hamiltonian["basis"][0].shape,
         -1,
     )
-    # TODO: is this correct...
+    # is this correct...
     # I think because H is real symmetric, this ultimately doesn't matter
     data_stacked = np.fft.fftn(
         np.fft.ifftn(
@@ -779,7 +1013,7 @@ def get_full_wannier_hamiltonian(
         norm="ortho",
     )
     # Re order to match the correct basis
-    data = np.einsum(
+    data = np.einsum(  # type: ignore lib
         "ijkl->ikjl",
         data_stacked.reshape(
             hamiltonian["basis"][0].n,

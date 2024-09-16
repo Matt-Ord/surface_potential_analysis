@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 from collections.abc import Callable, Mapping
 from functools import update_wrapper, wraps
-from typing import TYPE_CHECKING, Any, Generic, ParamSpec, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Generic, Literal, ParamSpec, TypeVar, overload
 
 import numpy as np
 
@@ -108,22 +108,32 @@ def npy_cached(
     return _npy_cached
 
 
+CallType = Literal[
+    "load_or_call_cached",
+    "load_or_call_uncached",
+    "call_uncached",
+    "call_cached",
+]
+
+
 class NPYCachedFunction(Generic[_P, _RD]):
     """A function wrapper which is used to cache the output."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         function: Callable[_P, _RD],
         path: Path | None | Callable[_P, Path | None],
         *,
         load_pickle: bool = False,
         save_pickle: bool = True,
+        default_call: CallType = "load_or_call_cached",
     ) -> None:
         self._inner = function
         self._path = path
 
         self.load_pickle = load_pickle
         self.save_pickle = save_pickle
+        self.default_call: CallType = default_call
 
     def _get_cache_path(self, *args: _P.args, **kw: _P.kwargs) -> Path | None:
         cache_path = self._path(*args, **kw) if callable(self._path) else self._path
@@ -174,7 +184,15 @@ class NPYCachedFunction(Generic[_P, _RD]):
 
     def __call__(self, *args: _P.args, **kw: _P.kwargs) -> _RD:
         """Call the function using the cache."""
-        return self.load_or_call_cached(*args, **kw)
+        match self.default_call:
+            case "call_cached":
+                return self.call_cached(*args, **kw)
+            case "call_uncached":
+                return self.call_uncached(*args, **kw)
+            case "load_or_call_cached":
+                return self.load_or_call_cached(*args, **kw)
+            case "load_or_call_uncached":
+                return self.load_or_call_uncached(*args, **kw)
 
 
 @overload
@@ -182,6 +200,7 @@ def npy_cached_dict(
     path: Path | None,
     *,
     load_pickle: bool = False,
+    default_call: CallType = "load_or_call_cached",
 ) -> Callable[[Callable[_P, _RD]], NPYCachedFunction[_P, _RD]]:
     ...
 
@@ -191,6 +210,7 @@ def npy_cached_dict(
     path: Callable[_P, Path | None],
     *,
     load_pickle: bool = False,
+    default_call: CallType = "load_or_call_cached",
 ) -> Callable[[Callable[_P, _RD]], NPYCachedFunction[_P, _RD]]:
     ...
 
@@ -199,6 +219,7 @@ def npy_cached_dict(
     path: Path | None | Callable[_P, Path | None],
     *,
     load_pickle: bool = False,
+    default_call: CallType = "load_or_call_cached",
 ) -> Callable[[Callable[_P, _RD]], NPYCachedFunction[_P, _RD]]:
     """
     Cache the response of the function at the given path.
@@ -220,6 +241,11 @@ def npy_cached_dict(
     """
 
     def _npy_cached(f: Callable[_P, _RD]) -> NPYCachedFunction[_P, _RD]:
-        return update_wrapper(NPYCachedFunction(f, path, load_pickle=load_pickle), f)  # type: ignore aaa
+        return update_wrapper(  # type: ignore aaa
+            NPYCachedFunction(
+                f, path, load_pickle=load_pickle, default_call=default_call
+            ),
+            f,
+        )
 
     return _npy_cached

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
+from matplotlib.lines import Line2D
 from scipy.constants import Boltzmann, hbar  # type: ignore lib
 
 from surface_potential_analysis.basis.util import BasisUtil
@@ -67,7 +68,6 @@ if TYPE_CHECKING:
     from matplotlib.axes import Axes
     from matplotlib.collections import QuadMesh
     from matplotlib.figure import Figure
-    from matplotlib.lines import Line2D
 
     from surface_potential_analysis.basis.basis_like import BasisLike
     from surface_potential_analysis.basis.block_fraction_basis import (
@@ -257,7 +257,7 @@ def plot_wavepacket_eigenvalues_1d_k(
     ax: Axes | None = None,
     measure: Measure = "abs",
     scale: Scale = "linear",
-) -> tuple[Figure, Axes]:
+) -> tuple[Figure, Axes, list[Line2D]]:
     """
     Plot the energy of the eigenstates in a wavepacket.
 
@@ -284,7 +284,7 @@ def plot_wavepacket_eigenvalues_1d_k(
     data = converted["eigenvalue"].reshape(converted["basis"][0][0].n, -1)[bands, :]
 
     fig, ax = get_figure(ax)
-
+    lines = list[Line2D]()
     basis = get_fundamental_sample_basis(get_wavepacket_basis(wavepacket["basis"]))
     for band_data in data:
         _, _, line = plot_data_1d_k(
@@ -297,10 +297,11 @@ def plot_wavepacket_eigenvalues_1d_k(
         )
         line.set_linestyle("--")
         line.set_marker("x")
+        lines.append(line)
     ax.set_xlabel("K")  # type: ignore lib
     ax.set_ylabel("Energy / J")  # type: ignore lib
 
-    return fig, ax
+    return fig, ax, lines
 
 
 def plot_wavepacket_eigenvalues_1d_x(
@@ -618,7 +619,7 @@ def get_wavepacket_localized_effective_mass(
     """
     # E(\Delta x)
     localized = get_full_wannier_hamiltonian(wavefunctions, operator)
-    diagonal = np.einsum(
+    diagonal = np.einsum(  # type: ignore lib
         "ijik->ijk",
         localized["data"].reshape(
             *localized["basis"][0].vectors["basis"][0].shape,
