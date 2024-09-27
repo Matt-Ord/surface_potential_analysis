@@ -97,7 +97,7 @@ def select_diagonal_operator(
     }
 
 
-def as_operator_list(
+def diagonal_operator_list_as_full(
     diagonal_list: DiagonalOperatorList[_B0, _B1, _B2],
 ) -> OperatorList[_B0, _B1, _B2]:
     """
@@ -113,7 +113,7 @@ def as_operator_list(
     Eigenstate[_B0Inv]
     """
     n = diagonal_list["basis"][1].shape[0]
-    data = np.einsum("ij,jk->ijk", diagonal_list["data"].reshape(-1, n), np.eye(n))
+    data = np.einsum("ij->ijj", diagonal_list["data"].reshape(-1, n))  # type: ignore lib
 
     return {
         "basis": diagonal_list["basis"],
@@ -121,7 +121,7 @@ def as_operator_list(
     }
 
 
-def as_diagonal_operator_list(
+def operator_list_as_diagonal(
     operators: OperatorList[_B0, _B1, _B2],
 ) -> DiagonalOperatorList[_B0, _B1, _B2]:
     """
@@ -137,7 +137,7 @@ def as_diagonal_operator_list(
     Eigenstate[_B0Inv]
     """
     n = operators["basis"][1].shape[0]
-    data = np.einsum("ijj->ij", operators["data"].reshape(-1, n, n))
+    data = np.einsum("ijj->ij", operators["data"].reshape(-1, n, n))  # type: ignore lib
 
     return {
         "basis": operators["basis"],
@@ -242,32 +242,4 @@ def as_diagonal_operator(
         "data": operator_list["data"]
         .reshape(operator_list["basis"][0].n, -1)[idx]
         .reshape(-1),
-    }
-
-
-def sum_diagonal_operator_list_over_axes(
-    states: DiagonalOperatorList[_B0, Any, Any], axes: tuple[int, ...]
-) -> DiagonalOperatorList[_B0, Any, Any]:
-    """
-    given a diagonal operator list, sum the states over axes.
-
-    Parameters
-    ----------
-    states : DiagonalOperatorList[Any, Any, _L0Inv]
-    axes : tuple[int, ...]
-
-    Returns
-    -------
-    DiagonalOperatorList[Any, Any, _L0Inv]
-    """
-    traced_basis = tuple(
-        b for (i, b) in enumerate(states["basis"][1][0]) if i not in axes
-    )
-    # TODO: just wrong
-    return {
-        "basis": TupleBasis(states["basis"][0], TupleBasis(traced_basis, traced_basis)),
-        "data": np.sum(
-            states["data"].reshape(-1, *states["basis"][1][0].shape),
-            axis=tuple(1 + np.array(axes, dtype=np.int_)),
-        ).reshape(states["data"].shape[0], -1),
     }

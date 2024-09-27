@@ -7,7 +7,9 @@ from surface_potential_analysis.basis.basis_like import (
 )
 from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.operator.operator import DiagonalOperator, as_operator
-from surface_potential_analysis.operator.operator_list import as_operator_list
+from surface_potential_analysis.operator.operator_list import (
+    diagonal_operator_list_as_full,
+)
 
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis_like import BasisLike
@@ -115,5 +117,5 @@ def convert_diagonal_operator_list_to_basis(
     -------
     OperatorList[_B4, _B2Inv, _B3Inv]
     """
-    full = as_operator_list(operator)
+    full = diagonal_operator_list_as_full(operator)
     return convert_operator_list_to_basis(full, basis)
