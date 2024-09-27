@@ -23,8 +23,8 @@ from surface_potential_analysis.operator.operator import (
 from surface_potential_analysis.operator.operator_list import (
     DiagonalOperatorList,
     OperatorList,
-    as_diagonal_operator_list,
-    as_operator_list,
+    diagonal_operator_list_as_full,
+    operator_list_as_diagonal,
 )
 from surface_potential_analysis.util.util import slice_ignoring_axes
 
@@ -396,7 +396,7 @@ def as_diagonal_noise_operators_from_full(
     -------
     DiagonalNoiseOperatorList[_B0, _B1, _B2]
     """
-    operators_diagonal = as_diagonal_operator_list(operators)
+    operators_diagonal = operator_list_as_diagonal(operators)
     return {
         "basis": operators["basis"],
         "data": operators_diagonal["data"],
@@ -418,7 +418,7 @@ def as_noise_operators_from_diagonal(
     -------
     NoiseOperatorList[_B0, _B1, _B2]
     """
-    operators_full = as_operator_list(operators)
+    operators_full = diagonal_operator_list_as_full(operators)
     return {
         "basis": operators["basis"],
         "data": operators_full["data"],

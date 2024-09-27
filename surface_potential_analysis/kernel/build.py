@@ -37,7 +37,9 @@ from surface_potential_analysis.operator.operations import (
     scale_operator_list,
 )
 from surface_potential_analysis.operator.operator import SingleBasisOperator
-from surface_potential_analysis.operator.operator_list import as_operator_list
+from surface_potential_analysis.operator.operator_list import (
+    diagonal_operator_list_as_full,
+)
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_position_basis,
 )
@@ -231,7 +233,7 @@ def _get_temperature_corrected_diagonal_operators(
     converted = convert_operator_to_basis(hamiltonian, operators["basis"][1])
     commutator = get_commutator_diagonal_operator_list(converted, operators)
     correction = scale_operator_list(-1 / (4 * Boltzmann * temperature), commutator)
-    return add_list_list(correction, as_operator_list(operators))
+    return add_list_list(correction, diagonal_operator_list_as_full(operators))
 
 
 def get_temperature_corrected_diagonal_noise_operators(
