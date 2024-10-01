@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import pickle  # noqa: S403
 from collections.abc import Callable, Mapping
 from functools import update_wrapper, wraps
 from typing import TYPE_CHECKING, Any, Generic, Literal, ParamSpec, TypeVar, overload
@@ -116,30 +117,26 @@ CallType = Literal[
 ]
 
 
-class NPYCachedFunction(Generic[_P, _RD]):
+class CachedFunction(Generic[_P, _RD]):
     """A function wrapper which is used to cache the output."""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         function: Callable[_P, _RD],
         path: Path | None | Callable[_P, Path | None],
         *,
-        load_pickle: bool = False,
-        save_pickle: bool = True,
         default_call: CallType = "load_or_call_cached",
     ) -> None:
         self._inner = function
         self._path = path
 
-        self.load_pickle = load_pickle
-        self.save_pickle = save_pickle
         self.default_call: CallType = default_call
 
     def _get_cache_path(self, *args: _P.args, **kw: _P.kwargs) -> Path | None:
         cache_path = self._path(*args, **kw) if callable(self._path) else self._path
         if cache_path is None:
             return None
-        return cache_path.with_suffix(".npz")
+        return cache_path
 
     def call_uncached(self, *args: _P.args, **kw: _P.kwargs) -> _RD:
         """Call the function, without using the cache."""
@@ -150,7 +147,8 @@ class NPYCachedFunction(Generic[_P, _RD]):
         obj = self.call_uncached(*args, **kw)
         cache_path = self._get_cache_path(*args, **kw)
         if cache_path is not None:
-            np.savez(cache_path, **obj)
+            with cache_path.open("wb") as f:
+                pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
         return obj
 
     def _load_cache(self, *args: _P.args, **kw: _P.kwargs) -> _RD | None:
@@ -159,8 +157,8 @@ class NPYCachedFunction(Generic[_P, _RD]):
         if cache_path is None:
             return None
         try:
-            data = np.load(cache_path, allow_pickle=self.load_pickle)
-            return {f: data[f][()] for f in data.files}  # type: ignore not _RD
+            with cache_path.open("rb") as f:
+                return pickle.load(f)  # noqa: S301
         except FileNotFoundError:
             return None
 
@@ -196,56 +194,45 @@ class NPYCachedFunction(Generic[_P, _RD]):
 
 
 @overload
-def npy_cached_dict(
+def cached(
     path: Path | None,
     *,
-    load_pickle: bool = False,
     default_call: CallType = "load_or_call_cached",
-) -> Callable[[Callable[_P, _RD]], NPYCachedFunction[_P, _RD]]:
+) -> Callable[[Callable[_P, _RD]], CachedFunction[_P, _RD]]:
     ...
 
 
 @overload
-def npy_cached_dict(
+def cached(
     path: Callable[_P, Path | None],
     *,
-    load_pickle: bool = False,
     default_call: CallType = "load_or_call_cached",
-) -> Callable[[Callable[_P, _RD]], NPYCachedFunction[_P, _RD]]:
+) -> Callable[[Callable[_P, _RD]], CachedFunction[_P, _RD]]:
     ...
 
 
-def npy_cached_dict(
+def cached(
     path: Path | None | Callable[_P, Path | None],
     *,
-    load_pickle: bool = False,
     default_call: CallType = "load_or_call_cached",
-) -> Callable[[Callable[_P, _RD]], NPYCachedFunction[_P, _RD]]:
+) -> Callable[[Callable[_P, _RD]], CachedFunction[_P, _RD]]:
     """
-    Cache the response of the function at the given path.
+    Cache the response of the function at the given path using pickle.
 
     Parameters
     ----------
     path : Path | Callable[P, Path]
         The file to read.
-    load_pickle : bool, optional
-        Allow loading pickled object arrays stored in npy files.
-        Reasons for disallowing pickles include security, as loading pickled data can execute arbitrary code.
-        If pickles are disallowed, loading object arrays will fail. default: False
-    save_pickle : bool, optional
-        Allow saving pickled objects. default: True
 
     Returns
     -------
     Callable[[Callable[P, R]], Callable[P, R]]
     """
 
-    def _npy_cached(f: Callable[_P, _RD]) -> NPYCachedFunction[_P, _RD]:
+    def _cached(f: Callable[_P, _RD]) -> CachedFunction[_P, _RD]:
         return update_wrapper(  # type: ignore aaa
-            NPYCachedFunction(
-                f, path, load_pickle=load_pickle, default_call=default_call
-            ),
+            CachedFunction(f, path, default_call=default_call),
             f,
         )
 
-    return _npy_cached
+    return _cached
