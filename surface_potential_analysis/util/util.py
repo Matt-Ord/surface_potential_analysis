@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TypeVar, overload
 
 import numpy as np
 
@@ -76,11 +76,38 @@ def get_position_in_sorted(axes: tuple[IntLike_co, ...]) -> tuple[IntLike_co, ..
     return tuple(np.argsort(np.argsort(axes)))  # type: ignore Tuple is an array-like
 
 
+@overload
+def get_data_in_axes(
+    data: np.ndarray[_S0Inv, _DTInv],
+    axes: tuple[IntLike_co],
+    idx: SingleStackedIndexLike,
+) -> np.ndarray[tuple[int], _DTInv]:
+    ...
+
+
+@overload
+def get_data_in_axes(
+    data: np.ndarray[_S0Inv, _DTInv],
+    axes: tuple[IntLike_co, IntLike_co],
+    idx: SingleStackedIndexLike,
+) -> np.ndarray[tuple[int, int], _DTInv]:
+    ...
+
+
+@overload
 def get_data_in_axes(
     data: np.ndarray[_S0Inv, _DTInv],
     axes: tuple[IntLike_co, ...],
     idx: SingleStackedIndexLike,
 ) -> np.ndarray[tuple[int, ...], _DTInv]:
+    ...
+
+
+def get_data_in_axes(
+    data: np.ndarray[_S0Inv, _DTInv],
+    axes: tuple[IntLike_co, ...] | tuple[IntLike_co],
+    idx: SingleStackedIndexLike,
+) -> np.ndarray[tuple[int, ...], _DTInv] | np.ndarray[tuple[int], _DTInv]:
     """
     Given a slice, insert slice(None) everywhere given in axes.
 

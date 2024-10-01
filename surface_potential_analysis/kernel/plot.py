@@ -21,8 +21,8 @@ from surface_potential_analysis.kernel.kernel import (
     as_diagonal_noise_operators_from_full,
 )
 from surface_potential_analysis.kernel.solve import (
-    get_noise_operators_diagonal_eigenvalue,
-    get_noise_operators_eigenvalue,
+    get_periodic_noise_operators_diagonal_eigenvalue,
+    get_periodic_noise_operators_eigenvalue,
 )
 from surface_potential_analysis.operator.operator_list import (
     select_diagonal_operator,
@@ -47,7 +47,6 @@ if TYPE_CHECKING:
     from matplotlib.lines import Line2D
 
     from surface_potential_analysis.basis.basis import (
-        FundamentalBasis,
         FundamentalPositionBasis,
     )
     from surface_potential_analysis.basis.basis_like import BasisLike
@@ -67,7 +66,7 @@ if TYPE_CHECKING:
     from surface_potential_analysis.types import SingleStackedIndexLike
 
     _B0s = TypeVarTuple("_B0s")
-    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
+    _B0 = TypeVar("_B0", bound=BasisLike[int, int])
     _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
     _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
     _SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike[Any, Any, Any])
@@ -158,7 +157,7 @@ def plot_kernel_sparsity(
     """
     fig, ax = get_figure(ax)
 
-    operators = get_noise_operators_eigenvalue(kernel)
+    operators = get_periodic_noise_operators_eigenvalue(kernel)
 
     data = get_measured_data(operators["eigenvalue"], measure)
     bins = np.logspace(
@@ -203,7 +202,7 @@ def plot_kernel_truncation_error(
     """
     fig, ax = get_figure(ax)
 
-    operators = get_noise_operators_eigenvalue(kernel)
+    operators = get_periodic_noise_operators_eigenvalue(kernel)
     sorted_eigenvalues = np.sort(np.abs(operators["eigenvalue"]))
     cumulative = np.empty(sorted_eigenvalues.size + 1)
     cumulative[0] = 0
@@ -242,7 +241,7 @@ def plot_diagonal_kernel_truncation_error(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    operators = get_noise_operators_diagonal_eigenvalue(kernel)
+    operators = get_periodic_noise_operators_diagonal_eigenvalue(kernel)
     eigenvalues = np.sort(np.abs(operators["eigenvalue"]))
     cumulative = np.empty(eigenvalues.size + 1)
     cumulative[0] = 0
@@ -260,7 +259,7 @@ def plot_diagonal_kernel_truncation_error(
 
 def plot_diagonal_noise_operators_single_sample(  # noqa: PLR0913
     operators: DiagonalNoiseOperatorList[
-        FundamentalBasis[int],
+        _B0,
         TupleBasisWithLengthLike[*_B0s],
         TupleBasisWithLengthLike[*_B0s],
     ],
@@ -333,9 +332,9 @@ def plot_diagonal_noise_operators_single_sample(  # noqa: PLR0913
 
 def plot_noise_operators_single_sample_x(  # noqa: PLR0913
     operators: NoiseOperatorList[
-        FundamentalBasis[int],
-        StackedBasisWithVolumeLike[Any, Any, Any],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        _B0,
+        _SBV0,
+        _SBV1,
     ],
     truncation: Iterable[int] | None = None,
     axes: tuple[int] = (0,),
@@ -416,7 +415,7 @@ def plot_noise_kernel_single_sample(  # noqa: PLR0913
     -------
     tuple[Figure, Axes, Line2D]
     """
-    operators = get_noise_operators_diagonal_eigenvalue(kernel)
+    operators = get_periodic_noise_operators_diagonal_eigenvalue(kernel)
 
     return plot_diagonal_noise_operators_single_sample(
         operators,
@@ -431,7 +430,7 @@ def plot_noise_kernel_single_sample(  # noqa: PLR0913
 
 def plot_diagonal_noise_operators_eigenvalues(
     operators: SingleBasisDiagonalNoiseOperatorList[
-        FundamentalBasis[int],
+        _B0,
         Any,
     ],
     truncation: int | None = None,

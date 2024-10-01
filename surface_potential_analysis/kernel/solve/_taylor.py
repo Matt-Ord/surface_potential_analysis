@@ -5,14 +5,21 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 import numpy as np
 from scipy.special import factorial  # type:ignore bad stb file
 
+from surface_potential_analysis.basis.basis import (
+    FundamentalBasis,
+)
 from surface_potential_analysis.basis.conversion import (
     basis_as_fundamental_position_basis,
 )
+from surface_potential_analysis.basis.stacked_basis import (
+    TupleBasis,
+)
+from surface_potential_analysis.basis.util import get_displacements_nx
 from surface_potential_analysis.kernel.kernel import (
     get_diagonal_noise_operators_from_axis,
 )
 from surface_potential_analysis.kernel.solve._fft import (
-    get_operators_for_real_isotropic_noise,
+    get_periodic_operators_for_real_isotropic_noise,
 )
 from surface_potential_analysis.kernel.solve._util import (
     get_fundamental_axis_kernels_from_isotropic,
@@ -21,7 +28,6 @@ from surface_potential_analysis.util.interpolation import pad_ft_points
 
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis import (
-        FundamentalBasis,
         FundamentalPositionBasis,
     )
     from surface_potential_analysis.basis.basis_like import (
@@ -30,11 +36,13 @@ if TYPE_CHECKING:
     )
     from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisWithVolumeLike,
-        TupleBasis,
     )
     from surface_potential_analysis.kernel.kernel import (
         IsotropicNoiseKernel,
         SingleBasisDiagonalNoiseOperatorList,
+    )
+    from surface_potential_analysis.operator.operator_list import (
+        SingleBasisDiagonalOperatorList,
     )
 
     _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
@@ -70,7 +78,7 @@ def _get_cos_coefficients_for_taylor_series(
     return out
 
 
-def _get_coefficients_for_taylor_series(
+def _get_periodic_coefficients_for_taylor_series(
     polynomial_coefficients: np.ndarray[Any, np.dtype[np.float64]],
     *,
     n_terms: int | None = None,
@@ -82,7 +90,7 @@ def _get_coefficients_for_taylor_series(
     return np.concatenate([cos_series_coefficients, sin_series_coefficients])
 
 
-def get_noise_operators_explicit_taylor_expansion(
+def get_periodic_noise_operators_explicit_taylor_expansion(
     basis: _B0,
     polynomial_coefficients: np.ndarray[tuple[int], np.dtype[np.float64]],
     *,
@@ -94,10 +102,10 @@ def get_noise_operators_explicit_taylor_expansion(
     """Note polynomial_coefficients should be properly normalized."""
     n_terms = (basis.n // 2) if n_terms is None else n_terms
 
-    data = get_operators_for_real_isotropic_noise(basis, n=n_terms)
+    data = get_periodic_operators_for_real_isotropic_noise(basis, n=n_terms)
 
     # coefficients for the Taylor expansion of the trig terms
-    coefficients = _get_coefficients_for_taylor_series(
+    coefficients = _get_periodic_coefficients_for_taylor_series(
         polynomial_coefficients=polynomial_coefficients,
     )
     coefficients *= basis.n
@@ -109,7 +117,42 @@ def get_noise_operators_explicit_taylor_expansion(
     }
 
 
-def get_noise_operators_real_isotropic_taylor_expansion(
+def _get_linear_operators_for_noise(
+    basis: _B0, *, n_terms: int | None = None
+) -> SingleBasisDiagonalOperatorList[FundamentalBasis[int], _B0]:
+    n_terms = basis.n if n_terms is None else n_terms
+
+    displacements = 2 * np.pi * get_displacements_nx(basis)[basis.n // 2] / basis.n
+    data = np.array([displacements**n for n in range(n_terms)], dtype=np.complex128)
+    return {
+        "basis": TupleBasis(FundamentalBasis(n_terms), TupleBasis(basis, basis)),
+        "data": data,
+    }
+
+
+def get_linear_noise_operators_explicit_taylor_expansion(
+    basis: _B0,
+    polynomial_coefficients: np.ndarray[tuple[int], np.dtype[np.float64]],
+    *,
+    n_terms: int | None = None,
+) -> SingleBasisDiagonalNoiseOperatorList[
+    FundamentalBasis[int],
+    _B0,
+]:
+    """Note polynomial_coefficients should be properly normalized.
+
+    This is done such that 'x' changes between 0 and 2pi
+    """
+    data = _get_linear_operators_for_noise(basis, n_terms=n_terms)
+
+    return {
+        "basis": data["basis"],
+        "data": data["data"].astype(np.complex128),
+        "eigenvalue": polynomial_coefficients.astype(np.complex128),
+    }
+
+
+def get_periodic_noise_operators_real_isotropic_taylor_expansion(
     kernel: IsotropicNoiseKernel[_BL0],
     *,
     n: int | None = None,
@@ -157,7 +200,7 @@ def get_noise_operators_real_isotropic_taylor_expansion(
     ).astype(np.complex128)
     operator_coefficients *= n_states
 
-    operators = get_operators_for_real_isotropic_noise(basis_x, n=n + 1)
+    operators = get_periodic_operators_for_real_isotropic_noise(basis_x, n=n + 1)
 
     return {
         "basis": operators["basis"],
@@ -166,7 +209,7 @@ def get_noise_operators_real_isotropic_taylor_expansion(
     }
 
 
-def get_noise_operators_real_isotropic_stacked_taylor_expansion(
+def get_periodic_noise_operators_real_isotropic_stacked_taylor_expansion(
     kernel: IsotropicNoiseKernel[_SBV0],
     *,
     shape: tuple[int | None, ...] | None = None,
@@ -191,7 +234,7 @@ def get_noise_operators_real_isotropic_stacked_taylor_expansion(
     axis_kernels = get_fundamental_axis_kernels_from_isotropic(kernel)
 
     operators_list = tuple(
-        get_noise_operators_real_isotropic_taylor_expansion(
+        get_periodic_noise_operators_real_isotropic_taylor_expansion(
             kernel,
             n=None if shape is None else shape[i],
         )

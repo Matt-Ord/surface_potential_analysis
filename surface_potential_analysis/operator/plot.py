@@ -32,7 +32,9 @@ from surface_potential_analysis.state_vector.eigenvalue_list_plot import (
 )
 from surface_potential_analysis.util.plot import (
     Scale,
+    animate_data_through_list_1d_n,
     get_figure,
+    plot_data_1d_n,
     plot_data_1d_x,
     plot_data_2d,
     plot_data_2d_x,
@@ -43,6 +45,7 @@ from surface_potential_analysis.util.util import (
 )
 
 if TYPE_CHECKING:
+    from matplotlib.animation import ArtistAnimation
     from matplotlib.axes import Axes
     from matplotlib.collections import QuadMesh
     from matplotlib.figure import Figure
@@ -53,11 +56,16 @@ if TYPE_CHECKING:
         DiagonalOperator,
         SingleBasisOperator,
     )
+    from surface_potential_analysis.operator.operator_list import DiagonalOperatorList
     from surface_potential_analysis.types import SingleStackedIndexLike
 
     from .operator import Operator
 
     _SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+
+    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
+    _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
+    _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
 
 
 def plot_operator_sparsity(
@@ -89,16 +97,16 @@ def plot_operator_sparsity(
 
     values, bins = np.histogram(
         measured,
-        bins=np.logspace(-22, np.log10(np.max(measured)), 10000),
+        bins=np.logspace(-22, np.log10(np.max(measured)), 10000),  # type:ignore lib
     )
 
     cumulative = np.cumsum(values)
-    ax.plot(bins[:-1], cumulative)
+    ax.plot(bins[:-1], cumulative)  # type:ignore lib
 
-    ax.set_yscale(scale)
-    ax.set_xlabel("Value")
-    ax.set_ylabel("Density")
-    ax.set_xscale("log")
+    ax.set_yscale(scale)  # type:ignore lib
+    ax.set_xlabel("Value")  # type:ignore lib
+    ax.set_ylabel("Density")  # type:ignore lib
+    ax.set_xscale("log")  # type:ignore lib
 
     return fig, ax
 
@@ -142,16 +150,16 @@ def plot_operator_diagonal_sparsity(
 
     values, bins = np.histogram(
         size,
-        bins=np.logspace(-22, np.log10(np.max(size)), 10000),
+        bins=np.logspace(-22, np.log10(np.max(size)), 10000),  # type:ignore lib
     )
 
     cumulative = np.cumsum(values)
-    ax.plot(bins[:-1], cumulative)
+    ax.plot(bins[:-1], cumulative)  # type:ignore lib
 
-    ax.set_yscale(scale)
-    ax.set_xlabel("Value")
-    ax.set_ylabel("Density")
-    ax.set_xscale("log")
+    ax.set_yscale(scale)  # type:ignore lib
+    ax.set_xlabel("Value")  # type:ignore lib
+    ax.set_ylabel("Density")  # type:ignore lib
+    ax.set_xscale("log")  # type:ignore lib
 
     return fig, ax
 
@@ -218,7 +226,7 @@ def plot_eigenvalues(
 
 
 def plot_diagonal_operator_along_diagonal(
-    operator: DiagonalOperator[BasisLike[Any, Any], BasisLike[Any, Any]],
+    operator: DiagonalOperator[_B1, _B2],
     *,
     ax: Axes | None = None,
     scale: Scale = "linear",
@@ -240,12 +248,44 @@ def plot_diagonal_operator_along_diagonal(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    fig, ax = get_figure(ax)
+    fig, ax, line = plot_data_1d_n(
+        TupleBasis(operator["basis"][0]), operator["data"], measure=measure, scale=scale
+    )
 
-    (line,) = ax.plot(get_measured_data(operator["data"], measure))
-    ax.set_yscale(scale)
     line.set_label(f"{measure} operator")
     return fig, ax, line
+
+
+def animate_diagonal_operator_list_along_diagonal(
+    operator: DiagonalOperatorList[_B0, _B1, _B2],
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "abs",
+) -> tuple[Figure, Axes, ArtistAnimation]:
+    """
+    Plot the expected occupation of eigenstates at the given temperature.
+
+    Parameters
+    ----------
+    eigenstates : EigenstateList[BasisLike[Any, Any], BasisLike[Any, Any]]
+    temperature : float
+    ax : Axes | None, optional
+        ax, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    return animate_data_through_list_1d_n(
+        TupleBasis(operator["basis"][1][0]),
+        operator["data"].reshape(operator["basis"][0].n, -1),
+        ax=ax,
+        scale=scale,
+        measure=measure,
+    )
 
 
 def plot_operator_along_diagonal(
@@ -277,7 +317,7 @@ def plot_operator_along_diagonal(
     )
 
 
-def plot_operator_along_diagonal_1d_x(
+def plot_operator_along_diagonal_1d_x(  # noqa:PLR0913
     operator: SingleBasisOperator[_SB0],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -316,7 +356,7 @@ def plot_operator_along_diagonal_1d_x(
     )
 
 
-def plot_diagonal_operator_along_diagonal_1d_x(
+def plot_diagonal_operator_along_diagonal_1d_x(  # noqa:PLR0913
     operator: SingleBasisOperator[_SB0],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -351,7 +391,7 @@ def plot_diagonal_operator_along_diagonal_1d_x(
     )
 
 
-def plot_operator_along_diagonal_2d_x(
+def plot_operator_along_diagonal_2d_x(  # noqa:PLR0913
     operator: SingleBasisOperator[_SB0],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
@@ -390,7 +430,7 @@ def plot_operator_along_diagonal_2d_x(
     )
 
 
-def plot_diagonal_operator_along_diagonal_2d_x(
+def plot_diagonal_operator_along_diagonal_2d_x(  # noqa:PLR0913
     operator: SingleBasisOperator[_SB0],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,

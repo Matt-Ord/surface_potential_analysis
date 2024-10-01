@@ -26,8 +26,8 @@ from surface_potential_analysis.kernel.kernel import (
     get_full_kernel_from_operators,
 )
 from surface_potential_analysis.kernel.solve._eigenvalue import (
-    get_noise_operators_diagonal_eigenvalue,
-    get_noise_operators_eigenvalue,
+    get_periodic_noise_operators_diagonal_eigenvalue,
+    get_periodic_noise_operators_eigenvalue,
 )
 from surface_potential_analysis.operator.conversion import convert_operator_to_basis
 from surface_potential_analysis.operator.operations import (
@@ -289,7 +289,7 @@ def truncate_diagonal_noise_operator_list(
     -------
     DiagonalNoiseOperatorList[FundamentalBasis[int], _B0, _B1]
     """
-    args = np.argsort(operators["eigenvalue"])[::-1][np.array(list(truncation))]
+    args = np.argsort(np.abs(operators["eigenvalue"]))[::-1][np.array(list(truncation))]
     data = operators["data"].reshape(operators["basis"][0].n, -1)[args, :]
     return {
         "basis": TupleBasis(FundamentalBasis(data.shape[0]), operators["basis"][1]),
@@ -339,7 +339,7 @@ def truncate_noise_kernel(
     -------
     NoiseKernel[_B0, _B1, _B0, _B1]
     """
-    operators = get_noise_operators_eigenvalue(kernel)
+    operators = get_periodic_noise_operators_eigenvalue(kernel)
 
     truncated = truncate_noise_operator_list(operators, truncation)
     return get_full_kernel_from_operators(truncated)
@@ -361,7 +361,7 @@ def truncate_diagonal_noise_kernel(
     -------
     NoiseKernel[_B0, _B1, _B0, _B1]
     """
-    operators = get_noise_operators_diagonal_eigenvalue(kernel)
+    operators = get_periodic_noise_operators_diagonal_eigenvalue(kernel)
 
     truncated = truncate_diagonal_noise_operator_list(operators, truncation)
     return get_diagonal_kernel_from_operators(truncated)

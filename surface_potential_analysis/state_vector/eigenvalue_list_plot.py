@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
-from scipy.constants import Boltzmann
+from scipy.constants import Boltzmann  # type:ignore lib
 
 from surface_potential_analysis.util.plot import get_figure
 from surface_potential_analysis.util.util import Measure, get_measured_data
@@ -64,12 +64,12 @@ def plot_eigenvalue_against_time(
     times = eigenvalues["basis"][0].times
     standard_deviation = eigenvalues.get("standard_deviation", None)
     if isinstance(standard_deviation, np.ndarray):
-        line = ax.errorbar(times, data, yerr=standard_deviation).lines[0]
+        line = ax.errorbar(times, data, yerr=standard_deviation).lines[0]  # type:ignore lib
     else:
-        (line,) = ax.plot(times, data)
-    ax.set_ylabel("Eigenvalue")
-    ax.set_yscale(scale)
-    ax.set_xlabel("time /s")
+        (line,) = ax.plot(times, data)  # type:ignore lib
+    ax.set_ylabel("Eigenvalue")  # type:ignore lib
+    ax.set_yscale(scale)  # type:ignore lib
+    ax.set_xlabel("time /s")  # type:ignore lib
     ax.set_xlim(times[0], times[-1])
     return fig, ax, line
 
@@ -108,13 +108,12 @@ def plot_eigenstate_occupations(
     energies = energies[a_sort]
     occupation = occupation[a_sort]
 
-    (line,) = ax.plot(energies, occupation)
-    # ax.axvline(np.average(energies, weights=occupation))
+    (line,) = ax.plot(energies, occupation)  # type:ignore lib
 
-    ax.set_yscale(scale)
-    ax.set_ylabel("Occupation")
-    ax.set_xlabel("Energy /J")
-    # ax.set_title("Plot of Occupation against Energy")
+    ax.set_yscale(scale)  # type:ignore lib
+    ax.set_ylabel("Occupation")  # type:ignore lib
+    ax.set_xlabel("Energy /J")  # type:ignore lib
+    ax.set_title("Plot of Occupation against Energy")  # type:ignore lib
 
     return fig, ax, line
 
@@ -146,10 +145,10 @@ def plot_eigenvalues(
     a_sort = np.argsort(np.abs(eigenstates["eigenvalue"]))
     energies = get_measured_data(eigenstates["eigenvalue"], measure)[a_sort]
 
-    (line,) = ax.plot(energies)
+    (line,) = ax.plot(energies)  # type:ignore lib
 
-    ax.set_yscale(scale)
-    ax.set_ylabel(f"{measure} Eigenvalue")
-    ax.set_title("Plot of Eigenvalues")
+    ax.set_yscale(scale)  # type:ignore lib
+    ax.set_ylabel(f"{measure} Eigenvalue")  # type:ignore lib
+    ax.set_title("Plot of Eigenvalues")  # type:ignore lib
 
     return fig, ax, line

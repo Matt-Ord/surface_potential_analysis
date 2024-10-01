@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     _SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
 
-def plot_states_1d_x(
+def plot_states_1d_x(  # noqa: PLR0913
     states: StateVectorList[_B0, _SB0],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -65,7 +65,7 @@ def plot_states_1d_x(
     return fig, ax
 
 
-def plot_states_1d_k(
+def plot_states_1d_k(  # noqa: PLR0913
     states: StateVectorList[_B0, _SB0],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,

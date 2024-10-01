@@ -30,10 +30,11 @@ from surface_potential_analysis.kernel.kernel import (
     get_diagonal_noise_operators_from_axis,
 )
 from surface_potential_analysis.kernel.solve._fft import (
-    get_noise_operators_real_isotropic_stacked_fft,
+    get_periodic_noise_operators_real_isotropic_stacked_fft,
 )
 from surface_potential_analysis.kernel.solve._taylor import (
-    get_noise_operators_explicit_taylor_expansion,
+    get_linear_noise_operators_explicit_taylor_expansion,
+    get_periodic_noise_operators_explicit_taylor_expansion,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_position_basis,
@@ -269,7 +270,7 @@ def get_effective_gaussian_isotropic_noise_kernel(
     return get_gaussian_isotropic_noise_kernel(basis, a, lambda_)
 
 
-def get_gaussian_noise_operators(
+def get_gaussian_noise_operators_periodic(
     basis: StackedBasisWithVolumeLike[Any, Any, Any],
     a: float,
     lambda_: float,
@@ -299,20 +300,19 @@ def get_gaussian_noise_operators(
     """
     kernel = get_gaussian_isotropic_noise_kernel(basis, a, lambda_)
 
-    operators = get_noise_operators_real_isotropic_stacked_fft(kernel)
+    operators = get_periodic_noise_operators_real_isotropic_stacked_fft(kernel)
     truncation = range(operators["basis"][0].n) if truncation is None else truncation
     return truncate_diagonal_noise_operator_list(operators, truncation=truncation)
 
 
-def get_effective_gaussian_noise_operators(
+def get_effective_gaussian_noise_operators_periodic(
     basis: StackedBasisWithVolumeLike[Any, Any, Any],
     eta: float,
     temperature: float,
     *,
     truncation: Iterable[int] | None = None,
-) -> DiagonalNoiseOperatorList[
+) -> SingleBasisDiagonalNoiseOperatorList[
     FundamentalBasis[int],
-    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
     TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
 ]:
     """Get the noise operators for a gausssian kernel in the given basis.
@@ -333,7 +333,9 @@ def get_effective_gaussian_noise_operators(
 
     """
     a, lambda_ = get_effective_gaussian_parameters(basis, eta, temperature)
-    return get_gaussian_noise_operators(basis, a, lambda_, truncation=truncation)
+    return get_gaussian_noise_operators_periodic(
+        basis, a, lambda_, truncation=truncation
+    )
 
 
 def get_temperature_corrected_gaussian_noise_operators(
@@ -361,7 +363,7 @@ def get_temperature_corrected_gaussian_noise_operators(
     ]
 
     """
-    operators = get_gaussian_noise_operators(
+    operators = get_gaussian_noise_operators_periodic(
         hamiltonian["basis"][0], a, lambda_, truncation=truncation
     )
     corrected = get_temperature_corrected_diagonal_noise_operators(
@@ -413,7 +415,7 @@ def _get_explicit_taylor_coefficients_gaussian(
     return (a**2 / factorial(i)) * ((-1 / (2 * lambda_**2)) ** i)
 
 
-def get_gaussian_operators_explicit_taylor(
+def get_periodic_gaussian_operators_explicit_taylor(
     basis: BasisWithLengthLike[int, Any, Any],
     a: float,
     lambda_: float,
@@ -443,12 +445,56 @@ def get_gaussian_operators_explicit_taylor(
         a, normalized_lambda.item(), n_terms=n_terms
     )
 
-    return get_noise_operators_explicit_taylor_expansion(
+    return get_periodic_noise_operators_explicit_taylor_expansion(
         basis_x, polynomial_coefficients, n_terms=n_terms
     )
 
 
-def get_gaussian_operators_explicit_taylor_stacked(
+def get_linear_gaussian_noise_operators_explicit_taylor(
+    basis: BasisWithLengthLike[int, int, int],
+    a: float,
+    lambda_: float,
+    *,
+    n_terms: int | None = None,
+) -> SingleBasisDiagonalNoiseOperatorList[
+    FundamentalBasis[int],
+    FundamentalPositionBasis[int, Any],
+]:
+    """Get the noise operators for a gausssian kernel in the given basis.
+
+    Parameters
+    ----------
+    hamiltonian : SingleBasisOperator[_BL0]
+    mass : float
+    temperature : float
+    gamma : float
+
+    Returns
+    -------
+    SingleBasisNoiseOperatorList[
+        FundamentalBasis[int],
+        FundamentalPositionBasis[Any, Literal[1]],
+    ]
+
+    """
+    basis_x = basis_as_fundamental_position_basis(basis)
+    n_terms = basis.n if n_terms is None else n_terms
+
+    # expand gaussian and define array containing coefficients for each term in the polynomial
+    # coefficients for the explicit Taylor expansion of the gaussian noise
+    # Normalize lambda
+    delta_x = np.linalg.norm(BasisUtil(basis).delta_x)
+    normalized_lambda = 2 * np.pi * lambda_ / delta_x
+    polynomial_coefficients = _get_explicit_taylor_coefficients_gaussian(
+        a, normalized_lambda.item(), n_terms=n_terms
+    )
+
+    return get_linear_noise_operators_explicit_taylor_expansion(
+        basis_x, polynomial_coefficients, n_terms=n_terms
+    )
+
+
+def get_periodic_gaussian_operators_explicit_taylor_stacked(
     basis: StackedBasisWithVolumeLike[Any, Any, Any],
     a: float,
     lambda_: float,
@@ -469,7 +515,40 @@ def get_gaussian_operators_explicit_taylor_stacked(
     basis_x = stacked_basis_as_fundamental_position_basis(basis)
 
     axis_operators = tuple(
-        get_gaussian_operators_explicit_taylor(
+        get_periodic_gaussian_operators_explicit_taylor(
+            basis_x[i],
+            a,
+            lambda_,
+            n_terms=None if shape is None else shape[i],
+        )
+        for i in range(basis.ndim)
+    )
+
+    return get_diagonal_noise_operators_from_axis(axis_operators)
+
+
+def get_linear_gaussian_operators_explicit_taylor_stacked(
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    a: float,
+    lambda_: float,
+    *,
+    shape: tuple[int, ...] | None = None,
+) -> SingleBasisDiagonalNoiseOperatorList[
+    TupleBasisLike[*tuple[FundamentalBasis[int], ...]],
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[int, Any], ...]],
+]:
+    """Calculate the noise operators for an isotropic gaussian noise kernel, using an explicit Taylor expansion.
+
+    This function makes use of the analytical expression for the Taylor expansion of gaussian
+    noise (a^2)*e^(-x^2/2*lambda_^2) about origin to find the 2n+1 lowest fourier coefficients.
+
+    Return in the order of [const term, first n cos terms, first n sin terms]
+    and also their corresponding coefficients.
+    """
+    basis_x = stacked_basis_as_fundamental_position_basis(basis)
+
+    axis_operators = tuple(
+        get_linear_gaussian_noise_operators_explicit_taylor(
             basis_x[i],
             a,
             lambda_,

@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
 
 
-def get_noise_operators_eigenvalue(
+def get_periodic_noise_operators_eigenvalue(
     kernel: NoiseKernel[_B0, _B1, _B0, _B1],
 ) -> NoiseOperatorList[FundamentalBasis[int], _B0, _B1]:
     r"""
@@ -82,7 +82,7 @@ def get_noise_operators_eigenvalue(
     }
 
 
-def get_noise_operators_diagonal_eigenvalue(
+def get_periodic_noise_operators_diagonal_eigenvalue(
     kernel: DiagonalNoiseKernel[_B0, _B1, _B0, _B1],
 ) -> DiagonalNoiseOperatorList[FundamentalBasis[int], _B0, _B1]:
     r"""
