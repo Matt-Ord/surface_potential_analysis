@@ -12,6 +12,7 @@ from matplotlib.scale import LinearScale, LogScale, ScaleBase, SymmetricalLogSca
 
 from surface_potential_analysis.basis.basis_like import convert_vector
 from surface_potential_analysis.stacked_basis.conversion import (
+    stacked_basis_as_fundamental_basis,
     stacked_basis_as_fundamental_momentum_basis,
     stacked_basis_as_fundamental_position_basis,
 )
@@ -33,6 +34,7 @@ if TYPE_CHECKING:
     from matplotlib.lines import Line2D
 
     from surface_potential_analysis.basis.stacked_basis import (
+        StackedBasisLike,
         StackedBasisWithVolumeLike,
     )
     from surface_potential_analysis.types import SingleStackedIndexLike
@@ -188,6 +190,50 @@ def plot_data_1d(
     return fig, ax, line
 
 
+def plot_data_1d_n(
+    basis: StackedBasisLike[Any, Any, Any],
+    data: np.ndarray[tuple[_L0Inv], np.dtype[_DType]],
+    axes: tuple[int,] = (0,),
+    idx: SingleStackedIndexLike | None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "abs",
+    periodic: bool = False,
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot data in 1d.
+
+    Parameters
+    ----------
+    data : np.ndarray[tuple[int], np.dtype[np.complex128]]
+    coordinates : np.ndarray[tuple[int], np.dtype[np.float64]]
+    ax : Axes | None, optional
+        ax, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+    measure : Measure, optional
+        measure, by default "abs"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    fundamental_basis = stacked_basis_as_fundamental_basis(basis)
+    converted = convert_vector(data, basis, fundamental_basis)
+
+    idx = get_max_idx(fundamental_basis, converted, axes) if idx is None else idx
+
+    return plot_data_1d(
+        get_data_in_axes(converted.reshape(fundamental_basis.shape), axes, idx),
+        np.arange(fundamental_basis[axes[0]].n, dtype=np.float64),
+        ax=ax,
+        scale=scale,
+        measure=measure,
+        periodic=periodic,
+    )
+
+
 def plot_data_1d_k(
     basis: StackedBasisWithVolumeLike[Any, Any, Any],
     data: np.ndarray[tuple[_L0Inv], np.dtype[_DType]],
@@ -287,7 +333,7 @@ def plot_data_1d_x(
     data_in_axis = get_data_in_axes(converted_data.reshape(basis_x.shape), axes, idx)
 
     fig, ax, line = plot_data_1d(
-        data_in_axis,  # type: ignore shape is correct
+        data_in_axis,
         coordinates[0],
         ax=ax,
         scale=scale,
@@ -473,7 +519,7 @@ def plot_data_2d_x(
     data_in_axis = get_data_in_axes(converted_data.reshape(basis_x.shape), axes, idx)
 
     fig, ax, mesh = plot_data_2d(
-        cast(np.ndarray[tuple[int], np.dtype[np.complex128]], data_in_axis),
+        data_in_axis.ravel(),
         coordinates,
         ax=ax,
         scale=scale,
@@ -606,6 +652,62 @@ def animate_data_through_surface_x(
     return fig, ax, ani
 
 
+def animate_data_through_list_1d_n(
+    basis: StackedBasisLike[Any, Any, Any],
+    data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
+    axes: tuple[int,] = (0,),
+    idx: SingleStackedIndexLike | None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "abs",
+    periodic: bool = False,
+) -> tuple[Figure, Axes, ArtistAnimation]:
+    """
+    Given data, animate along the given direction.
+
+    Parameters
+    ----------
+    basis : TupleBasisLike
+    data : np.ndarray[tuple[_L0Inv], np.dtype[np.complex_]]
+    axes : tuple[int, int, int], optional
+        plot axes (z, y, z), by default (0, 1, 2)
+    idx : SingleStackedIndexLike | None, optional
+        idx in remaining dimensions, by default None
+    ax : Axes | None, optional
+        plot ax, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+    measure : Measure, optional
+        measure, by default "abs"
+
+    Returns
+    -------
+    tuple[Figure, Axes, ArtistAnimation]
+    """
+    fig, ax = get_figure(ax)
+
+    frames: list[list[Line2D]] = []
+
+    for data_i in data:
+        _, _, line = plot_data_1d_n(
+            basis,
+            data_i,
+            axes,
+            idx,
+            ax=ax,
+            scale=scale,
+            measure=measure,
+            periodic=periodic,
+        )
+
+        frames.append([line])
+        line.set_color(frames[0][0].get_color())
+
+    ani = ArtistAnimation(fig, frames)
+    return fig, ax, ani
+
+
 def animate_data_through_list_1d_x(
     basis: StackedBasisWithVolumeLike[Any, Any, Any],
     data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
@@ -650,6 +752,54 @@ def animate_data_through_list_1d_x(
         line.set_color(frames[0][0].get_color())
 
     ani = ArtistAnimation(fig, frames)
+    return fig, ax, ani
+
+
+def animate_data_through_list_1d_k(
+    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
+    axes: tuple[int,] = (0,),
+    idx: SingleStackedIndexLike | None = None,
+    *,
+    ax: Axes | None = None,
+    scale: Scale = "linear",
+    measure: Measure = "abs",
+) -> tuple[Figure, Axes, ArtistAnimation]:
+    """
+    Given data, animate along the given direction.
+
+    Parameters
+    ----------
+    basis : TupleBasisLike
+    data : np.ndarray[tuple[_L0Inv], np.dtype[np.complex_]]
+    axes : tuple[int, int, int], optional
+        plot axes (z, y, z), by default (0, 1, 2)
+    idx : SingleStackedIndexLike | None, optional
+        idx in remaining dimensions, by default None
+    ax : Axes | None, optional
+        plot ax, by default None
+    scale : Scale, optional
+        scale, by default "linear"
+    measure : Measure, optional
+        measure, by default "abs"
+
+    Returns
+    -------
+    tuple[Figure, Axes, ArtistAnimation]
+    """
+    fig, ax = get_figure(ax)
+
+    frames: list[list[Line2D]] = []
+
+    for data_i in data:
+        _, _, line = plot_data_1d_k(
+            basis, data_i, axes, idx, ax=ax, scale=scale, measure=measure
+        )
+        frames.append([line])
+        line.set_color(frames[0][0].get_color())
+
+    ani = ArtistAnimation(fig, frames)
+
     return fig, ax, ani
 
 
@@ -753,52 +903,4 @@ def animate_data_through_list_2d_x(
         frames.append([mesh])
 
     ani = ArtistAnimation(fig, frames)
-    return fig, ax, ani
-
-
-def animate_data_through_list_1d_k(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
-    data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
-    axes: tuple[int,] = (0,),
-    idx: SingleStackedIndexLike | None = None,
-    *,
-    ax: Axes | None = None,
-    scale: Scale = "linear",
-    measure: Measure = "abs",
-) -> tuple[Figure, Axes, ArtistAnimation]:
-    """
-    Given data, animate along the given direction.
-
-    Parameters
-    ----------
-    basis : TupleBasisLike
-    data : np.ndarray[tuple[_L0Inv], np.dtype[np.complex_]]
-    axes : tuple[int, int, int], optional
-        plot axes (z, y, z), by default (0, 1, 2)
-    idx : SingleStackedIndexLike | None, optional
-        idx in remaining dimensions, by default None
-    ax : Axes | None, optional
-        plot ax, by default None
-    scale : Scale, optional
-        scale, by default "linear"
-    measure : Measure, optional
-        measure, by default "abs"
-
-    Returns
-    -------
-    tuple[Figure, Axes, ArtistAnimation]
-    """
-    fig, ax = get_figure(ax)
-
-    frames: list[list[Line2D]] = []
-
-    for data_i in data:
-        _, _, line = plot_data_1d_k(
-            basis, data_i, axes, idx, ax=ax, scale=scale, measure=measure
-        )
-        frames.append([line])
-        line.set_color(frames[0][0].get_color())
-
-    ani = ArtistAnimation(fig, frames)
-
     return fig, ax, ani

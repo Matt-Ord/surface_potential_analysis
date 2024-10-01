@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Any, TypeVar
 from surface_potential_analysis.basis.basis_like import convert_vector
 from surface_potential_analysis.kernel.kernel import get_full_kernel_from_operators
 from surface_potential_analysis.kernel.solve._eigenvalue import (
-    get_noise_operators_diagonal_eigenvalue,
-    get_noise_operators_eigenvalue,
+    get_periodic_noise_operators_diagonal_eigenvalue,
+    get_periodic_noise_operators_eigenvalue,
 )
 from surface_potential_analysis.operator.conversion import (
     convert_diagonal_operator_list_to_basis,
@@ -92,7 +92,7 @@ def convert_kernel_to_basis(
     -------
     NoiseKernel[_B0, _B1, _B0, _B1]
     """
-    operators = get_noise_operators_eigenvalue(kernel)
+    operators = get_periodic_noise_operators_eigenvalue(kernel)
     converted = convert_noise_operator_list_to_basis(operators, basis)
     return get_full_kernel_from_operators(converted)
 
@@ -112,7 +112,7 @@ def convert_diagonal_kernel_to_basis(
     -------
     NoiseKernel[_B0, _B1, _B0, _B1]
     """
-    operators = get_noise_operators_diagonal_eigenvalue(kernel)
+    operators = get_periodic_noise_operators_diagonal_eigenvalue(kernel)
     converted = convert_diagonal_noise_operator_list_to_basis(operators, basis)
     return get_full_kernel_from_operators(converted)
 

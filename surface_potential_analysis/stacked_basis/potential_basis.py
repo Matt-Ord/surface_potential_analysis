@@ -11,11 +11,12 @@ from surface_potential_analysis.basis.basis import (
 )
 from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
 from surface_potential_analysis.basis.explicit_basis import (
-    ExplicitBasisWithLength,
+    ExplicitStackedBasisWithLength,
 )
 from surface_potential_analysis.basis.stacked_basis import (
+    StackedBasisWithVolumeLike,
     TupleBasis,
-    TupleBasisLike,
+    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.hamiltonian_builder.momentum_basis import (
     total_surface_hamiltonian,
@@ -41,7 +42,7 @@ _L1_co = TypeVar("_L1_co", covariant=True, bound=int)
 class PotentialBasisConfig(TypedDict, Generic[_B1d0Inv, _L1_co]):
     """Configures the generation of an explicit basis from a given potential."""
 
-    potential: Potential[TupleBasisLike[_B1d0Inv]]
+    potential: Potential[TupleBasisWithLengthLike[_B1d0Inv]]
     mass: float
     n: _L1_co
 
@@ -53,7 +54,9 @@ def get_potential_basis_config_eigenstates(
     config: PotentialBasisConfig[_B1d0Inv, _N0Inv],
     *,
     bloch_fraction: float | None = None,
-) -> EigenstateList[FundamentalBasis[_N0Inv], TupleBasisLike[_B1d0Inv]]:
+) -> EigenstateList[
+    FundamentalBasis[_N0Inv], StackedBasisWithVolumeLike[Any, Any, Any]
+]:
     """
     Get the eigenstates of the potential, as used in the final basis.
 
@@ -77,9 +80,9 @@ def get_potential_basis_config_eigenstates(
 
 def get_potential_basis_config_basis(
     config: PotentialBasisConfig[_B1d0Inv, _N0Inv],
-) -> ExplicitBasisWithLength[
+) -> ExplicitStackedBasisWithLength[
     FundamentalBasis[_N0Inv],
-    TupleBasisLike[_B1d0Inv],
+    StackedBasisWithVolumeLike[Any, Any, Any],
 ]:
     """
     Get the explicit basis for the potential basis config.
@@ -93,12 +96,12 @@ def get_potential_basis_config_basis(
     ExplicitBasis[_L1Inv, PositionBasis[_L0Inv]]
     """
     eigenstates = get_potential_basis_config_eigenstates(config)
-    return ExplicitBasisWithLength(eigenstates)
+    return ExplicitStackedBasisWithLength(eigenstates)
 
 
 def select_minimum_potential_3d(
-    potential: Potential[TupleBasisLike[Any, Any, _B3d0]],
-) -> Potential[TupleBasisLike[FundamentalPositionBasis1d[Any]]]:
+    potential: Potential[TupleBasisWithLengthLike[Any, Any, _B3d0]],
+) -> Potential[TupleBasisWithLengthLike[FundamentalPositionBasis1d[Any]]]:
     """
     Given a 3D potential in the standard configuration select the minimum potential.
 

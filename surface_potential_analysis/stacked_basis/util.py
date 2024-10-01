@@ -26,7 +26,6 @@ from surface_potential_analysis.util.util import (
 
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis_like import (
-        BasisLike,
         BasisWithLengthLike,
     )
     from surface_potential_analysis.basis.stacked_basis import (
@@ -45,7 +44,6 @@ if TYPE_CHECKING:
     )
 
     _S0Inv = TypeVar("_S0Inv", bound=tuple[int, ...])
-    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
     _BL0Inv = TypeVar("_BL0Inv", bound=BasisWithLengthLike[Any, Any, Any])
     _NDInv = TypeVar("_NDInv", bound=int)
 
@@ -86,7 +84,7 @@ def project_k_points_along_axes(
 
 
 def get_fundamental_stacked_k_points_projected_along_axes(
-    basis: TupleBasisLike[Unpack[tuple[_BL0Inv, ...]]],
+    basis: TupleBasisWithLengthLike[Unpack[tuple[_BL0Inv, ...]]],
     axes: tuple[int, ...],
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     """
@@ -107,7 +105,7 @@ def get_fundamental_stacked_k_points_projected_along_axes(
 
 
 def get_k_coordinates_in_axes(
-    basis: TupleBasisLike[Unpack[tuple[_BL0Inv, ...]]],
+    basis: TupleBasisWithLengthLike[Unpack[tuple[_BL0Inv, ...]]],
     axes: tuple[int, ...],
     idx: SingleStackedIndexLike | None,
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:

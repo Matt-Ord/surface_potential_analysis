@@ -10,7 +10,7 @@ from surface_potential_analysis.kernel.build import (
     build_isotropic_kernel_from_function_stacked,
 )
 from surface_potential_analysis.kernel.solve import (
-    get_noise_operators_explicit_taylor_expansion,
+    get_periodic_noise_operators_explicit_taylor_expansion,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_position_basis,
@@ -147,6 +147,6 @@ def get_lorentzian_operators_explicit_taylor(
         a, normalized_lambda.item(), n_terms=n_terms
     )
 
-    return get_noise_operators_explicit_taylor_expansion(
+    return get_periodic_noise_operators_explicit_taylor_expansion(
         basis_x, polynomial_coefficients, n_terms=n_terms
     )

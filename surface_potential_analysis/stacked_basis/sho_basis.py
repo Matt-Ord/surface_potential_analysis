@@ -6,15 +6,17 @@ import math
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, TypeVar
 
 import numpy as np
-import scipy
-import scipy.special
-from scipy.constants import hbar
+import scipy  # type: ignore lib
+import scipy.special  # type: ignore lib
+from scipy.constants import hbar  # type: ignore lib
 
 from surface_potential_analysis.basis.basis import (
+    FundamentalBasis,
     FundamentalPositionBasis,
 )
 from surface_potential_analysis.basis.explicit_basis import (
     ExplicitBasisWithLength,
+    ExplicitStackedBasisWithLength,
 )
 from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.basis.util import BasisUtil
@@ -127,7 +129,7 @@ def get_sho_potential_basis_config(
 
 def sho_basis_3d_from_config(
     parent: BasisWithLengthLike3d[_LF0Inv, _L0Inv], config: SHOBasisConfig, n: _L0Inv
-) -> ExplicitBasisWithLength[_LF0Inv, _L0Inv, Literal[3]]:
+) -> ExplicitStackedBasisWithLength[Any, Any]:
     """
     Calculate the exact sho basis for a given basis, by directly diagonalizing the sho wavefunction in this basis.
 
@@ -145,13 +147,12 @@ def sho_basis_3d_from_config(
     ExplicitBasis[_L0Inv, _FBInv]
     """
     potential_basis_config = get_sho_potential_basis_config(parent, config, n)
-    axis = get_potential_basis_config_basis(potential_basis_config)
-    return ExplicitBasisWithLength(parent.delta_x, axis.vectors)
+    return get_potential_basis_config_basis(potential_basis_config)
 
 
 def infinate_sho_basis_3d_from_config(
-    parent: BasisWithLengthLike3d[_LF0Inv, _L1Inv], config: SHOBasisConfig, n: _L0Inv
-) -> ExplicitBasis3d[_LF0Inv, _L0Inv]:
+    parent: BasisWithLengthLike3d[_LF0Inv, _L1Inv], config: SHOBasisConfig, *, n: int
+) -> ExplicitBasisWithLength[Any, Any]:
     """
     Generate an explicit sho basis assuming an infinate extent in the z direction.
 
@@ -177,4 +178,6 @@ def infinate_sho_basis_3d_from_config(
     )
     util = BasisUtil(parent)
     vectors *= np.sqrt(np.linalg.norm(util.fundamental_dx))
-    return ExplicitBasisWithLength(parent.delta_x, vectors)
+    return ExplicitBasisWithLength(
+        {"basis": TupleBasis(FundamentalBasis(n), parent), "data": vectors}
+    )

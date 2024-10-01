@@ -104,7 +104,7 @@ def _get_noise_eigenvalues_isotropic_fft(
     }
 
 
-def get_noise_operators_isotropic_fft(
+def get_periodic_noise_operators_isotropic_fft(
     kernel: IsotropicNoiseKernel[_B0],
     *,
     fundamental_n: int | None = None,
@@ -149,7 +149,7 @@ def get_noise_operators_isotropic_fft(
     }
 
 
-def get_operators_for_real_isotropic_noise(
+def get_periodic_operators_for_real_isotropic_noise(
     basis: _B0,
     *,
     n: int | None = None,
@@ -196,7 +196,7 @@ def get_operators_for_real_isotropic_noise(
     }
 
 
-def get_noise_operators_real_isotropic_fft(
+def get_periodic_noise_operators_real_isotropic_fft(
     kernel: IsotropicNoiseKernel[_B0],
     *,
     n: int | None = None,
@@ -231,7 +231,7 @@ def get_noise_operators_real_isotropic_fft(
 
     fundamental_n = kernel["basis"].n if n is None else 2 * n + 1
 
-    operators = get_operators_for_real_isotropic_noise(
+    operators = get_periodic_operators_for_real_isotropic_noise(
         kernel["basis"], fundamental_n=fundamental_n, assert_periodic=assert_periodic
     )
 
@@ -315,7 +315,7 @@ def _get_noise_eigenvalues_isotropic_stacked_fft(
     }
 
 
-def get_noise_operators_isotropic_stacked_fft(
+def get_periodic_noise_operators_isotropic_stacked_fft(
     kernel: IsotropicNoiseKernel[_TB0],
     *,
     fundamental_shape: tuple[int, ...] | None = None,
@@ -366,7 +366,7 @@ def get_noise_operators_isotropic_stacked_fft(
     }
 
 
-def get_noise_operators_real_isotropic_stacked_fft(
+def get_periodic_noise_operators_real_isotropic_stacked_fft(
     kernel: IsotropicNoiseKernel[_SBV0],
     *,
     fundamental_shape: tuple[int | None, ...] | None = None,
@@ -392,7 +392,7 @@ def get_noise_operators_real_isotropic_stacked_fft(
     axis_kernels = get_fundamental_axis_kernels_from_isotropic(kernel)
 
     operators = tuple(
-        get_noise_operators_isotropic_fft(
+        get_periodic_noise_operators_isotropic_fft(
             kernel,
             fundamental_n=None if (fundamental_shape is None) else fundamental_shape[i],
             assert_periodic=assert_periodic,

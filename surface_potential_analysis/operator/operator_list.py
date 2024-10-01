@@ -113,7 +113,7 @@ def diagonal_operator_list_as_full(
     Eigenstate[_B0Inv]
     """
     n = diagonal_list["basis"][1].shape[0]
-    data = np.einsum("ij->ijj", diagonal_list["data"].reshape(-1, n))  # type: ignore lib
+    data = np.einsum("ij,jk->ijk", diagonal_list["data"].reshape(-1, n), np.eye(n))  # type: ignore lib
 
     return {
         "basis": diagonal_list["basis"],
