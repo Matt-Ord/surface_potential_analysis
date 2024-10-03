@@ -741,6 +741,7 @@ class BlochBasis(
                 ExplicitStackedBasisWithLength(self.vectors).__into_fundamental__(
                     vectors, axis
                 ),
+                atol=1e-10,
             )
 
         return self.vectors_basis[1].__into_fundamental__(

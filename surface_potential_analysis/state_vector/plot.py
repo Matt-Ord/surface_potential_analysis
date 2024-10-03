@@ -11,7 +11,6 @@ from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisLike,
-    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.time_basis_like import (
     BasisWithTimeLike,
@@ -22,10 +21,6 @@ from surface_potential_analysis.basis.util import (
 )
 from surface_potential_analysis.operator.conversion import (
     convert_diagonal_operator_to_basis,
-)
-from surface_potential_analysis.operator.operator import (
-    SingleBasisDiagonalOperator,
-    as_operator,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_momentum_basis,
@@ -79,10 +74,10 @@ if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis import (
         BasisLike,
         FundamentalBasis,
-        FundamentalPositionBasis,
     )
     from surface_potential_analysis.operator.operator import (
         Operator,
+        SingleBasisDiagonalOperator,
         SingleBasisOperator,
     )
     from surface_potential_analysis.state_vector.eigenstate_list import ValueList
@@ -929,11 +924,9 @@ def plot_total_band_occupation_against_energy(
 
 
 def get_periodic_x_operator(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    basis: _SBV0,
     direction: tuple[int, ...] | None = None,
-) -> SingleBasisOperator[
-    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
-]:
+) -> SingleBasisOperator[_SBV0]:
     """
     Generate operator for e^(2npi*x / delta_x).
 
@@ -955,8 +948,9 @@ def get_periodic_x_operator(
         util.stacked_nx_points,
         dk,
     )
-    return as_operator(
-        {"basis": TupleBasis(basis_x, basis_x), "data": np.exp(1j * phi)}
+    return convert_diagonal_operator_to_basis(
+        {"basis": TupleBasis(basis_x, basis_x), "data": np.exp(1j * phi)},
+        TupleBasis(basis, basis),
     )
 
 
