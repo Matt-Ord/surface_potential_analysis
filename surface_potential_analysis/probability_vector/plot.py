@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from surface_potential_analysis.basis.basis_like import BasisLike
     from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisWithVolumeLike,
+        TupleBasisLike,
     )
     from surface_potential_analysis.basis.time_basis_like import BasisWithTimeLike
     from surface_potential_analysis.probability_vector.probability_vector import (
@@ -36,6 +37,7 @@ if TYPE_CHECKING:
     _B0 = TypeVar("_B0", bound=BasisWithTimeLike[int, int])
     _B1 = TypeVar("_B1", bound=BasisLike[int, int])
     _SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+    _TB0 = TypeVar("_TB0", bound=TupleBasisLike[*tuple[Any, ...]])
 
 
 def plot_probability_against_time(
@@ -66,18 +68,18 @@ def plot_probability_against_time(
 
     lines: list[Line2D] = []
     for n in range(probability["basis"].shape[1]):
-        (line,) = ax.plot(times, (data[:, n]))
+        (line,) = ax.plot(times, (data[:, n]))  # type:ignore lib
         lines.append(line)
 
-    ax.set_title("Plot of probability against time")
-    ax.set_xlabel("time /s")
-    ax.set_ylabel("occupation probability")
-    ax.set_yscale(scale)
+    ax.set_title("Plot of probability against time")  # type:ignore lib
+    ax.set_xlabel("time /s")  # type:ignore lib
+    ax.set_ylabel("occupation probability")  # type:ignore lib
+    ax.set_yscale(scale)  # type:ignore lib
     return fig, ax, lines
 
 
 def plot_total_probability_against_time(
-    probability: ProbabilityVectorList[_B0, _SB0],
+    probability: ProbabilityVectorList[_B0, _TB0],
     *,
     ax: Axes | None = None,
     scale: Scale = "linear",
@@ -144,7 +146,7 @@ def plot_probability_1d_k(
         scale=scale,
         measure=measure,
     )
-    ax.set_ylabel("Probability")
+    ax.set_ylabel("Probability")  # type: ignore lib
     return fig, ax, line
 
 
@@ -187,7 +189,7 @@ def plot_probability_1d_x(
         scale=scale,
         measure=measure,
     )
-    ax.set_ylabel("Probability")
+    ax.set_ylabel("Probability")  # type: ignore lib
     return fig, ax, line
 
 
@@ -230,7 +232,7 @@ def plot_probability_2d_k(
         scale=scale,
         measure=measure,
     )
-    ax.set_ylabel("Probability")
+    ax.set_ylabel("Probability")  # type: ignore lib
     return fig, ax, mesh
 
 
@@ -273,5 +275,5 @@ def plot_probability_2d_x(
         scale=scale,
         measure=measure,
     )
-    ax.set_ylabel("Probability")
+    ax.set_ylabel("Probability")  # type: ignore lib
     return fig, ax, mesh

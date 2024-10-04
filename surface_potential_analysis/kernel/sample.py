@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
 def sample_noise_from_diagonal_operators_split(
     operators: DiagonalNoiseOperatorList[_B0, _B1, _B2], *, n_samples: int
-) -> DiagonalOperatorList[TupleBasis[FundamentalBasis[int], _B0], _B1, _B2]:
+) -> DiagonalOperatorList[TupleBasis[_B0, FundamentalBasis[int]], _B1, _B2]:
     """Generate noise from a set of diagonal noise operators.
 
     Parameters
@@ -55,14 +55,14 @@ def sample_noise_from_diagonal_operators_split(
     ) / np.sqrt(2)
 
     data = np.einsum(  # type: ignore lib
-        "ij,j,jk->ijk",
+        "ij,j,jk->jik",
         factors,
         np.lib.scimath.sqrt(operators["eigenvalue"] * hbar),
         operators["data"].reshape(n_operators, -1),
     )
     return {
         "basis": TupleBasis(
-            TupleBasis(FundamentalBasis(n_samples), operators["basis"][0]),
+            TupleBasis(operators["basis"][0], FundamentalBasis(n_samples)),
             operators["basis"][1],
         ),
         "data": data.ravel(),
@@ -70,7 +70,7 @@ def sample_noise_from_diagonal_operators_split(
 
 
 def diagonal_operator_list_from_diagonal_split(
-    split: DiagonalOperatorList[TupleBasis[_B3, _B0], _B1, _B2],
+    split: DiagonalOperatorList[TupleBasis[_B0, _B3], _B1, _B2],
 ) -> DiagonalOperatorList[_B3, _B1, _B2]:
     """
     Sum over the 'spit' axis.
@@ -83,15 +83,15 @@ def diagonal_operator_list_from_diagonal_split(
     -------
     DiagonalOperatorList[_B3, _B1, _B2]
     """
-    data = np.sum(split["data"].reshape(*split["basis"][0].shape, -1), axis=1)
+    data = np.sum(split["data"].reshape(*split["basis"][0].shape, -1), axis=0)
     return {
-        "basis": TupleBasis(split["basis"][0][0], split["basis"][1]),
+        "basis": TupleBasis(split["basis"][0][1], split["basis"][1]),
         "data": data.ravel(),
     }
 
 
 def get_diagonal_split_noise_components(
-    split: DiagonalOperatorList[TupleBasis[_B3, _B0], _B1, _B2],
+    split: DiagonalOperatorList[TupleBasis[_B0, _B3], _B1, _B2],
 ) -> list[DiagonalOperatorList[_B3, _B1, _B2]]:
     """Get the components of the noise.
 
@@ -103,10 +103,10 @@ def get_diagonal_split_noise_components(
     -------
     list[DiagonalOperatorList[_B3, _B1, _B2]]
     """
-    data = split["data"].reshape(*split["basis"][0].shape, -1).swapaxes(0, 1)
+    data = split["data"].reshape(*split["basis"][0].shape, -1)
     return [
         {
-            "basis": TupleBasis(split["basis"][0][0], split["basis"][1]),
+            "basis": TupleBasis(split["basis"][0][1], split["basis"][1]),
             "data": d.ravel(),
         }
         for d in data

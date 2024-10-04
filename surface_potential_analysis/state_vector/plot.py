@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 import numpy as np
 import scipy  # type: ignore unknown
 import scipy.signal  # type: ignore unknown
 from matplotlib.animation import ArtistAnimation
 
+from surface_potential_analysis.basis.basis import (
+    FundamentalBasis,
+)
 from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisWithVolumeLike,
     TupleBasis,
@@ -73,7 +76,6 @@ if TYPE_CHECKING:
 
     from surface_potential_analysis.basis.basis import (
         BasisLike,
-        FundamentalBasis,
     )
     from surface_potential_analysis.operator.operator import (
         Operator,
@@ -979,20 +981,18 @@ _BT0 = TypeVar("_BT0", bound=BasisWithTimeLike[Any, Any])
 
 def _get_average_x_periodic(
     states: StateVectorList[
-        TupleBasisLike[Any, _BT0],
+        _B0Inv,
         StackedBasisWithVolumeLike[Any, Any, Any],
     ],
     axis: int,
-) -> ValueList[TupleBasisLike[Any, _BT0]]:
+) -> ValueList[_B0Inv]:
     direction = tuple(1 if i == axis else 0 for i in range(states["basis"][1].ndim))
     periodic_x = _get_periodic_x(states, direction)
-    angle = np.angle(periodic_x["data"].reshape(states["basis"][0].shape)) % (2 * np.pi)
+    angle = np.angle(periodic_x["data"]) % (2 * np.pi)
 
     return {
         "basis": periodic_x["basis"],
-        "data": (
-            angle * states["basis"][1].delta_x_stacked[axis] / (2 * np.pi)
-        ).ravel(),
+        "data": (angle * states["basis"][1].delta_x_stacked[axis] / (2 * np.pi)),
     }
 
 
@@ -1124,11 +1124,11 @@ def plot_averaged_occupation_1d_x(
 
 def _get_x_spread(
     states: StateVectorList[
-        TupleBasisLike[Any, _BT0],
+        _B0Inv,
         StackedBasisWithVolumeLike[Any, Any, Any],
     ],
     axis: int,
-) -> ValueList[TupleBasisLike[Any, _BT0]]:
+) -> ValueList[_B0Inv]:
     r"""
     Calculate the spread, \sigma_0 using the periodic x operator.
 
@@ -1156,11 +1156,41 @@ def _get_x_spread(
 
     states["data"] = data.ravel()
     periodic_x = _get_periodic_x(states, direction)
-    norm = np.abs(periodic_x["data"].reshape(states["basis"][0].shape))
+    norm = np.abs(periodic_x["data"])
     q = 2 * np.pi / np.linalg.norm(states["basis"][1].delta_x_stacked[axis])
     sigma_0 = np.sqrt(-(4 / q**2) * np.log(norm))
 
     return {"basis": periodic_x["basis"], "data": sigma_0.ravel()}
+
+
+def get_coherent_coordinates(
+    states: StateVectorList[
+        _B0Inv,
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ],
+    axis: int,
+) -> ValueList[TupleBasisLike[FundamentalBasis[Literal[3]], _B0Inv]]:
+    """Get the coherent wavepacket coordinates x0,k0,sigma0.
+
+    Parameters
+    ----------
+    states : StateVectorList[ _B0Inv, StackedBasisWithVolumeLike[Any, Any, Any], ]
+    axis : int
+
+    Returns
+    -------
+    ValueList[TupleBasisLike[FundamentalBasis[Literal[3]], _B0Inv]]
+    """
+    sigma_0 = _get_x_spread(states, axis)
+    x0 = _get_average_x_periodic(states, axis)
+    k0 = _get_average_k(states, axis)
+    return {
+        "basis": TupleBasis(
+            FundamentalBasis[Literal[3]](3),
+            states["basis"][0],
+        ),
+        "data": np.array([x0["data"], k0["data"], sigma_0["data"]]),
+    }
 
 
 def plot_spread_1d(
@@ -1263,7 +1293,7 @@ def _get_average_k(
     axis: int,
 ) -> ValueList[_B0Inv]:
     """
-    Calculate expectation of e^(2pi*x / delta_x).
+    Calculate expectation of k.
 
     Parameters
     ----------
@@ -1492,9 +1522,10 @@ def plot_periodic_x_distribution_1d(
     return fig, ax
 
 
-def _get_average_displacements(
+def get_average_displacements(
     positions: ValueList[TupleBasisLike[_B0Inv, _BT0]],
 ) -> ValueList[TupleBasisLike[_B0Inv, EvenlySpacedTimeBasis[Any, Any, Any]]]:
+    """Get the RMS displacement against time."""
     basis = positions["basis"]
     stacked = positions["data"].reshape(basis.shape)
     squared_positions = np.square(stacked)
@@ -1540,7 +1571,7 @@ def plot_average_displacement_1d_x(
     tuple[Figure, Axes, Line2D]
     """
     restored_x = _get_restored_x(states, axes[0])
-    displacements = _get_average_displacements(restored_x)
+    displacements = get_average_displacements(restored_x)
 
     return plot_average_value_list_against_time(
         displacements, ax=ax, measure=measure, scale=scale

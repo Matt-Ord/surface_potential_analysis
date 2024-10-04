@@ -262,6 +262,7 @@ def animate_diagonal_operator_list_along_diagonal(
     ax: Axes | None = None,
     scale: Scale = "linear",
     measure: Measure = "abs",
+    periodic: bool = False,
 ) -> tuple[Figure, Axes, ArtistAnimation]:
     """
     Plot the expected occupation of eigenstates at the given temperature.
@@ -285,6 +286,7 @@ def animate_diagonal_operator_list_along_diagonal(
         ax=ax,
         scale=scale,
         measure=measure,
+        periodic=periodic,
     )
 
 

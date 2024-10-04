@@ -5,7 +5,10 @@ from typing import TYPE_CHECKING, Any, TypeVar
 import numpy as np
 
 from surface_potential_analysis.basis.conversion import basis_as_single_point_basis
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
+from surface_potential_analysis.basis.stacked_basis import (
+    TupleBasis,
+    TupleBasisWithLengthLike,
+)
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.stacked_basis.brillouin_zone import (
     decrement_brillouin_zone,
@@ -57,12 +60,12 @@ def plot_k_points_projected_2d(
     fig, ax = get_figure(ax)
     projected_points = project_k_points_along_axes(points, basis, axes)
 
-    (line,) = ax.plot(*projected_points.reshape(2, -1))
+    (line,) = ax.plot(*projected_points.reshape(2, -1))  # type:ignore lib
     line.set_linestyle(" ")
     line.set_marker("x")
 
-    ax.set_xlabel(f"k{axes[0]} axis")
-    ax.set_ylabel(f"k{axes[1]} axis")
+    ax.set_xlabel(f"k{axes[0]} axis")  # type:ignore lib
+    ax.set_ylabel(f"k{axes[1]} axis")  # type:ignore lib
     ax.set_aspect("equal", adjustable="box")
 
     return fig, ax, line
@@ -123,7 +126,7 @@ def plot_bragg_points_projected_2d(
 
 
 def plot_fundamental_k_in_plane_projected_2d(
-    basis: TupleBasisLike[*tuple[_BL0, ...]],
+    basis: TupleBasisWithLengthLike[*tuple[_BL0, ...]],
     axes: tuple[int, int],
     idx: SingleStackedIndexLike,
     *,
@@ -154,7 +157,7 @@ def plot_fundamental_k_in_plane_projected_2d(
 
 
 def plot_x_points_projected_2d(
-    basis: TupleBasisLike[*tuple[_BL0, ...]],
+    basis: TupleBasisWithLengthLike[*tuple[_BL0, ...]],
     axes: tuple[int, int],
     points: np.ndarray[tuple[int, ...], np.dtype[np.float64]],
     *,
@@ -180,19 +183,19 @@ def plot_x_points_projected_2d(
     fig, ax = get_figure(ax)
     projected_points = project_x_points_along_axes(points, basis, axes)
 
-    (line,) = ax.plot(*projected_points.reshape(2, -1))
+    (line,) = ax.plot(*projected_points.reshape(2, -1))  # type:ignore lib
     line.set_linestyle(" ")
     line.set_marker("x")
 
-    ax.set_xlabel(f"x{axes[0]} axis")
-    ax.set_ylabel(f"x{axes[1]} axis")
+    ax.set_xlabel(f"x{axes[0]} axis")  # type:ignore lib
+    ax.set_ylabel(f"x{axes[1]} axis")  # type:ignore lib
     ax.set_aspect("equal", adjustable="box")
 
     return fig, ax, line
 
 
 def plot_fundamental_x_in_plane_projected_2d(
-    basis: TupleBasisLike[*tuple[_BL0, ...]],
+    basis: TupleBasisWithLengthLike[*tuple[_BL0, ...]],
     axes: tuple[int, int],
     idx: SingleStackedIndexLike,
     *,
@@ -227,7 +230,7 @@ def plot_fundamental_x_in_plane_projected_2d(
 
 
 def plot_fundamental_x_at_index_projected_2d(
-    basis: TupleBasisLike[*tuple[Any, ...]],
+    basis: TupleBasisWithLengthLike[*tuple[Any, ...]],
     idx: IndexLike,
     axes: tuple[int, int],
     *,

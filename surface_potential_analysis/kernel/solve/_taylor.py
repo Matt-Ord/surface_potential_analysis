@@ -14,7 +14,7 @@ from surface_potential_analysis.basis.conversion import (
 from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
 )
-from surface_potential_analysis.basis.util import get_displacements_nx
+from surface_potential_analysis.basis.util import get_displacements_matrix_nx
 from surface_potential_analysis.kernel.kernel import (
     get_diagonal_noise_operators_from_axis,
 )
@@ -122,7 +122,9 @@ def _get_linear_operators_for_noise(
 ) -> SingleBasisDiagonalOperatorList[FundamentalBasis[int], _B0]:
     n_terms = basis.n if n_terms is None else n_terms
 
-    displacements = 2 * np.pi * get_displacements_nx(basis)[basis.n // 2] / basis.n
+    displacements = (
+        2 * np.pi * get_displacements_matrix_nx(basis)[basis.n // 2] / basis.n
+    )
     data = np.array([displacements**n for n in range(n_terms)], dtype=np.complex128)
     return {
         "basis": TupleBasis(FundamentalBasis(n_terms), TupleBasis(basis, basis)),
