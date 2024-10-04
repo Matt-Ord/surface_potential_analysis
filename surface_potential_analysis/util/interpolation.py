@@ -4,8 +4,8 @@ import itertools
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
-import scipy.fft
-import scipy.interpolate
+import scipy.fft  # type:ignore lib
+import scipy.interpolate  # type:ignore lib
 
 from .util import slice_along_axis
 

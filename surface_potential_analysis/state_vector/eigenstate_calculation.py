@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
-import scipy.linalg
+import scipy.linalg  # type:ignore lib
 
 from surface_potential_analysis.basis.basis import FundamentalBasis
 from surface_potential_analysis.basis.basis_like import BasisLike
@@ -53,16 +53,17 @@ def calculate_eigenvectors_hermitian(
     subset_by_index: tuple[IntLike_co, IntLike_co] | None = None,
 ) -> EigenstateList[FundamentalBasis[int], _B0]:
     """Get a list of eigenstates for a given operator, assuming it is hermitian."""
-    eigenvalues, vectors = scipy.linalg.eigh(
+    eigenvalues, vectors = scipy.linalg.eigh(  # type:ignore lib
         operator["data"].reshape(operator["basis"].shape),
         subset_by_index=subset_by_index,
     )
     return {
         "basis": TupleBasis(
-            FundamentalBasis(np.size(eigenvalues)), operator["basis"][0]
+            FundamentalBasis(np.size(eigenvalues)),  # type:ignore lib
+            operator["basis"][0],
         ),
-        "data": np.transpose(vectors).reshape(-1),
-        "eigenvalue": np.array(eigenvalues),
+        "data": np.transpose(vectors).reshape(-1),  # type:ignore lib
+        "eigenvalue": np.array(eigenvalues),  # type:ignore lib
     }
 
 
@@ -85,7 +86,7 @@ def operator_from_eigenstates(
 ) -> SingleBasisOperator[_B0]:
     """Get an operator from eigenstates."""
     eigenvectors = states["data"].reshape(states["basis"].shape)
-    data = np.einsum(
+    data = np.einsum(  # type:ignore lib
         "ji,j,kj->ik",
         eigenvectors,
         states["eigenvalue"],
@@ -116,7 +117,7 @@ def calculate_expectation_diagonal(
     """
     converted = convert_state_vector_to_basis(state, operator["basis"][0])
 
-    return np.einsum(
+    return np.einsum(  # type:ignore lib
         "j,j,j->",
         np.conj(converted["data"]),
         operator["data"],
@@ -144,7 +145,7 @@ def calculate_expectation(
         operator, TupleBasis(state["basis"], state["basis"])
     )
 
-    return np.einsum(
+    return np.einsum(  # type:ignore lib
         "i,ij,j->",
         np.conj(state["data"]),
         converted["data"].reshape(converted["basis"].shape),
@@ -172,7 +173,7 @@ def calculate_expectation_list(
     converted = convert_operator_to_basis(
         operator, TupleBasis(states["basis"][1], states["basis"][1])
     )
-    data = np.einsum(
+    data = np.einsum(  # type:ignore lib
         "ij,jk,ik->i",
         np.conj(states["data"].reshape(states["basis"].shape)),
         converted["data"].reshape(converted["basis"].shape),

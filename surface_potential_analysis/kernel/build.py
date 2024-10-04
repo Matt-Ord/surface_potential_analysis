@@ -14,8 +14,8 @@ from surface_potential_analysis.basis.stacked_basis import (
     TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import (
-    get_displacements_x,
-    get_displacements_x_stacked,
+    get_displacements_matrix_x,
+    get_displacements_matrix_x_stacked,
 )
 from surface_potential_analysis.kernel.kernel import (
     AxisKernel,
@@ -98,7 +98,7 @@ def build_isotropic_kernel_from_function(
         TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
     ]
     """
-    displacements = get_displacements_x(basis)
+    displacements = get_displacements_matrix_x(basis)
     correlation = fn(displacements["data"].reshape(displacements["basis"].shape)[0])
 
     return {"basis": displacements["basis"][0], "data": correlation.ravel()}
@@ -131,7 +131,7 @@ def build_isotropic_kernel_from_function_stacked(
         TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
     ]
     """
-    displacements = get_displacements_x_stacked(basis)
+    displacements = get_displacements_matrix_x_stacked(basis)
     correlation = fn(displacements["data"].reshape(displacements["basis"].shape)[0])
 
     return {"basis": displacements["basis"][0], "data": correlation.ravel()}
