@@ -315,7 +315,7 @@ def animate_state_over_list_2d_x(
         states, stacked_basis_as_fundamental_position_basis(states["basis"][1])
     )
 
-    fig, ax, ani = animate_data_through_list_2d_x(
+    return animate_data_through_list_2d_x(
         converted["basis"][1],
         converted["data"].reshape(converted["basis"].shape),
         axes,
@@ -324,8 +324,6 @@ def animate_state_over_list_2d_x(
         scale=scale,
         measure=measure,
     )
-    ax.set_ylabel("State /Au")  # type: ignore unknown
-    return fig, ax, ani
 
 
 def animate_state_over_list_1d_k(

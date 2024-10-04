@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from matplotlib.collections import QuadMesh
+    from matplotlib.colorbar import Colorbar
     from matplotlib.image import AxesImage
     from matplotlib.lines import Line2D
 
@@ -299,11 +300,17 @@ def plot_data_1d_x(
     return fig, ax, line
 
 
-def _has_colorbar(axis: Axes) -> bool:
+def get_axis_colorbar(axis: Axes) -> Colorbar | None:
+    """Get a colorbar attached to the axis."""
     for artist in axis.get_children():
         if isinstance(artist, plt.cm.ScalarMappable) and artist.colorbar is not None:
-            return True
-    return False
+            return artist.colorbar
+    return None
+
+
+def _has_colorbar(axis: Axes) -> bool:
+    colourbar = get_axis_colorbar(axis)
+    return colourbar is not None
 
 
 @overload
@@ -409,16 +416,17 @@ def plot_data_2d_k(
         measure=measure,
     )
 
-    ax.set_xlabel(f"k{axes[0]} axis")  # type: ignore lib
-    ax.set_ylabel(f"k{axes[1]} axis")  # type: ignore lib
-    ax.text(  # type: ignore lib
-        0.05,
-        0.95,
-        f"k = {idx}",
-        transform=ax.transAxes,
-        verticalalignment="top",
-        bbox={"boxstyle": "round", "facecolor": "wheat", "alpha": 0.5},
-    )
+    ax.set_xlabel(f"k{axes[0]} axis / $m^-1$")  # type: ignore lib
+    ax.set_ylabel(f"k{axes[1]} axis / $m^-1$")  # type: ignore lib
+    if len(idx) > 0:
+        ax.text(  # type: ignore lib
+            0.05,
+            0.95,
+            f"k = {idx}",
+            transform=ax.transAxes,
+            verticalalignment="top",
+            bbox={"boxstyle": "round", "facecolor": "wheat", "alpha": 0.5},
+        )
     return fig, ax, mesh
 
 
@@ -472,16 +480,17 @@ def plot_data_2d_x(
         measure=measure,
     )
 
-    ax.set_xlabel(f"x{axes[0]} axis")  # type: ignore lib
-    ax.set_ylabel(f"x{axes[1]} axis")  # type: ignore lib
-    ax.text(  # type: ignore lib
-        0.05,
-        0.95,
-        f"x = {idx}",
-        transform=ax.transAxes,
-        verticalalignment="top",
-        bbox={"boxstyle": "round", "facecolor": "wheat", "alpha": 0.5},
-    )
+    ax.set_xlabel(f"x{axes[0]} axis / m")  # type: ignore lib
+    ax.set_ylabel(f"x{axes[1]} axis / m")  # type: ignore lib
+    if len(idx) > 0:
+        ax.text(  # type: ignore lib
+            0.05,
+            0.95,
+            f"x = {idx}",
+            transform=ax.transAxes,
+            verticalalignment="top",
+            bbox={"boxstyle": "round", "facecolor": "wheat", "alpha": 0.5},
+        )
     return fig, ax, mesh
 
 
