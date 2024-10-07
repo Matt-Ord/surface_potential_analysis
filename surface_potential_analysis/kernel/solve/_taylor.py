@@ -14,7 +14,6 @@ from surface_potential_analysis.basis.conversion import (
 from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
 )
-from surface_potential_analysis.basis.util import get_displacements_matrix_nx
 from surface_potential_analysis.kernel.kernel import (
     get_diagonal_noise_operators_from_axis,
 )
@@ -24,6 +23,7 @@ from surface_potential_analysis.kernel.solve._fft import (
 from surface_potential_analysis.kernel.solve._util import (
     get_fundamental_axis_kernels_from_isotropic,
 )
+from surface_potential_analysis.operator.build import get_displacements_matrix_nx
 from surface_potential_analysis.util.interpolation import pad_ft_points
 
 if TYPE_CHECKING:
