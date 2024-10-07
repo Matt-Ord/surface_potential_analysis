@@ -16,12 +16,7 @@ import numpy as np
 
 from surface_potential_analysis.basis.basis import (
     FundamentalBasis,
-    FundamentalPositionBasis,
 )
-from surface_potential_analysis.basis.conversion import (
-    basis_as_fundamental_position_basis,
-)
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_basis,
     stacked_basis_as_fundamental_position_basis,
@@ -35,10 +30,7 @@ if TYPE_CHECKING:
     from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisLike,
         StackedBasisWithVolumeLike,
-        TupleBasisWithLengthLike,
     )
-    from surface_potential_analysis.operator.operator import Operator
-    from surface_potential_analysis.state_vector.eigenstate_list import ValueList
     from surface_potential_analysis.types import (
         ArrayFlatIndexLike,
         ArrayIndexLike,
@@ -536,162 +528,3 @@ def get_twice_average_nx(
             strict=True,
         )
     )
-
-
-def get_displacements_x(
-    basis: BasisWithLengthLike[Any, Any, Any], origin: float
-) -> ValueList[FundamentalPositionBasis[Any, Any]]:
-    """Get the displacements from origin.
-
-    Parameters
-    ----------
-    basis : BasisWithLengthLike[Any, Any, Any]
-    origin : float
-
-    Returns
-    -------
-    ValueList[FundamentalPositionBasis[Any, Any]]
-    """
-    basis_x = basis_as_fundamental_position_basis(basis)
-    distances = BasisUtil(basis_x).x_points - origin
-    max_distance = basis_x.delta_x / 2
-    data = np.remainder((distances + basis_x.delta_x), max_distance) - max_distance
-    return {"basis": basis_x, "data": data.astype(np.complex128)}
-
-
-def _get_displacements_x_along_axis(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
-    origin: float,
-    axis: int,
-) -> ValueList[
-    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
-]:
-    basis_x = stacked_basis_as_fundamental_position_basis(basis)
-    distances = BasisUtil(basis_x).x_points_stacked[axis] - origin
-    delta_x = basis_x.delta_x_stacked[axis]
-    max_distance = delta_x / 2
-    data = np.remainder((distances + delta_x), max_distance) - max_distance
-    return {"basis": basis_x, "data": data}
-
-
-def get_displacements_x_stacked(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any], origin: tuple[float, ...]
-) -> tuple[
-    ValueList[
-        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
-    ],
-    ...,
-]:
-    """Get the displacements from origin."""
-    return tuple(
-        _get_displacements_x_along_axis(basis, o, axis)
-        for (axis, o) in enumerate(origin)
-    )
-
-
-def get_displacements_matrix_nx_stacked(
-    basis: StackedBasisLike[Any, Any, Any],
-) -> tuple[np.ndarray[tuple[int, int], np.dtype[np.int_]], ...]:
-    """
-    Get a matrix of displacements in nx, taken in a periodic fashion.
-
-    Parameters
-    ----------
-    basis : StackedBasisLike[Any, Any, Any]
-
-    Returns
-    -------
-    np.ndarray[tuple[int, int], np.dtype[np.int_]]
-        _description_
-    """
-    util = BasisUtil(basis)
-    return tuple(
-        (n_x_points[:, np.newaxis] - n_x_points[np.newaxis, :] + n // 2) % n - (n // 2)
-        for (n_x_points, n) in zip(
-            util.fundamental_stacked_nx_points,
-            util.fundamental_shape,
-            strict=True,
-        )
-    )
-
-
-def get_displacements_matrix_nx(
-    basis: BasisLike[_NF0Inv, Any],
-) -> np.ndarray[tuple[int, int], np.dtype[np.int_]]:
-    """
-    Get a matrix of displacements in nx, taken in a periodic fashion.
-
-    Parameters
-    ----------
-    basis : StackedBasisLike[Any, Any, Any]
-
-    Returns
-    -------
-    np.ndarray[tuple[int, int], np.dtype[np.int_]]
-        _description_
-    """
-    util = BasisUtil(basis)
-    n_x_points = util.fundamental_nx_points
-    n = util.fundamental_n
-    return (n_x_points[:, np.newaxis] - n_x_points[np.newaxis, :] + n // 2) % n - (
-        n // 2
-    )
-
-
-def get_displacements_matrix_x_stacked(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
-) -> Operator[
-    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
-    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
-]:
-    """
-    Get a matrix of displacements in x, taken in a periodic fashion.
-
-    Parameters
-    ----------
-    basis : StackedBasisLike[Any, Any, Any]
-        _description_
-
-    Returns
-    -------
-    np.ndarray[tuple[int, int], np.dtype[np.float64]]
-        _description_
-    """
-    basis_x = stacked_basis_as_fundamental_position_basis(basis)
-    step = get_displacements_matrix_nx_stacked(basis_x)
-    util = BasisUtil(basis_x)
-    return {
-        "basis": TupleBasis(basis_x, basis_x),
-        "data": np.linalg.norm(
-            np.tensordot(step, util.fundamental_dx_stacked, axes=(0, 0)),
-            axis=2,
-        ).ravel(),
-    }
-
-
-def get_displacements_matrix_x(
-    basis: BasisWithLengthLike[Any, Any, Any],
-) -> Operator[
-    FundamentalPositionBasis[Any, Any],
-    FundamentalPositionBasis[Any, Any],
-]:
-    """
-    Get a matrix of displacements in x, taken in a periodic fashion.
-
-    Parameters
-    ----------
-    basis : StackedBasisLike[Any, Any, Any]
-        _description_
-
-    Returns
-    -------
-    np.ndarray[tuple[int, int], np.dtype[np.float64]]
-        _description_
-    """
-    basis_x = basis_as_fundamental_position_basis(basis)
-    step = get_displacements_matrix_nx(basis_x)
-    dx = np.linalg.norm(BasisUtil(basis_x).fundamental_dx)
-    return {
-        "basis": TupleBasis(basis_x, basis_x),
-        "data": (dx * step).astype(np.complex128).ravel(),
-    }

@@ -13,10 +13,6 @@ from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
     TupleBasisWithLengthLike,
 )
-from surface_potential_analysis.basis.util import (
-    get_displacements_matrix_x,
-    get_displacements_matrix_x_stacked,
-)
 from surface_potential_analysis.kernel.kernel import (
     AxisKernel,
     DiagonalNoiseKernel,
@@ -28,6 +24,10 @@ from surface_potential_analysis.kernel.kernel import (
 from surface_potential_analysis.kernel.solve._eigenvalue import (
     get_periodic_noise_operators_diagonal_eigenvalue,
     get_periodic_noise_operators_eigenvalue,
+)
+from surface_potential_analysis.operator.build import (
+    get_displacements_matrix_x,
+    get_total_displacements_matrix_x_stacked,
 )
 from surface_potential_analysis.operator.conversion import convert_operator_to_basis
 from surface_potential_analysis.operator.operations import (
@@ -131,7 +131,7 @@ def build_isotropic_kernel_from_function_stacked(
         TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
     ]
     """
-    displacements = get_displacements_matrix_x_stacked(basis)
+    displacements = get_total_displacements_matrix_x_stacked(basis)
     correlation = fn(displacements["data"].reshape(displacements["basis"].shape)[0])
 
     return {"basis": displacements["basis"][0], "data": correlation.ravel()}
