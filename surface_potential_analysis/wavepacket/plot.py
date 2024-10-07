@@ -46,10 +46,6 @@ from surface_potential_analysis.wavepacket.eigenstate_conversion import (
 from surface_potential_analysis.wavepacket.get_eigenstate import (
     get_all_wavepacket_states,
     get_full_bloch_hamiltonian,
-    get_full_wannier_hamiltonian,
-)
-from surface_potential_analysis.wavepacket.localization._wannier90 import (
-    get_localization_operator_wannier90_individual_bands,
 )
 
 from .wavepacket import (
@@ -88,9 +84,6 @@ if TYPE_CHECKING:
         SingleStackedIndexLike,
     )
     from surface_potential_analysis.util.plot import Scale
-    from surface_potential_analysis.wavepacket.localization_operator import (
-        LocalizationOperator,
-    )
 
     _SB1 = TypeVar("_SB1", bound=StackedBasisLike[Any, Any, Any])
     _SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike[Any, Any, Any])
@@ -591,115 +584,6 @@ def plot_wavepacket_transformed_energy_effective_mass_against_band(
     ax.set_xlabel("Band Index")  # type: ignore lib
     ax.set_ylabel("Mass / Kg")  # type: ignore lib
     ax.set_ylim([0, ax.get_ylim()[1]])  # type: ignore lib
-
-    return fig, ax, line
-
-
-def get_wavepacket_localized_effective_mass(
-    wavefunctions: BlochWavefunctionListWithEigenvaluesList[
-        _B0,
-        _SB0,
-        _SBV0,
-    ],
-    operator: LocalizationOperator[_SB0, _B0, _B0],
-    axis: int = 0,
-) -> ValueList[_B0]:
-    """
-    Get the effective mass of a wavepacket band along the axis direction.
-
-    Parameters
-    ----------
-    wavepacket : BlochWavefunctionListWithEigenvaluesList[ _B0, _SB0, _SBV0, ]
-    axis : int, optional
-        axis index, by default 0
-
-    Returns
-    -------
-    ValueList[_B0]
-    """
-    # E(\Delta x)
-    localized = get_full_wannier_hamiltonian(wavefunctions, operator)
-    diagonal = np.einsum(  # type: ignore lib
-        "ijik->ijk",
-        localized["data"].reshape(
-            *localized["basis"][0].vectors["basis"][0].shape,
-            *localized["basis"][1].vectors["basis"][0].shape,
-        ),
-    )[:, 0, :]
-
-    list_basis = localized["basis"][0].vectors["basis"][0][1]
-    actual_energy = diagonal.reshape(-1, *list_basis.shape)[
-        :, *tuple(1 if i == axis else 0 for i in range(list_basis.ndim))
-    ]
-    actual_energy = np.abs(actual_energy)
-    nx_points = BasisUtil(wavefunctions["basis"][0][0]).nx_points
-    free_energy = _get_free_energy(wavefunctions["basis"][1], nx_points, axis)
-    # By integrating explicitly we find
-    # |E(\Delta x)| = (\Delta x)^{-3}(8\pi N + 4 \pi)
-    # we add an additional np.sqrt(wavepacket["basis"][0][1].n) * delta_x / (2 * np.pi)
-    # to account for the difference in fourier transform definitions
-    delta_x = np.linalg.norm(wavefunctions["basis"][1].delta_x_stacked[axis])
-    norm = np.sqrt(wavefunctions["basis"][0][1].n) * delta_x / (2 * np.pi)
-    norm *= hbar**2 / 2
-    effective_mass = norm * free_energy / actual_energy
-    return {"basis": wavefunctions["basis"][0][0], "data": effective_mass}
-
-
-def plot_wavepacket_localized_effective_mass_against_energy(
-    wavepacket: BlochWavefunctionListWithEigenvaluesList[
-        _B0,
-        _SB0,
-        _SBV0,
-    ],
-    axes: tuple[int,] = (0,),
-    *,
-    true_mass: float | None = None,
-    ax: Axes | None = None,
-    scale: Scale = "linear",
-    measure: Measure = "real",
-) -> tuple[Figure, Axes, Line2D]:
-    """Plot the energy of the eigenstates in a wavepacket.
-
-    Parameters
-    ----------
-    wavepacket : BlochWavefunctionListWithEigenvaluesList[
-        _B0,
-        _SB0,
-        _SBV0,
-    ]
-    ax : Axes | None, optional
-        plot axis, by default None
-    scale : Literal[&quot;symlog&quot;, &quot;linear&quot;], optional
-        scale, by default "linear"
-
-    Returns
-    -------
-    tuple[Figure, Axes, QuadMesh]
-
-    """
-    energies = get_average_band_energy(get_full_bloch_hamiltonian(wavepacket))["data"]
-    operator = get_localization_operator_wannier90_individual_bands(wavepacket)
-    masses = get_wavepacket_localized_effective_mass(wavepacket, operator, axes[0])
-    data = (
-        masses["data"]
-        if true_mass is None
-        else (masses["data"] - true_mass) / true_mass
-    )
-    fig, ax, line = plot_data_1d(
-        data,
-        np.real(energies),
-        ax=ax,
-        scale=scale,
-        measure=measure,
-    )
-    line.set_label("Effective Mass")
-
-    ax.set_xlabel("Average Band Energy /J")  # type: ignore library type
-    if true_mass:
-        ax.set_ylabel("Mass - True Mass / True Mass")  # type: ignore library type
-    else:
-        ax.set_ylabel("Mass / kg")  # type: ignore library type
-    ax.set_ylim((0.0, ax.get_ylim()[1]))
 
     return fig, ax, line
 
