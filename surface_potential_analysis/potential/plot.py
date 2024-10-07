@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 
@@ -89,15 +89,13 @@ def plot_potential_1d_x(
         scale=scale,
         measure="real",
     )
-    ax.set_ylabel("Energy /J")
+    ax.set_ylabel("Energy /J")  # type: ignore lib
     return fig, ax, line
 
 
 def plot_potential_1d_comparison(
     potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
-    comparison_points: Mapping[
-        str, tuple[tuple[int, int], Literal[0, 1, 2, -1, -2, -3]]
-    ],
+    comparison_points: Mapping[str, tuple[tuple[int, int], int]],
     *,
     ax: Axes | None = None,
     scale: Scale = "linear",
@@ -125,7 +123,7 @@ def plot_potential_1d_comparison(
         _, _, line = plot_potential_1d_x(potential, (axis,), idx, ax=ax, scale=scale)
         line.set_label(label)
         lines.append(line)
-    ax.legend()
+    ax.legend()  # type: ignore lib
     return fig, ax, lines
 
 
@@ -329,7 +327,7 @@ def animate_potential_3d_x(
         clim=clim,
         measure=measure,
     )
-    ax.set_title(f"Animation of the potential perpendicular to the x{axes[2]} axis")
+    ax.set_title(f"Animation of the potential perpendicular to the x{axes[2]} axis")  # type: ignore lib
 
     return fig, ax, ani
 
@@ -415,8 +413,8 @@ def plot_potential_along_path(
         converted["basis"], path, wrap_distances=wrap_distances
     )
 
-    (line,) = ax.plot(distances, data)
-    ax.set_yscale(scale)
+    (line,) = ax.plot(distances, data)  # type: ignore lib
+    ax.set_yscale(scale)  # type: ignore lib
     return fig, ax, line
 
 

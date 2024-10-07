@@ -32,13 +32,13 @@ def plot_explicit_basis_states_x(
     lines: list[Line2D] = []
     for i, vector in enumerate(util.vectors):
         data = get_measured_data(vector, measure)
-        (line,) = ax.plot(x_points, data)
+        (line,) = ax.plot(x_points, data)  # type: ignore lib
         line.set_label(f"State {i}")
         lines.append(line)
 
-    ax.set_xlabel("x / m")
-    ax.set_ylabel("Amplitude")
-    ax.set_title("Plot of the wavefunction of the explicit basis states")
+    ax.set_xlabel("x / m")  # type: ignore lib
+    ax.set_ylabel("Amplitude")  # type: ignore lib
+    ax.set_title("Plot of the wavefunction of the explicit basis states")  # type: ignore lib
     return fig, ax, lines
 
 
@@ -55,5 +55,5 @@ def plot_explicit_basis_state_x(
 
     x_points = np.linalg.norm(util.fundamental_x_points, axis=0)
     data = get_measured_data(util.vectors[idx], measure)
-    (line,) = ax.plot(x_points, data)
+    (line,) = ax.plot(x_points, data)  # type: ignore lib
     return fig, ax, line

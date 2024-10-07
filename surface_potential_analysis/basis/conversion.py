@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from surface_potential_analysis.basis.basis import (
     FundamentalBasis,
@@ -112,8 +112,8 @@ def basis_as_n_point_basis(
 
 
 def basis_as_single_point_basis(
-    axis: BasisWithLengthLike[_NF0Inv, _N0Inv, _NDInv],
-) -> FundamentalPositionBasis[Literal[1], _NDInv]:
+    axis: BasisWithLengthLike[_NF0Inv, _N0Inv, int],
+) -> FundamentalPositionBasis[int, int]:
     """
     Get the corresponding single point axis for a given axis.
 
@@ -125,4 +125,4 @@ def basis_as_single_point_basis(
     -------
     FundamentalPositionBasis[Literal[1], _NDInv]
     """
-    return basis_as_n_point_basis(axis, n=1)
+    return basis_as_n_point_basis(axis.delta_x, n=1)

@@ -53,10 +53,10 @@ def plot_uneven_potential_z(
     util = BasisUtil(potential["basis"])
     data = potential["data"].reshape(util.shape)[*idx, :]
 
-    (line,) = ax.plot(coordinates, data)
-    ax.set_xlabel("Z axis")
-    ax.set_ylabel("Energy /J")
-    ax.set_yscale(scale)
+    (line,) = ax.plot(coordinates, data)  # type: ignore lib
+    ax.set_xlabel("Z axis")  # type: ignore lib
+    ax.set_ylabel("Energy /J")  # type: ignore lib
+    ax.set_yscale(scale)  # type: ignore lib
     return fig, ax, line
 
 
@@ -90,7 +90,7 @@ def plot_uneven_potential_z_comparison(
         (_, _, line) = plot_uneven_potential_z(potential, idx, ax=ax, scale=scale)
         line.set_label(label)
         lines.append(line)
-    ax.legend()
+    ax.legend()  # type: ignore lib
     return fig, ax, lines
 
 

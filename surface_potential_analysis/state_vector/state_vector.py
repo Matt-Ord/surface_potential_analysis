@@ -71,7 +71,7 @@ def calculate_normalization(
     -------
     float
     """
-    return np.sum(np.abs(state["data"]) ** 2)
+    return np.sum(np.abs(state["data"]) ** 2).astype(np.float64)
 
 
 def calculate_inner_product(

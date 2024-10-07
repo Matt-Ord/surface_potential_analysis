@@ -207,7 +207,7 @@ def average_probabilities(
 
 
 def average_probabilities(
-    probabilities: ProbabilityVectorList[_B0, _B1],
+    probabilities: ProbabilityVectorList[_B0, _B1] | ProbabilityVectorList[_SB0, _B1],
     axis: tuple[int, ...] | None = None,
     *,
     weights: np.ndarray[tuple[int], np.dtype[np.float64]] | None = None,
