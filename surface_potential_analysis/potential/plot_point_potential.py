@@ -60,13 +60,13 @@ def plot_point_potential_location_xy(
     fig, ax = get_figure(ax)
 
     points = get_point_potential_xy_locations(potential)
-    (line,) = ax.plot(*points)
+    (line,) = ax.plot(*points)  # type: ignore lib
     line.set_marker("x")
     line.set_linestyle("")
     ax.set_aspect("equal", adjustable="box")
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.set_title("Plot of x,y points in the potential")
+    ax.set_xlabel("x")  # type: ignore lib
+    ax.set_ylabel("y")  # type: ignore lib
+    ax.set_title("Plot of x,y points in the potential")  # type: ignore lib
     return fig, ax, line
 
 
@@ -98,10 +98,10 @@ def plot_point_potential_all_z(
         )
         points = potential["points"][idx]
         z_points = potential["z_points"][idx]
-        (line,) = ax.plot(z_points, points)
+        (line,) = ax.plot(z_points, points)  # type: ignore lib
         line.set_label(f"{x:.2}, {y:.2}")
 
-    ax.set_title("Plot of Energy against z for each (x,y) point")
-    ax.set_xlabel("z")
-    ax.set_ylabel("Energy /J")
+    ax.set_title("Plot of Energy against z for each (x,y) point")  # type: ignore lib
+    ax.set_xlabel("z")  # type: ignore lib
+    ax.set_ylabel("Energy /J")  # type: ignore lib
     return fig, ax

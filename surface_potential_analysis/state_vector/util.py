@@ -80,7 +80,7 @@ def get_single_point_state_vectors(
         get_fundamental_unfurled_basis(basis)
     )
     data = np.zeros((n_bands, converted.n), dtype=np.complex128)
-    for i, n in enumerate(np.linspace(0, basis[1].n, n_bands, endpoint=False)):
+    for i, n in enumerate(range(0, basis[1].n, n_bands)):
         data[i, n] = 1
     return {
         "basis": TupleBasis(FundamentalBasis(n_bands), converted),

@@ -46,7 +46,6 @@ _L0Inv = TypeVar("_L0Inv", bound=int)
 _L1Inv = TypeVar("_L1Inv", bound=int)
 _L2Inv = TypeVar("_L2Inv", bound=int)
 
-# TODO: report bug in pylance - not possible to use TupleBasisLike[*tuple[Any, ...]]
 _SB0_co = TypeVar(
     "_SB0_co", bound=StackedBasisWithVolumeLike[Any, Any, Any], covariant=True
 )

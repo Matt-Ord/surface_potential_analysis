@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 from surface_potential_analysis.basis.basis_like import (
     BasisLike,
-    BasisWithLengthLike,
     convert_vector,
 )
 from surface_potential_analysis.basis.stacked_basis import (
+    StackedBasisWithVolumeLike,
     TupleBasis,
-    TupleBasisLike,
+    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_momentum_basis,
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
     _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
 
-    _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
+    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
 
 def convert_probability_vector_to_basis(
@@ -80,8 +80,10 @@ def convert_probability_vector_list_to_basis(
 
 
 def convert_probability_vector_to_position_basis(
-    probability_vector: ProbabilityVector[TupleBasisLike[*tuple[_BL0, ...]]],
-) -> ProbabilityVector[TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]]:
+    probability_vector: ProbabilityVector[_SBV0],
+) -> ProbabilityVector[
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
+]:
     """
     Given an state vector, calculate the vector in position basis.
 
@@ -100,9 +102,9 @@ def convert_probability_vector_to_position_basis(
 
 
 def convert_probability_vector_to_momentum_basis(
-    probability_vector: ProbabilityVector[TupleBasisLike[*tuple[_BL0, ...]]],
+    probability_vector: ProbabilityVector[_SBV0],
 ) -> ProbabilityVector[
-    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
+    TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
 ]:
     """
     Given a state vector, calculate the vector in the given basis.
