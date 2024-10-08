@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
 
 import numpy as np
 
@@ -74,7 +74,15 @@ def convert_potential_to_position_basis(
 _B0 = TypeVar("_B0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
 
 
-def get_continuous_potential(potential: Potential[_B0]) -> Callable[[float], float]:
+def get_continuous_potential(
+    potential: Potential[_B0],
+) -> (
+    Callable[[tuple[float, ...]], float]
+    | Callable[
+        [tuple[np.ndarray[Any, np.dtype[np.float64]], ...]],
+        np.ndarray[Any, np.dtype[np.float64]],
+    ]
+):
     """Given a potential, convert it to a continuous function of x.
 
     Parameters
@@ -89,12 +97,26 @@ def get_continuous_potential(potential: Potential[_B0]) -> Callable[[float], flo
         potential,
         stacked_basis_as_fundamental_momentum_basis(potential["basis"]),
     )
-    k_points = BasisUtil(converted["basis"]).k_points[0]
+    k_points = BasisUtil(converted["basis"]).fundamental_stacked_k_points
 
-    def _fn(x: float) -> float:
-        phases = 1j * k_points * x
+    @overload
+    def _fn(
+        x: tuple[np.ndarray[Any, np.dtype[np.float64]], ...],
+    ) -> np.ndarray[Any, np.dtype[np.float64]]:
+        ...
+
+    @overload
+    def _fn(
+        x: tuple[float, ...],
+    ) -> float:
+        ...
+
+    def _fn(
+        x: tuple[float, ...] | tuple[np.ndarray[Any, np.dtype[np.float64]], ...],
+    ) -> float | np.ndarray[Any, np.dtype[np.float64]]:
+        phases = 1j * np.einsum("ij,i...->j...", k_points, x)  # type:ignore unknown
         return np.einsum(  # type:ignore unknown
-            "i,i->",
+            "j,j...->...",
             converted["data"],
             np.exp(phases) / np.sqrt(converted["basis"].n),
         )
