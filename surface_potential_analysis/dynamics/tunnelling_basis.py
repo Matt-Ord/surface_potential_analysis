@@ -63,7 +63,7 @@ class TunnellingSimulationBandsBasis(FundamentalBasis[_L0_co]):
         locations = np.zeros((2, wavepackets["basis"][0][0].n))
         for i, w in enumerate(wavepacket_list_into_iter(wavepackets)):
             idx0, idx1 = get_wavepacket_two_points(w)
-            location = np.average([idx0, idx1], axis=0)
+            location = np.average([idx0, idx1], axis=0)  # type: ignore lib
             locations[:, i] = location[0:2]
         return cls(locations, tuple(util.delta_x_stacked[0:2, 0:2]))  # type: ignore[arg-type]
 

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
 import numpy as np
-import scipy.optimize
+import scipy.optimize  # type: ignore lib
 
 from surface_potential_analysis.basis.basis import FundamentalPositionBasis
 from surface_potential_analysis.basis.stacked_basis import TupleBasis
@@ -178,7 +178,7 @@ def fit_isf_to_double_exponential(
     ) -> np.ndarray[Any, Any]:
         return a * np.exp(-(b) * t) + c * np.exp(-(d) * t) + (1 - a - c)
 
-    params, _ = scipy.optimize.curve_fit(
+    params, _ = scipy.optimize.curve_fit(  # type: ignore lib
         f,
         isf["basis"][0].times,
         data,
@@ -186,7 +186,11 @@ def fit_isf_to_double_exponential(
         bounds=([0, 0, 0, 0], [1, np.inf, 1, np.inf]),
     )
     return ISF4VariableFit(
-        params[1], params[0], params[3], params[2], 1 - params[0] - params[2]
+        params[1],  # type: ignore lib
+        params[0],  # type: ignore lib
+        params[3],  # type: ignore lib
+        params[2],  # type: ignore lib
+        1 - params[0] - params[2],  # type: ignore lib
     )
 
 
@@ -251,7 +255,7 @@ class ISFFey4VariableFit:
     offset: float
 
 
-def calculate_isf_fey_4_variable_model_110(  # noqa: PLR0913
+def calculate_isf_fey_4_variable_model_110(  # noqa: PLR0913, PLR0917
     t: np.ndarray[_S0Inv, np.dtype[np.float64]],
     fast_rate: FloatLike_co,
     fast_amplitude: FloatLike_co,
@@ -319,7 +323,7 @@ def get_isf_from_fey_4_variable_model_110(
     }
 
 
-def fit_isf_to_fey_4_variable_model_110_fixed_ratio(
+def fit_isf_to_fey_4_variable_model_110_fixed_ratio(  # noqa: PLR0913
     isf: SingleBasisDiagonalOperator[_BT0] | StatisticalDiagonalOperator[_BT0, _BT0],
     lam: FloatLike_co,
     *,
@@ -342,7 +346,7 @@ def fit_isf_to_fey_4_variable_model_110_fixed_ratio(
     """
     data = get_measured_data(isf["data"], measure)
     times = isf["basis"][0].times
-    end_t = isf["basis"][0].times[-1] if end_t is None else end_t
+    end_t = cast(float, isf["basis"][0].times[-1]) if end_t is None else end_t
     valid_times = np.logical_and(times > start_t, times < end_t)
 
     sigma = isf.get("standard_deviation")
@@ -361,7 +365,7 @@ def fit_isf_to_fey_4_variable_model_110_fixed_ratio(
     ) -> np.ndarray[Any, Any]:
         return f(t, fr, fa, sa, offset)  # - penalization
 
-    params, _ = scipy.optimize.curve_fit(
+    params, _ = scipy.optimize.curve_fit(  # type: ignore lib
         penalized_f,
         times[valid_times],
         data[valid_times],
@@ -371,11 +375,11 @@ def fit_isf_to_fey_4_variable_model_110_fixed_ratio(
     )
     return ISFFey4VariableFit(
         a_dk,
-        params[0],
-        params[1],
-        lam * params[0],
-        params[2],
-        params[3],
+        params[0],  # type: ignore lib
+        params[1],  # type: ignore lib
+        lam * params[0],  # type: ignore lib
+        params[2],  # type: ignore lib
+        params[3],  # type: ignore lib
     )
 
 
@@ -406,7 +410,7 @@ def fit_isf_to_fey_4_variable_model_110(
     if isinstance(sigma, np.ndarray):
         sigma = sigma[valid_times]
 
-    def f(
+    def f(  # noqa: PLR0913, PLR0917
         t: np.ndarray[Any, Any],
         fr: float,
         fa: float,
@@ -418,7 +422,7 @@ def fit_isf_to_fey_4_variable_model_110(
             t, fr, fa, sr, sa, offset, a_dk=a_dk
         )
 
-    def penalized_f(
+    def penalized_f(  # noqa: PLR0913, PLR0917
         t: np.ndarray[Any, Any],
         fr: float,
         fa: float,
@@ -428,7 +432,7 @@ def fit_isf_to_fey_4_variable_model_110(
     ) -> np.ndarray[Any, Any]:
         return f(t, fr, fa, sr, sa, offset)  # - penalization
 
-    params, _ = scipy.optimize.curve_fit(
+    params, _ = scipy.optimize.curve_fit(  # type: ignore lib
         penalized_f,
         times[valid_times],
         data[valid_times],
@@ -438,11 +442,11 @@ def fit_isf_to_fey_4_variable_model_110(
     )
     return ISFFey4VariableFit(
         a_dk,
-        params[0],
-        params[1],
-        params[2],
-        params[3],
-        params[4],
+        params[0],  # type: ignore lib
+        params[1],  # type: ignore lib
+        params[2],  # type: ignore lib
+        params[3],  # type: ignore lib
+        params[4],  # type: ignore lib
     )
 
 
@@ -593,14 +597,14 @@ def fit_isf_to_fey_model_110(
     ) -> np.ndarray[Any, Any]:
         return calculate_isf_fey_model_110(t, f, s, a_dk=a_dk)
 
-    params, _ = scipy.optimize.curve_fit(
+    params, _ = scipy.optimize.curve_fit(  # type: ignore lib
         f,
         isf["basis"][0].times,
         data,
         p0=(1.4e9, 3e8),
         bounds=([0, 0], [np.inf, np.inf]),
     )
-    return ISFFeyModelFit(params[0], params[1], a_dk=a_dk)
+    return ISFFeyModelFit(params[0], params[1], a_dk=a_dk)  # type: ignore lib
 
 
 def fit_isf_to_fey_model_112bar(
@@ -630,11 +634,11 @@ def fit_isf_to_fey_model_112bar(
     ) -> np.ndarray[Any, Any]:
         return calculate_isf_fey_model_112bar(t, f, s, a_dk=a_dk)
 
-    params, _ = scipy.optimize.curve_fit(
+    params, _ = scipy.optimize.curve_fit(  # type: ignore lib
         f,
         isf["basis"][0].times,
         data,
         p0=(2e10, 1e10),
         bounds=([0, 0], [np.inf, np.inf]),
     )
-    return ISFFeyModelFit(params[0], params[1], a_dk=a_dk)
+    return ISFFeyModelFit(params[0], params[1], a_dk=a_dk)  # type: ignore lib

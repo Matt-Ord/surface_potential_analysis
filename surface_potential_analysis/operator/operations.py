@@ -106,7 +106,7 @@ def matmul_operator_list(
     converted = convert_operator_list_to_basis(
         rhs, TupleBasis(lhs["basis"][1], rhs["basis"][1][1])
     )
-    data = np.einsum(
+    data = np.einsum(  # type: ignore lib
         "ik,mkj->mij",
         lhs["data"].reshape(lhs["basis"].shape),
         converted["data"].reshape(-1, *converted["basis"][1].shape),
@@ -140,7 +140,7 @@ def matmul_diagonal_list_operator(
     converted = convert_operator_to_basis(
         rhs, TupleBasis(lhs["basis"][1][1], rhs["basis"][1])
     )
-    data = np.einsum(
+    data = np.einsum(  # type: ignore lib
         "ik,kl->ikl",
         lhs["data"].reshape(-1, lhs["basis"][1][1].n),
         converted["data"].reshape(*converted["basis"].shape),
@@ -173,7 +173,7 @@ def matmul_operator_diagonal_list(
     converted = convert_operator_to_basis(
         lhs, TupleBasis(lhs["basis"][0], rhs["basis"][1][0])
     )
-    data = np.einsum(
+    data = np.einsum(  # type: ignore lib
         "ik,mk->mik",
         converted["data"].reshape(lhs["basis"].shape),
         rhs["data"].reshape(-1, rhs["basis"][1][0].n),
@@ -326,7 +326,7 @@ def apply_operator_to_states(
     Operator[_B0Inv]
     """
     converted = convert_state_vector_list_to_basis(states, lhs["basis"][1])
-    data = np.einsum(
+    data = np.einsum(  # type: ignore lib
         "ik,jk->ji",
         lhs["data"].reshape(lhs["basis"].shape),
         converted["data"].reshape(converted["basis"].shape),
