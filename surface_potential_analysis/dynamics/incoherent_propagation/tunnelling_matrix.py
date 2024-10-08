@@ -392,5 +392,5 @@ def density_matrix_list_as_probabilities(
     """
     return {
         "basis": TupleBasis(matrix["basis"][0], matrix["basis"][1][0]),
-        "data": np.real(matrix["data"]),
+        "data": np.real(matrix["data"]),  # type: ignore lib
     }

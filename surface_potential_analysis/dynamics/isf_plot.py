@@ -69,7 +69,7 @@ def plot_isf_against_time(
     fig, ax, line = plot_eigenvalue_against_time(
         eigenvalues, ax=ax, measure=measure, scale=scale
     )
-    ax.set_ylabel("ISF")
+    ax.set_ylabel("ISF")  # type: ignore lib
     ax.set_ylim(0, 1.01)
     return fig, ax, line
 

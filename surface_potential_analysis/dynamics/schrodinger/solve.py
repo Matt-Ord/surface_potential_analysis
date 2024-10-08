@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
-import qutip
-import qutip.ui
-import scipy.sparse
-from scipy.constants import hbar
+import qutip  # type: ignore lib
+import qutip.ui  # type: ignore lib
+import scipy.sparse  # type: ignore lib
+from scipy.constants import hbar  # type: ignore lib
 
 from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
@@ -157,11 +157,22 @@ def solve_schrodinger_equation(
     times: _BT1,
     hamiltonian: SingleBasisOperator[_B0Inv],
 ) -> StateVectorList[_BT1, _B0Inv]:
+    """Solve the schrodinger equation using qutip.
+
+    Args:
+        initial_state (StateVector[_B0Inv]): _description_
+        times (_BT1): _description_
+        hamiltonian (SingleBasisOperator[_B0Inv]): _description_
+
+    Returns
+    -------
+        StateVectorList[_BT1, _B0Inv]: _description_
+    """
     hamiltonian_qobj = qutip.Qobj(
         hamiltonian["data"].reshape(hamiltonian["basis"].shape) / hbar,
     )
     initial_state_qobj = qutip.Qobj(initial_state["data"])
-    result = qutip.sesolve(
+    result = qutip.sesolve(  # type: ignore lib
         hamiltonian_qobj,
         initial_state_qobj,
         times.times,
@@ -173,9 +184,9 @@ def solve_schrodinger_equation(
         },
     )
     return {
-        "basis": TupleBasis(TupleBasis(times), hamiltonian["basis"][0]),
+        "basis": TupleBasis(times, hamiltonian["basis"][0]),
         "data": np.array(
-            np.asarray([state.full().reshape(-1) for state in result.states]),
+            np.asarray([state.full().reshape(-1) for state in result.states]),  # type: ignore lib
             dtype=np.complex128,
         ).reshape(-1),
     }

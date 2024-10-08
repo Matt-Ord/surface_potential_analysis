@@ -3,8 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 import numpy as np
-import scipy.integrate
-from scipy.constants import electron_mass, elementary_charge, epsilon_0, hbar
+import scipy.integrate  # type: ignore lib
+from scipy.constants import (  # type: ignore lib
+    electron_mass,
+    elementary_charge,
+    epsilon_0,
+    hbar,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable

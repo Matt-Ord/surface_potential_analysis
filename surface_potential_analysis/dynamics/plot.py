@@ -65,8 +65,8 @@ def plot_probability_per_band(
     for n, line in enumerate(lines):
         line.set_label(f"band {n}")
 
-    ax.legend()
-    ax.set_title("Plot of occupation of each band against time")
+    ax.legend()  # type: ignore lib
+    ax.set_title("Plot of occupation of each band against time")  # type: ignore lib
     return fig, ax, lines
 
 
@@ -102,7 +102,7 @@ def plot_average_probability_per_band(
         scale=scale,
     )
 
-    ax.set_title(
+    ax.set_title(  # type: ignore lib
         "Plot of occupation of each band against time,\n"
         f"averaged over {len(probability)} repeats"
     )
@@ -139,6 +139,6 @@ def plot_probability_per_site(
     for n, line in enumerate(lines):
         line.set_label(f"site {n}")
 
-    ax.legend()
-    ax.set_title("Plot of occupation of each site against time")
+    ax.legend()  # type: ignore lib
+    ax.set_title("Plot of occupation of each site against time")  # type: ignore lib
     return fig, ax, lines
