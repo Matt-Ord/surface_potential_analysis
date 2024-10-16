@@ -619,7 +619,7 @@ class BlochBasis(
             axis=axis,
         )
 
-        if self.vectors["basis"].n < 100 * 90:
+        if self.vectors_basis.n < 100 * 90:
             np.testing.assert_allclose(
                 np.apply_along_axis(
                     lambda x: np.einsum(  # type: ignore lib
@@ -733,7 +733,7 @@ class BlochBasis(
             shift,
             tuple(range(axis, axis + ndim)),
         )
-        if self.vectors["basis"].n < 100 * 90:
+        if self.vectors_basis.n < 100 * 90:
             np.testing.assert_allclose(
                 self.vectors_basis[1].__into_fundamental__(
                     unshifted.reshape(vectors_in_basis.shape), axis
