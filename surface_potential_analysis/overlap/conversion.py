@@ -4,29 +4,27 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis_like import (
+from surface_potential_analysis.basis.legacy import (
     BasisLike,
     BasisWithLengthLike,
     convert_vector,
 )
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_momentum_basis,
-    stacked_basis_as_fundamental_position_basis,
+    tuple_basis_as_fundamental,
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis import (
+    from surface_potential_analysis.basis.legacy import (
         FundamentalPositionBasis,
         FundamentalTransformedPositionBasis,
+        TupleBasisLike,
     )
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.overlap.overlap import Overlap
 
-    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-    _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
-    _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
-    _B3 = TypeVar("_B3", bound=BasisLike[Any, Any])
+    _B0 = TypeVar("_B0", bound=BasisLike)
+    _B1 = TypeVar("_B1", bound=BasisLike)
+    _B2 = TypeVar("_B2", bound=BasisLike)
+    _B3 = TypeVar("_B3", bound=BasisLike)
     _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Literal[3]])
 
 
@@ -54,7 +52,7 @@ def convert_overlap_to_basis(
         axis=0,
     )
     return {
-        "basis": TupleBasis(basis, overlap["basis"][1]),
+        "basis": VariadicTupleBasis((basis, overlap["basis"][1]), None),
         "data": converted.reshape(-1),
     }
 
@@ -90,7 +88,7 @@ def convert_overlap_to_momentum_basis(
     transformed.reshape(-1)
 
     return convert_overlap_to_basis(
-        overlap, stacked_basis_as_fundamental_momentum_basis(overlap["basis"][0])
+        overlap, stacked_basis_as_transformed_basis(overlap["basis"][0])
     )
 
 
@@ -101,7 +99,7 @@ def convert_overlap_to_position_basis(
         _B2,
     ],
 ) -> Overlap[
-    TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    TupleBasisLike[*tuple[FundamentalPositionBasis, ...]],
     _B1,
     _B2,
 ]:
@@ -117,5 +115,5 @@ def convert_overlap_to_position_basis(
     Overlap[PositionTupleBasisLike[tuple[_L0Inv, _L1Inv, _L2Inv]]
     """
     return convert_overlap_to_basis(
-        overlap, stacked_basis_as_fundamental_position_basis(overlap["basis"][0])
+        overlap, tuple_basis_as_fundamental(overlap["basis"][0])
     )

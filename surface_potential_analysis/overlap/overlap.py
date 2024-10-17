@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
-from surface_potential_analysis.basis.basis import FundamentalBasis
-from surface_potential_analysis.basis.basis_like import BasisLike
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
+from surface_potential_analysis.basis.legacy import (
+    BasisLike,
+    FundamentalBasis,
+    TupleBasis,
+)
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.operator.operator_list import OperatorList
 
@@ -12,9 +14,9 @@ if TYPE_CHECKING:
     from surface_potential_analysis.types import SingleIndexLike
 
 
-_B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-_B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
-_B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
+_B0 = TypeVar("_B0", bound=BasisLike)
+_B1 = TypeVar("_B1", bound=BasisLike)
+_B2 = TypeVar("_B2", bound=BasisLike)
 
 Overlap = OperatorList[_B0, _B1, _B2]
 SingleOverlap = Overlap[

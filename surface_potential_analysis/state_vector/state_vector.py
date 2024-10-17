@@ -4,11 +4,11 @@ from typing import Any, Generic, TypedDict, TypeVar
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis_like import BasisLike
+from surface_potential_analysis.basis.legacy import BasisLike
 
-_B0Inv = TypeVar("_B0Inv", bound=BasisLike[Any, Any])
+_B0Inv = TypeVar("_B0Inv", bound=BasisLike)
 
-_B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
+_B0_co = TypeVar("_B0_co", bound=BasisLike, covariant=True)
 
 
 class StateVector(TypedDict, Generic[_B0_co]):

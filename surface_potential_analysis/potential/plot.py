@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
 
@@ -37,8 +37,8 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
     from matplotlib.lines import Line2D
 
-    from surface_potential_analysis.basis.basis import FundamentalPositionBasis3d
-    from surface_potential_analysis.basis.stacked_basis import (
+    from surface_potential_analysis.basis.legacy import (
+        FundamentalPositionBasis3d,
         StackedBasisWithVolumeLike,
         TupleBasisWithLengthLike,
     )
@@ -56,7 +56,7 @@ if TYPE_CHECKING:
 
 
 def plot_potential_1d_x(
-    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
+    potential: Potential[StackedBasisWithVolumeLike],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -94,7 +94,7 @@ def plot_potential_1d_x(
 
 
 def plot_potential_1d_comparison(
-    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
+    potential: Potential[StackedBasisWithVolumeLike],
     comparison_points: Mapping[str, tuple[tuple[int, int], int]],
     *,
     ax: Axes | None = None,
@@ -210,7 +210,7 @@ def plot_potential_1d_x2_comparison_100(
 
 
 def plot_potential_2d_x(
-    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
+    potential: Potential[StackedBasisWithVolumeLike],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -250,8 +250,8 @@ def plot_potential_2d_x(
 
 
 def plot_potential_difference_2d_x(
-    potential0: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
-    potential1: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
+    potential0: Potential[StackedBasisWithVolumeLike],
+    potential1: Potential[StackedBasisWithVolumeLike],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -279,7 +279,7 @@ def plot_potential_difference_2d_x(
     tuple[Figure, Axes, QuadMesh]
     """
     converted_1 = convert_potential_to_basis(potential1, potential0["basis"])
-    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]] = {
+    potential: Potential[StackedBasisWithVolumeLike] = {
         "basis": potential0["basis"],
         "data": potential0["data"] - converted_1["data"],
     }
@@ -287,7 +287,7 @@ def plot_potential_difference_2d_x(
 
 
 def animate_potential_3d_x(
-    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
+    potential: Potential[StackedBasisWithVolumeLike],
     axes: tuple[int, int, int] = (0, 1, 2),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -333,8 +333,8 @@ def animate_potential_3d_x(
 
 
 def animate_potential_difference_3d_x(
-    potential0: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
-    potential1: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
+    potential0: Potential[StackedBasisWithVolumeLike],
+    potential1: Potential[StackedBasisWithVolumeLike],
     axes: tuple[int, int, int] = (0, 1, 2),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -363,7 +363,7 @@ def animate_potential_difference_3d_x(
     tuple[Figure, Axes, QuadMesh]
     """
     converted_1 = convert_potential_to_basis(potential1, potential0["basis"])
-    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]] = {
+    potential: Potential[StackedBasisWithVolumeLike] = {
         "basis": potential0["basis"],
         "data": np.abs((potential0["data"] - converted_1["data"]) / potential0["data"]),
     }
@@ -371,7 +371,7 @@ def animate_potential_difference_3d_x(
 
 
 def plot_potential_along_path(
-    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
+    potential: Potential[StackedBasisWithVolumeLike],
     path: np.ndarray[tuple[int, int], np.dtype[np.int_]],
     *,
     wrap_distances: bool = False,
@@ -419,7 +419,7 @@ def plot_potential_along_path(
 
 
 def get_minimum_path(
-    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
+    potential: Potential[StackedBasisWithVolumeLike],
     path: np.ndarray[tuple[int, int], np.dtype[np.int_]],
     axis: int = 0,
 ) -> np.ndarray[tuple[int, int], np.dtype[np.int_]]:
@@ -440,14 +440,14 @@ def get_minimum_path(
     np.ndarray[tuple[Literal[3], int], np.dtype[np.int_]]
         The complete path after finding the minimum at each coordinate
     """
-    axis = axis % potential["basis"].ndim
+    axis = axis % potential["basis"].n_dim
     min_idx = np.argmin(potential["data"].reshape(potential["basis"].shape), axis=axis)
     wrapped = np.ravel_multi_index(path, min_idx.shape, mode="wrap")
     return np.insert(path, axis, min_idx.flat[wrapped], axis=0)
 
 
 def plot_potential_minimum_along_path(
-    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
+    potential: Potential[StackedBasisWithVolumeLike],
     path: np.ndarray[tuple[int, int], np.dtype[np.int_]],
     axis: int = 0,
     *,

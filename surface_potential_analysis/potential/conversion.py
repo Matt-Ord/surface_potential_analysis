@@ -4,30 +4,25 @@ from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis_like import (
-    convert_vector,
-)
-from surface_potential_analysis.basis.stacked_basis import (
+from surface_potential_analysis.basis.legacy import (
     StackedBasisWithVolumeLike,
+    convert_vector,
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_momentum_basis,
-    stacked_basis_as_fundamental_position_basis,
+    tuple_basis_as_fundamental,
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis import (
+    from surface_potential_analysis.basis.legacy import (
         FundamentalPositionBasis,
         FundamentalTransformedPositionBasis,
-    )
-    from surface_potential_analysis.basis.stacked_basis import (
         TupleBasisWithLengthLike,
     )
     from surface_potential_analysis.potential.potential import Potential
 
-    _SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
-    _SB1 = TypeVar("_SB1", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+    _SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike)
+    _SB1 = TypeVar("_SB1", bound=StackedBasisWithVolumeLike)
 
 
 def convert_potential_to_basis(
@@ -50,10 +45,8 @@ def convert_potential_to_basis(
 
 
 def convert_potential_to_position_basis(
-    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
-) -> Potential[
-    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
-]:
+    potential: Potential[StackedBasisWithVolumeLike],
+) -> Potential[TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]]:
     """
     Given an potential, convert to the fundamental position basis.
 
@@ -67,11 +60,11 @@ def convert_potential_to_position_basis(
     Potential[_B1Inv]
     """
     return convert_potential_to_basis(
-        potential, stacked_basis_as_fundamental_position_basis(potential["basis"])
+        potential, tuple_basis_as_fundamental(potential["basis"])
     )
 
 
-_B0 = TypeVar("_B0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+_B0 = TypeVar("_B0", bound=StackedBasisWithVolumeLike)
 
 
 def get_continuous_potential(
@@ -95,21 +88,19 @@ def get_continuous_potential(
     """
     converted = convert_potential_to_basis(
         potential,
-        stacked_basis_as_fundamental_momentum_basis(potential["basis"]),
+        stacked_basis_as_transformed_basis(potential["basis"]),
     )
     k_points = BasisUtil(converted["basis"]).fundamental_stacked_k_points
 
     @overload
     def _fn(
         x: tuple[np.ndarray[Any, np.dtype[np.float64]], ...],
-    ) -> np.ndarray[Any, np.dtype[np.float64]]:
-        ...
+    ) -> np.ndarray[Any, np.dtype[np.float64]]: ...
 
     @overload
     def _fn(
         x: tuple[float, ...],
-    ) -> float:
-        ...
+    ) -> float: ...
 
     def _fn(
         x: tuple[float, ...] | tuple[np.ndarray[Any, np.dtype[np.float64]], ...],
@@ -125,16 +116,16 @@ def get_continuous_potential(
 
 
 def get_potential_derivative(
-    potential: Potential[StackedBasisWithVolumeLike[Any, Any, Any]],
+    potential: Potential[StackedBasisWithVolumeLike],
     *,
     axis: int = 0,
 ) -> Potential[
-    TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
+    TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis, ...]]
 ]:
     """Get the derivative of a potential."""
     converted = convert_potential_to_basis(
         potential,
-        stacked_basis_as_fundamental_momentum_basis(potential["basis"]),
+        stacked_basis_as_transformed_basis(potential["basis"]),
     )
     k_points = BasisUtil(converted["basis"]).k_points[axis]
     return {"basis": converted["basis"], "data": 1j * k_points * converted["data"]}

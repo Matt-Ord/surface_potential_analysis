@@ -4,16 +4,14 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 
-from surface_potential_analysis.basis.stacked_basis import (
+from surface_potential_analysis.basis.legacy import (
     StackedBasisLike,
     StackedBasisWithVolumeLike,
-    TupleBasis,
     TupleBasisLike,
     TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_momentum_basis,
-    stacked_basis_as_fundamental_transformed_basis,
+    tuple_basis_as_transformed_fundamental,
 )
 from surface_potential_analysis.state_vector.state_vector_list import (
     as_state_vector_list,
@@ -29,11 +27,9 @@ from surface_potential_analysis.wavepacket.wavepacket import (
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis import (
-        FundamentalTransformedPositionBasis,
-    )
-    from surface_potential_analysis.basis.basis_like import (
+    from surface_potential_analysis.basis.legacy import (
         BasisLike,
+        FundamentalTransformedPositionBasis,
     )
     from surface_potential_analysis.state_vector.state_vector import (
         StateVector,
@@ -42,10 +38,10 @@ if TYPE_CHECKING:
         StateVectorList,
     )
 
-    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike)
 
-    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
-    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
+    _SB0 = TypeVar("_SB0", bound=StackedBasisLike)
+    _B0 = TypeVar("_B0", bound=BasisLike)
 
 
 def _unfurl_momentum_basis_wavepacket(
@@ -53,7 +49,7 @@ def _unfurl_momentum_basis_wavepacket(
         TupleBasisLike[*tuple[Any, ...]], TupleBasisWithLengthLike[*tuple[Any, ...]]
     ],
 ) -> StateVector[
-    TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
+    TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis, ...]]
 ]:
     list_shape = wavepacket["basis"][0].shape
     states_shape = wavepacket["basis"][1].shape
@@ -85,7 +81,7 @@ def _unfurl_momentum_basis_wavepacket(
 
     basis = get_fundamental_unfurled_basis(wavepacket["basis"])
     return {
-        "basis": stacked_basis_as_fundamental_momentum_basis(basis),
+        "basis": stacked_basis_as_transformed_basis(basis),
         "data": flattened / np.sqrt(np.prod(list_shape)),
     }
 
@@ -93,7 +89,7 @@ def _unfurl_momentum_basis_wavepacket(
 def unfurl_wavepacket(
     wavepacket: BlochWavefunctionList[_SB0, _SBV0],
 ) -> StateVector[
-    TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]
+    TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis, ...]]
 ]:
     """
     Convert a wavepacket into an eigenstate of the irreducible unit cell.
@@ -111,9 +107,7 @@ def unfurl_wavepacket(
     """
     converted = convert_wavepacket_to_fundamental_momentum_basis(
         wavepacket,
-        list_basis=stacked_basis_as_fundamental_transformed_basis(
-            wavepacket["basis"][0]
-        ),
+        list_basis=tuple_basis_as_transformed_fundamental(wavepacket["basis"][0]),
     )
     # TDOO:! np.testing.assert_array_equal(converted["data"], wavepacket["data"])
     return _unfurl_momentum_basis_wavepacket(converted)
@@ -123,9 +117,7 @@ def unfurl_wavepacket_list(
     wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBV0],
 ) -> StateVectorList[
     _B0,
-    TupleBasisWithLengthLike[
-        *tuple[FundamentalTransformedPositionBasis[Any, Any], ...]
-    ],
+    TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis, ...]],
 ]:
     """
     Convert a wavepacket list into a StateVectorList.
@@ -148,6 +140,8 @@ def unfurl_wavepacket_list(
         unfurl_wavepacket(w) for w in wavepacket_list_into_iter(wavepackets)
     )
     return {
-        "basis": TupleBasis(wavepackets["basis"][0][0], unfurled["basis"][1]),
+        "basis": VariadicTupleBasis(
+            (wavepackets["basis"][0][0], unfurled["basis"][1]), None
+        ),
         "data": unfurled["data"],
     }

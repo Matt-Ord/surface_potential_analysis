@@ -5,11 +5,9 @@ from typing import TYPE_CHECKING, Any, TypeVar
 import numpy as np
 import scipy.linalg  # type:ignore lib
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
+    BasisLike,
     FundamentalBasis,
-)
-from surface_potential_analysis.basis.basis_like import BasisLike
-from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisLike,
     StackedBasisWithVolumeLike,
     TupleBasis,
@@ -20,7 +18,7 @@ from surface_potential_analysis.basis.util import (
 )
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_momentum_basis,
-    stacked_basis_as_fundamental_position_basis,
+    tuple_basis_as_fundamental,
 )
 from surface_potential_analysis.stacked_basis.util import wrap_index_around_origin
 from surface_potential_analysis.state_vector.conversion import (
@@ -57,7 +55,7 @@ from surface_potential_analysis.wavepacket.wavepacket import (
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis import (
+    from surface_potential_analysis.basis.legacy import (
         FundamentalPositionBasis,
     )
     from surface_potential_analysis.operator.operator import Operator
@@ -75,15 +73,15 @@ if TYPE_CHECKING:
         BlochWavefunctionList,
     )
 
-_SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
+_SB0 = TypeVar("_SB0", bound=StackedBasisLike)
 
-_SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
-_SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+_SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike)
+_SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike)
 
-_B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-_B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
-_B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
-_B3 = TypeVar("_B3", bound=BasisLike[Any, Any])
+_B0 = TypeVar("_B0", bound=BasisLike)
+_B1 = TypeVar("_B1", bound=BasisLike)
+_B2 = TypeVar("_B2", bound=BasisLike)
+_B3 = TypeVar("_B3", bound=BasisLike)
 
 
 def get_state_projections_many_band(
@@ -109,7 +107,7 @@ def _get_orthogonal_projected_states_many_band(
     )
     orthonormal_a = np.tensordot(u, v_dagger, axes=(1, 0))  # type:ignore lib
     return {
-        "basis": TupleBasis(projections["basis"][0], states["basis"][0]),
+        "basis": VariadicTupleBasis((projections["basis"][0], states["basis"][0]), None),
         "data": orthonormal_a.T.reshape(-1),  # Maybe this should be .conj().T ??
     }
 
@@ -120,7 +118,7 @@ def get_localization_operator_for_projections(
 ) -> LocalizationOperator[_SB0, _B1, _B0]:
     converted = convert_state_vector_list_to_basis(
         wavepackets,
-        stacked_basis_as_fundamental_momentum_basis(wavepackets["basis"][1]),
+        stacked_basis_as_transformed_basis(wavepackets["basis"][1]),
     )
     # Note here we localize each bloch k seperately
     states = [
@@ -134,7 +132,7 @@ def get_localization_operator_for_projections(
     return {
         "basis": TupleBasis(
             wavepackets["basis"][0][1],
-            TupleBasis(projections["basis"][0], wavepackets["basis"][0][0]),
+            VariadicTupleBasis((projections["basis"][0], wavepackets["basis"][0][0]), None),
         ),
         "data": np.array(data, dtype=np.complex128).reshape(-1),
     }
@@ -189,7 +187,7 @@ def get_localization_operator_tight_binding_projections(
     # Better performace if we provide the projection in transformed basis
     converted = convert_state_vector_list_to_basis(
         projections,
-        stacked_basis_as_fundamental_momentum_basis(projections["basis"][1]),
+        stacked_basis_as_transformed_basis(projections["basis"][1]),
     )
     return get_localization_operator_for_projections(wavepackets, converted)
 
@@ -221,9 +219,7 @@ def get_single_point_state_for_wavepacket(
     wavepacket: BlochWavefunctionList[_SB0, _SBV0],
     idx: SingleIndexLike = 0,
     origin: SingleStackedIndexLike | None = None,
-) -> StateVector[
-    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
-]:
+) -> StateVector[TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]]:
     state_0 = convert_state_vector_to_position_basis(
         get_wavepacket_state_vector(wavepacket, idx)
     )
@@ -265,9 +261,7 @@ def get_exponential_state(
     wavepacket: BlochWavefunctionList[_SB0, _SBV0],
     idx: SingleIndexLike = 0,
     origin: SingleIndexLike | None = None,
-) -> StateVector[
-    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
-]:
+) -> StateVector[TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]]:
     """
     Given a wavepacket, get the state decaying exponentially from the maximum.
 
@@ -282,7 +276,7 @@ def get_exponential_state(
 
     Returns
     -------
-    StateVector[tuple[FundamentalPositionBasis[Any, Any], ...]]
+    StateVector[tuple[FundamentalPositionBasis, ...]]
         The localized state under the tight binding approximation
     """
     state_0 = convert_state_vector_to_position_basis(
@@ -309,7 +303,7 @@ def get_exponential_state(
     dx2 = coordinates[2] - origin_stacked[2] / unit_cell_util.fundamental_shape[2]
 
     out: StateVector[
-        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
+        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]
     ] = {
         "basis": state_0["basis"],
         "data": np.zeros_like(state_0["data"]),
@@ -321,15 +315,13 @@ def get_exponential_state(
 
 def _get_exponential_decay_state(
     wavepacket: BlochWavefunctionList[_SB0, _SBV0],
-) -> StateVector[
-    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
-]:
+) -> StateVector[TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]]:
     exponential = get_exponential_state(wavepacket)
     tight_binding = convert_state_vector_to_position_basis(
         get_wavepacket_state_vector(wavepacket, 0)
     )
     out: StateVector[
-        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
+        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]
     ] = {
         "basis": exponential["basis"],
         "data": exponential["data"] * tight_binding["data"],
@@ -362,8 +354,8 @@ def get_gaussian_states(
     wavepacket: BlochWavefunctionList[_SB0, _SBV0],
     origin: SingleIndexLike = 0,
 ) -> StateVectorList[
-    FundamentalBasis[int],
-    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    FundamentalBasis[BasisMetadata],
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]],
 ]:
     """
     Given a wavepacket, get the state decaying exponentially from the maximum.
@@ -379,10 +371,10 @@ def get_gaussian_states(
 
     Returns
     -------
-    StateVector[tuple[FundamentalPositionBasis[Any, Any], ...]]
+    StateVector[tuple[FundamentalPositionBasis, ...]]
         The localized state under the tight binding approximation
     """
-    basis = stacked_basis_as_fundamental_position_basis(
+    basis = tuple_basis_as_fundamental(
         get_fundamental_unfurled_basis(wavepacket["basis"])
     )
     util = BasisUtil(basis)
@@ -401,10 +393,10 @@ def get_gaussian_states(
     )
 
     out: StateVectorList[
-        FundamentalBasis[int],
-        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+        FundamentalBasis[BasisMetadata],
+        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]],
     ] = {
-        "basis": TupleBasis(FundamentalBasis(1), basis),
+        "basis": VariadicTupleBasis((FundamentalBasis(1), None), basis),
         "data": np.zeros(basis.n, dtype=np.complex128),
     }
     out["data"] = np.exp(-0.5 * np.sum(np.square(dx), axis=(0)))
@@ -437,10 +429,10 @@ def localize_wavepacket_gaussian_projection(
 def get_evenly_spaced_points(
     basis: BlochWavefunctionListBasis[Any, Any], shape: tuple[int, ...]
 ) -> StateVectorList[
-    TupleBasis[*tuple[FundamentalBasis[int], ...]],
+    TupleBasis[*tuple[FundamentalBasis[BasisMetadata], ...]],
     TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[int, Any], ...]],
 ]:
-    fundamental_basis = stacked_basis_as_fundamental_position_basis(
+    fundamental_basis = tuple_basis_as_fundamental(
         get_fundamental_unfurled_basis(basis)
     )
     util = BasisUtil(fundamental_basis)
@@ -456,7 +448,7 @@ def get_evenly_spaced_points(
 
     return {
         "basis": TupleBasis(
-            TupleBasis(*tuple(FundamentalBasis(s) for s in shape)),
+            VariadicTupleBasis((*tuple(FundamentalBasis(s), None) for s in shape)),
             fundamental_basis,
         ),
         "data": out.ravel(),

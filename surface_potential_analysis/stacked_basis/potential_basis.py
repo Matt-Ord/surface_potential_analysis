@@ -4,16 +4,12 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, TypedDict, TypeVar
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
+    BasisWithLengthLike,
+    ExplicitStackedBasisWithLength,
     FundamentalBasis,
     FundamentalPositionBasis,
     FundamentalPositionBasis1d,
-)
-from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
-from surface_potential_analysis.basis.explicit_basis import (
-    ExplicitStackedBasisWithLength,
-)
-from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisWithLengthLike,
@@ -54,9 +50,7 @@ def get_potential_basis_config_eigenstates(
     config: PotentialBasisConfig[_B1d0Inv, _N0Inv],
     *,
     bloch_fraction: float | None = None,
-) -> EigenstateList[
-    FundamentalBasis[_N0Inv], StackedBasisWithVolumeLike[Any, Any, Any]
-]:
+) -> EigenstateList[FundamentalBasis[_N0Inv], StackedBasisWithVolumeLike]:
     """
     Get the eigenstates of the potential, as used in the final basis.
 
@@ -72,7 +66,7 @@ def get_potential_basis_config_eigenstates(
     hamiltonian = total_surface_hamiltonian(
         config["potential"], config["mass"], np.array([bloch_fraction])
     )
-    return calculate_eigenvectors_hermitian(  # type: ignore FundamentalBasis[int] not FundamentalBasis[_N0Inv]
+    return calculate_eigenvectors_hermitian(  # type: ignore FundamentalBasis[BasisMetadata] not FundamentalBasis[_N0Inv]
         hamiltonian,
         subset_by_index=(0, config["n"] - 1),  # type: ignore cannot infer type of hamiltonian properly
     )
@@ -82,7 +76,7 @@ def get_potential_basis_config_basis(
     config: PotentialBasisConfig[_B1d0Inv, _N0Inv],
 ) -> ExplicitStackedBasisWithLength[
     FundamentalBasis[_N0Inv],
-    StackedBasisWithVolumeLike[Any, Any, Any],
+    StackedBasisWithVolumeLike,
 ]:
     """
     Get the explicit basis for the potential basis config.

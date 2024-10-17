@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
+from slate.basis.stacked._tuple_basis import VariadicTupleBasis
+from slate.metadata._metadata import BasisMetadata
 
-from surface_potential_analysis.basis.basis import FundamentalBasis
-from surface_potential_analysis.basis.basis_like import BasisLike
-from surface_potential_analysis.basis.stacked_basis import (
+from surface_potential_analysis.basis.legacy import (
+    BasisLike,
+    FundamentalBasis,
     StackedBasisLike,
     TupleBasis,
 )
@@ -27,9 +29,9 @@ if TYPE_CHECKING:
         BlochWavefunctionListList,
     )
 
-_B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-_B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
-_B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
+_B0 = TypeVar("_B0", bound=BasisLike)
+_B1 = TypeVar("_B1", bound=BasisLike)
+_B2 = TypeVar("_B2", bound=BasisLike)
 
 LocalizationOperator = OperatorList[_B0, _B1, _B2]
 """
@@ -55,11 +57,12 @@ def localization_operator_as_diagonal(
 ) -> DiagonalLocalizationOperator[_B0, _B1]:
     """Convert to a diagonal operator from full."""
     converted = convert_operator_list_to_basis(
-        operator, TupleBasis(operator["basis"][1][0], operator["basis"][1][0])
+        operator,
+        VariadicTupleBasis((operator["basis"][1][0], operator["basis"][1][0]), None),
     )
     diagonal = operator_list_as_diagonal(converted)
-    basis = TupleBasis(diagonal["basis"][0], diagonal["basis"][1][0])
-    return {"basis": TupleBasis(basis, basis), "data": diagonal["data"]}
+    basis = VariadicTupleBasis((diagonal["basis"][0], diagonal["basis"][1][0]), None)
+    return {"basis": VariadicTupleBasis((basis, basis), None), "data": diagonal["data"]}
 
 
 def diagonal_localization_operator_as_full(
@@ -68,17 +71,22 @@ def diagonal_localization_operator_as_full(
     """Convert to a full operator from diagonal."""
     return diagonal_operator_list_as_full(
         {
-            "basis": TupleBasis(
-                operator["basis"][0][0],
-                TupleBasis(operator["basis"][0][1], operator["basis"][0][1]),
+            "basis": VariadicTupleBasis(
+                (
+                    operator["basis"][0][0],
+                    VariadicTupleBasis(
+                        (operator["basis"][0][1], operator["basis"][0][1]), None
+                    ),
+                ),
+                None,
             ),
             "data": operator["data"],
         }
     )
 
 
-_SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
-_SB1 = TypeVar("_SB1", bound=StackedBasisLike[Any, Any, Any])
+_SB0 = TypeVar("_SB0", bound=StackedBasisLike)
+_SB1 = TypeVar("_SB1", bound=StackedBasisLike)
 
 
 def get_localized_wavepackets(
@@ -104,7 +112,7 @@ def get_localized_wavepackets(
     assert wavepackets["basis"][0][1] == operator["basis"][0]
 
     stacked_operator = operator["data"].reshape(
-        operator["basis"][0].n, *operator["basis"][1].shape
+        operator["basis"][0].size, *operator["basis"][1].shape
     )
     vectors = wavepackets["data"].reshape(*wavepackets["basis"][0].shape, -1)
 
@@ -112,9 +120,14 @@ def get_localized_wavepackets(
     data = np.einsum("jil,ljk->ijk", stacked_operator, vectors)  # type:ignore lib
 
     return {
-        "basis": TupleBasis(
-            TupleBasis(operator["basis"][1][0], wavepackets["basis"][0][1]),
-            wavepackets["basis"][1],
+        "basis": VariadicTupleBasis(
+            (
+                VariadicTupleBasis(
+                    (operator["basis"][1][0], wavepackets["basis"][0][1]), None
+                ),
+                wavepackets["basis"][1],
+            ),
+            None,
         ),
         "data": data.reshape(-1),
     }
@@ -140,14 +153,19 @@ def get_localized_hamiltonian_from_eigenvalues(
         "dic,cd,djc->dij",
         operator["data"].reshape(-1, *operator["basis"][1].shape),
         hamiltonian["data"].reshape(
-            hamiltonian["basis"][0].n, hamiltonian["basis"][1].shape[0]
+            hamiltonian["basis"][0].size, hamiltonian["basis"][1].shape[0]
         ),
         np.conj(operator["data"].reshape(-1, *operator["basis"][1].shape)),
     )
     return {
-        "basis": TupleBasis(
-            hamiltonian["basis"][1][0],
-            TupleBasis(operator["basis"][1][0], operator["basis"][1][0]),
+        "basis": VariadicTupleBasis(
+            (
+                hamiltonian["basis"][1][0],
+                VariadicTupleBasis(
+                    (operator["basis"][1][0], operator["basis"][1][0]), None
+                ),
+            ),
+            None,
         ),
         "data": converted.ravel(),
     }
@@ -189,7 +207,7 @@ def get_diagonal_localized_wavepackets(
 
 def get_identity_operator(
     basis: BlochWavefunctionListBasis[_SB0, _SB1],
-) -> LocalizationOperator[_SB1, FundamentalBasis[int], _SB0]:
+) -> LocalizationOperator[_SB1, FundamentalBasis[BasisMetadata], _SB0]:
     """
     Get the localization operator which is a simple identity.
 
@@ -199,12 +217,16 @@ def get_identity_operator(
 
     Returns
     -------
-    LocalizationOperator[_SB1, FundamentalBasis[int], _SB0]
+    LocalizationOperator[_SB1, FundamentalBasis[BasisMetadata], _SB0]
     """
     return diagonal_operator_list_as_full(
         {
-            "basis": TupleBasis(
-                basis[1], TupleBasis(FundamentalBasis(basis[1].n), basis[0])
+            "basis": VariadicTupleBasis(
+                (
+                    basis[1],
+                    VariadicTupleBasis((FundamentalBasis(basis[1].n), None), basis[0]),
+                ),
+                None,
             ),
             "data": np.ones(basis.n, dtype=np.complex128),
         }

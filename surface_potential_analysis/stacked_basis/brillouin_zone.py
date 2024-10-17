@@ -19,8 +19,10 @@ from surface_potential_analysis.stacked_basis.build import (
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis import FundamentalPositionBasis
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
+    from surface_potential_analysis.basis.legacy import (
+        FundamentalPositionBasis,
+        TupleBasisLike,
+    )
     from surface_potential_analysis.types import (
         ArrayStackedIndexLike,
         ArrayStackedIndexLike3d,
@@ -39,15 +41,13 @@ if TYPE_CHECKING:
 @overload
 def fold_point_in_bragg_plane(
     bragg_point: SingleStackedIndexLike3d, coordinate: ArrayStackedIndexLike3d[_S1Inv]
-) -> ArrayStackedIndexLike3d[_S1Inv]:
-    ...
+) -> ArrayStackedIndexLike3d[_S1Inv]: ...
 
 
 @overload
 def fold_point_in_bragg_plane(
     bragg_point: SingleStackedIndexLike3d, coordinate: SingleStackedIndexLike3d
-) -> SingleStackedIndexLike3d:
-    ...
+) -> SingleStackedIndexLike3d: ...
 
 
 def fold_point_in_bragg_plane(
@@ -163,16 +163,14 @@ def get_all_brag_point(
 def get_bragg_plane_distance(
     bragg_point: np.ndarray[tuple[Literal[3]], np.dtype[np.float64]],
     point: np.ndarray[tuple[Literal[3], _L, Unpack[_TS]], np.dtype[np.float64]],
-) -> np.ndarray[tuple[_L, Unpack[_TS]], np.dtype[np.float64]]:
-    ...
+) -> np.ndarray[tuple[_L, Unpack[_TS]], np.dtype[np.float64]]: ...
 
 
 @overload
 def get_bragg_plane_distance(
     bragg_point: np.ndarray[tuple[Literal[3]], np.dtype[np.float64]],
     point: np.ndarray[tuple[Literal[3]], np.dtype[np.float64]],
-) -> np.float64:
-    ...
+) -> np.float64: ...
 
 
 def get_bragg_plane_distance(
@@ -210,15 +208,13 @@ def _get_decrement_tolerance(basis: TupleBasisLike[*tuple[Any, ...]]) -> float:
 @overload
 def decrement_brillouin_zone_3d(
     basis: TupleBasisLike[Any, Any, Any], coordinate: ArrayStackedIndexLike3d[_S0Inv]
-) -> ArrayStackedIndexLike3d[_S0Inv]:
-    ...
+) -> ArrayStackedIndexLike3d[_S0Inv]: ...
 
 
 @overload
 def decrement_brillouin_zone_3d(
     basis: TupleBasisLike[Any, Any, Any], coordinate: SingleStackedIndexLike3d
-) -> SingleStackedIndexLike3d:
-    ...
+) -> SingleStackedIndexLike3d: ...
 
 
 def decrement_brillouin_zone_3d(
@@ -276,15 +272,13 @@ def decrement_brillouin_zone_3d(
 @overload
 def decrement_brillouin_zone(
     basis: TupleBasisLike[*tuple[Any, ...]], coordinate: ArrayStackedIndexLike[_S0Inv]
-) -> ArrayStackedIndexLike[_S0Inv]:
-    ...
+) -> ArrayStackedIndexLike[_S0Inv]: ...
 
 
 @overload
 def decrement_brillouin_zone(
     basis: TupleBasisLike[*tuple[Any, ...]], coordinate: SingleStackedIndexLike
-) -> SingleStackedIndexLike:
-    ...
+) -> SingleStackedIndexLike: ...
 
 
 def decrement_brillouin_zone(

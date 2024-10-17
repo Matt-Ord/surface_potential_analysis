@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
-from surface_potential_analysis.basis.basis_like import (
+from surface_potential_analysis.basis.legacy import (
     convert_matrix,
 )
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.operator.operator import DiagonalOperator, as_operator
 from surface_potential_analysis.operator.operator_list import (
     diagonal_operator_list_as_full,
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis_like import BasisLike
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
+    from surface_potential_analysis.basis.legacy import BasisLike, TupleBasisLike
     from surface_potential_analysis.operator.operator import (
         Operator,
     )
@@ -22,11 +20,11 @@ if TYPE_CHECKING:
         OperatorList,
     )
 
-    _B0Inv = TypeVar("_B0Inv", bound=BasisLike[Any, Any])
-    _B1Inv = TypeVar("_B1Inv", bound=BasisLike[Any, Any])
-    _B2Inv = TypeVar("_B2Inv", bound=BasisLike[Any, Any])
-    _B3Inv = TypeVar("_B3Inv", bound=BasisLike[Any, Any])
-    _B4 = TypeVar("_B4", bound=BasisLike[Any, Any])
+    _B0Inv = TypeVar("_B0Inv", bound=BasisLike)
+    _B1Inv = TypeVar("_B1Inv", bound=BasisLike)
+    _B2Inv = TypeVar("_B2Inv", bound=BasisLike)
+    _B3Inv = TypeVar("_B3Inv", bound=BasisLike)
+    _B4 = TypeVar("_B4", bound=BasisLike)
 
 
 def convert_operator_to_basis(
@@ -89,7 +87,9 @@ def convert_operator_list_to_basis(
     OperatorList[_B4, _B2Inv, _B3Inv]
     """
     converted = convert_matrix(
-        operator["data"].reshape(operator["basis"][0].n, *operator["basis"][1].shape),
+        operator["data"].reshape(
+            operator["basis"][0].size, *operator["basis"][1].shape
+        ),
         operator["basis"][1][0],
         basis[0],
         operator["basis"][1][1],
@@ -97,7 +97,7 @@ def convert_operator_list_to_basis(
         axes=(1, 2),
     )
     return {
-        "basis": TupleBasis(operator["basis"][0], basis),
+        "basis": VariadicTupleBasis((operator["basis"][0], basis), None),
         "data": converted.reshape(-1),
     }
 

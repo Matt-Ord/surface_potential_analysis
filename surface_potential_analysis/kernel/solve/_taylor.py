@@ -5,13 +5,11 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 import numpy as np
 from scipy.special import factorial  # type:ignore bad stb file
 
-from surface_potential_analysis.basis.basis import (
-    FundamentalBasis,
-)
 from surface_potential_analysis.basis.conversion import (
     basis_as_fundamental_position_basis,
 )
-from surface_potential_analysis.basis.stacked_basis import (
+from surface_potential_analysis.basis.legacy import (
+    FundamentalBasis,
     TupleBasis,
 )
 from surface_potential_analysis.kernel.kernel import (
@@ -27,14 +25,10 @@ from surface_potential_analysis.operator.build import get_displacements_matrix_n
 from surface_potential_analysis.util.interpolation import pad_ft_points
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis import (
-        FundamentalPositionBasis,
-    )
-    from surface_potential_analysis.basis.basis_like import (
+    from surface_potential_analysis.basis.legacy import (
         BasisLike,
         BasisWithLengthLike,
-    )
-    from surface_potential_analysis.basis.stacked_basis import (
+        FundamentalPositionBasis,
         StackedBasisWithVolumeLike,
     )
     from surface_potential_analysis.kernel.kernel import (
@@ -45,10 +39,10 @@ if TYPE_CHECKING:
         SingleBasisDiagonalOperatorList,
     )
 
-    _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
+    _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike)
 
-    _B0 = TypeVar("_B0", bound=BasisLike[int, int])
-    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+    _B0 = TypeVar("_B0", bound=BasisLike)
+    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike)
 
 
 def _get_cos_coefficients_for_taylor_series(
@@ -96,7 +90,7 @@ def get_periodic_noise_operators_explicit_taylor_expansion(
     *,
     n_terms: int | None = None,
 ) -> SingleBasisDiagonalNoiseOperatorList[
-    FundamentalBasis[int],
+    FundamentalBasis[BasisMetadata],
     _B0,
 ]:
     """Note polynomial_coefficients should be properly normalized."""
@@ -119,7 +113,7 @@ def get_periodic_noise_operators_explicit_taylor_expansion(
 
 def _get_linear_operators_for_noise(
     basis: _B0, *, n_terms: int | None = None
-) -> SingleBasisDiagonalOperatorList[FundamentalBasis[int], _B0]:
+) -> SingleBasisDiagonalOperatorList[FundamentalBasis[BasisMetadata], _B0]:
     n_terms = basis.n if n_terms is None else n_terms
 
     displacements = (
@@ -127,7 +121,9 @@ def _get_linear_operators_for_noise(
     )
     data = np.array([displacements**n for n in range(n_terms)], dtype=np.complex128)
     return {
-        "basis": TupleBasis(FundamentalBasis(n_terms), TupleBasis(basis, basis)),
+        "basis": VariadicTupleBasis(
+            (FundamentalBasis(n_terms), None), VariadicTupleBasis((basis, basis), None)
+        ),
         "data": data,
     }
 
@@ -138,7 +134,7 @@ def get_linear_noise_operators_explicit_taylor_expansion(
     *,
     n_terms: int | None = None,
 ) -> SingleBasisDiagonalNoiseOperatorList[
-    FundamentalBasis[int],
+    FundamentalBasis[BasisMetadata],
     _B0,
 ]:
     """Note polynomial_coefficients should be properly normalized.
@@ -159,8 +155,8 @@ def get_periodic_noise_operators_real_isotropic_taylor_expansion(
     *,
     n: int | None = None,
 ) -> SingleBasisDiagonalNoiseOperatorList[
-    FundamentalBasis[int],
-    FundamentalPositionBasis[Any, Any],
+    FundamentalBasis[BasisMetadata],
+    FundamentalPositionBasis,
 ]:
     """Calculate the noise operators for a general isotropic noise kernel.
 
@@ -176,7 +172,7 @@ def get_periodic_noise_operators_real_isotropic_taylor_expansion(
     The noise operators formed using the 2n+1 lowest fourier terms, and the corresponding coefficients.
 
     """
-    basis_x = basis_as_fundamental_position_basis(kernel["basis"])
+    basis_x = basis_as_fundamental_basiskernel["basis"])
 
     n_states: int = basis_x.n
     n = (n_states + 1) // 2 if n is None else n
@@ -216,8 +212,8 @@ def get_periodic_noise_operators_real_isotropic_stacked_taylor_expansion(
     *,
     shape: tuple[int | None, ...] | None = None,
 ) -> SingleBasisDiagonalNoiseOperatorList[
-    TupleBasis[*tuple[FundamentalBasis[int], ...]],
-    TupleBasis[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    TupleBasis[*tuple[FundamentalBasis[BasisMetadata], ...]],
+    TupleBasis[*tuple[FundamentalPositionBasis, ...]],
 ]:
     """Calculate the noise operators for a general isotropic noise kernel.
 

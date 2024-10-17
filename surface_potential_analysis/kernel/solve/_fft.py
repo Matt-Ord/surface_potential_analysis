@@ -4,11 +4,9 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
     FundamentalBasis,
     FundamentalPositionBasis,
-)
-from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisLike,
     StackedBasisWithVolumeLike,
     TupleBasis,
@@ -27,7 +25,7 @@ from surface_potential_analysis.stacked_basis.build import (
 from surface_potential_analysis.util.interpolation import pad_ft_points
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis_like import (
+    from surface_potential_analysis.basis.legacy import (
         BasisLike,
     )
     from surface_potential_analysis.kernel.kernel import (
@@ -39,11 +37,11 @@ if TYPE_CHECKING:
     )
     from surface_potential_analysis.state_vector.eigenstate_list import ValueList
 
-    _B0 = TypeVar("_B0", bound=BasisLike[int, int])
+    _B0 = TypeVar("_B0", bound=BasisLike)
 
     _TB0 = TypeVar("_TB0", bound=TupleBasisLike[*tuple[Any, ...]])
-    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
-    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+    _SB0 = TypeVar("_SB0", bound=StackedBasisLike)
+    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike)
 
 
 def _assert_periodic_sample(
@@ -67,7 +65,7 @@ def _get_operators_for_isotropic_noise(
     n: int | None = None,
     fundamental_n: int | None = None,
     assert_periodic: bool = True,
-) -> SingleBasisDiagonalOperatorList[FundamentalBasis[int], _B0]:
+) -> SingleBasisDiagonalOperatorList[FundamentalBasis[BasisMetadata], _B0]:
     fundamental_n = basis.n if fundamental_n is None else fundamental_n
     if assert_periodic:
         _assert_periodic_sample((basis.n,), (fundamental_n,))
@@ -83,7 +81,7 @@ def _get_operators_for_isotropic_noise(
     return {
         "basis": TupleBasis(
             FundamentalBasis(fundamental_n),
-            TupleBasis(basis, basis),
+            VariadicTupleBasis((basis, basis), None),
         ),
         "data": operators.astype(np.complex128).ravel(),
     }
@@ -91,7 +89,7 @@ def _get_operators_for_isotropic_noise(
 
 def _get_noise_eigenvalues_isotropic_fft(
     kernel: IsotropicNoiseKernel[_B0], *, fundamental_n: int | None = None
-) -> ValueList[FundamentalBasis[int]]:
+) -> ValueList[FundamentalBasis[BasisMetadata]]:
     fundamental_n = kernel["basis"].n if fundamental_n is None else fundamental_n
     coefficients = np.fft.ifft(
         pad_ft_points(kernel["data"], (fundamental_n,), (0,)),
@@ -109,7 +107,7 @@ def get_periodic_noise_operators_isotropic_fft(
     *,
     fundamental_n: int | None = None,
     assert_periodic: bool = True,
-) -> SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[int], _B0]:
+) -> SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[BasisMetadata], _B0]:
     r"""
     For an isotropic noise kernel, the noise operators are independent in k space.
 
@@ -130,7 +128,7 @@ def get_periodic_noise_operators_isotropic_fft(
 
     Returns
     -------
-    DiagonalNoiseOperator[BasisLike[Any, Any], BasisLike[Any, Any]]
+    DiagonalNoiseOperator[BasisLike, BasisLike]
         _description_
     """
     fundamental_n = kernel["basis"].n if fundamental_n is None else fundamental_n
@@ -155,7 +153,7 @@ def get_periodic_operators_for_real_isotropic_noise(
     n: int | None = None,
     fundamental_n: int | None = None,
     assert_periodic: bool = True,
-) -> SingleBasisDiagonalOperatorList[FundamentalBasis[int], _B0]:
+) -> SingleBasisDiagonalOperatorList[FundamentalBasis[BasisMetadata], _B0]:
     """Get operators used for real isotropic noise.
 
     returns the 2n - 1 smallest operators (n frequencies)
@@ -169,7 +167,7 @@ def get_periodic_operators_for_real_isotropic_noise(
 
     Returns
     -------
-    SingleBasisDiagonalOperatorList[FundamentalBasis[int], _B0]
+    SingleBasisDiagonalOperatorList[FundamentalBasis[BasisMetadata], _B0]
         _description_
     """
     fundamental_n = basis.n if fundamental_n is None else fundamental_n
@@ -191,7 +189,10 @@ def get_periodic_operators_for_real_isotropic_noise(
     # ! data[1:end] = np.sqrt(2) * np.real(data[1:end])
     # ! data[end:] = np.sqrt(2) * np.imag(np.conj(data[end:]))
     return {
-        "basis": TupleBasis(FundamentalBasis(data.shape[0]), TupleBasis(basis, basis)),
+        "basis": VariadicTupleBasis(
+            (FundamentalBasis(data.shape[0]), None),
+            VariadicTupleBasis((basis, basis), None),
+        ),
         "data": data,
     }
 
@@ -201,7 +202,7 @@ def get_periodic_noise_operators_real_isotropic_fft(
     *,
     n: int | None = None,
     assert_periodic: bool = True,
-) -> SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[int], _B0]:
+) -> SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[BasisMetadata], _B0]:
     r"""
     For an isotropic noise kernel, the noise operators are independent in k space.
 
@@ -225,7 +226,7 @@ def get_periodic_noise_operators_real_isotropic_fft(
 
     Returns
     -------
-    SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[int], FundamentalBasis[int]]
+    SingleBasisDiagonalNoiseOperatorList[FundamentalBasis[BasisMetadata], FundamentalBasis[BasisMetadata]]
     """
     np.testing.assert_allclose(np.imag(kernel["data"]), 0)
 
@@ -259,7 +260,7 @@ def _get_operators_for_isotropic_stacked_noise(
     fundamental_shape: tuple[int, ...] | None = None,
     assert_periodic: bool = True,
 ) -> SingleBasisDiagonalOperatorList[
-    TupleBasisLike[*tuple[FundamentalBasis[int], ...]], _SB0
+    TupleBasisLike[*tuple[FundamentalBasis[BasisMetadata], ...]], _SB0
 ]:
     fundamental_shape = basis.shape if fundamental_shape is None else fundamental_shape
     if assert_periodic:
@@ -284,7 +285,7 @@ def _get_operators_for_isotropic_stacked_noise(
     return {
         "basis": TupleBasis(
             shape_basis,
-            TupleBasis(basis, basis),
+            VariadicTupleBasis((basis, basis), None),
         ),
         "data": operators.astype(np.complex128).ravel(),
     }
@@ -294,7 +295,7 @@ def _get_noise_eigenvalues_isotropic_stacked_fft(
     kernel: IsotropicNoiseKernel[_TB0],
     *,
     fundamental_shape: tuple[int, ...] | None = None,
-) -> ValueList[TupleBasisLike[*tuple[FundamentalBasis[int], ...]]]:
+) -> ValueList[TupleBasisLike[*tuple[FundamentalBasis[BasisMetadata], ...]]]:
     fundamental_shape = (
         kernel["basis"].shape if fundamental_shape is None else fundamental_shape
     )
@@ -321,7 +322,7 @@ def get_periodic_noise_operators_isotropic_stacked_fft(
     fundamental_shape: tuple[int, ...] | None = None,
     assert_periodic: bool = True,
 ) -> SingleBasisDiagonalNoiseOperatorList[
-    TupleBasisLike[*tuple[FundamentalBasis[int], ...]], _TB0
+    TupleBasisLike[*tuple[FundamentalBasis[BasisMetadata], ...]], _TB0
 ]:
     r"""
     For an isotropic noise kernel, the noise operators are independent in k space.
@@ -343,7 +344,7 @@ def get_periodic_noise_operators_isotropic_stacked_fft(
 
     Returns
     -------
-    DiagonalNoiseOperator[BasisLike[Any, Any], BasisLike[Any, Any]]
+    DiagonalNoiseOperator[BasisLike, BasisLike]
         _description_
     """
     fundamental_shape = (
@@ -372,8 +373,8 @@ def get_periodic_noise_operators_real_isotropic_stacked_fft(
     fundamental_shape: tuple[int | None, ...] | None = None,
     assert_periodic: bool = True,
 ) -> SingleBasisDiagonalNoiseOperatorList[
-    TupleBasis[*tuple[FundamentalBasis[int], ...]],
-    TupleBasis[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    TupleBasis[*tuple[FundamentalBasis[BasisMetadata], ...]],
+    TupleBasis[*tuple[FundamentalPositionBasis, ...]],
 ]:
     """Calculate the noise operators for a general isotropic noise kernel.
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from surface_potential_analysis.dynamics.isf import (
     ISF4VariableFit,
@@ -22,20 +22,22 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
     from matplotlib.lines import Line2D
 
-    from surface_potential_analysis.basis.basis_like import BasisLike
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
-    from surface_potential_analysis.basis.time_basis_like import BasisWithTimeLike
+    from surface_potential_analysis.basis.legacy import (
+        BasisLike,
+        BasisWithTimeLike,
+        TupleBasisLike,
+    )
     from surface_potential_analysis.operator.operator import (
         SingleBasisDiagonalOperator,
     )
     from surface_potential_analysis.util.plot import Scale
     from surface_potential_analysis.util.util import Measure
 
-    _B0Inv = TypeVar("_B0Inv", bound=BasisWithTimeLike[Any, Any])
+    _B0Inv = TypeVar("_B0Inv", bound=BasisWithTimeLike)
     _N0Inv = TypeVar("_N0Inv", bound=int)
     _B0StackedInv = TypeVar(
         "_B0StackedInv",
-        bound=TupleBasisLike[BasisLike[Any, Any], BasisWithTimeLike[Any, Any]],
+        bound=TupleBasisLike[BasisLike, BasisWithTimeLike],
     )
 
 

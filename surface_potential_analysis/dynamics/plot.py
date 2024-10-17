@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, TypeVar
 
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.probability_vector.plot import (
     plot_probability_against_time,
 )
@@ -17,10 +16,10 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
     from matplotlib.lines import Line2D
 
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
-    from surface_potential_analysis.basis.time_basis_like import (
+    from surface_potential_analysis.basis.legacy import (
         BasisWithTimeLike,
         FundamentalTimeBasis,
+        TupleBasisLike,
     )
     from surface_potential_analysis.dynamics.tunnelling_basis import (
         TunnellingSimulationBasis,
@@ -95,7 +94,9 @@ def plot_average_probability_per_band(
     averaged = average_probabilities(probability, axis=(0,))
     fig, ax, lines = plot_probability_per_band(
         {
-            "basis": TupleBasis(averaged["basis"][0][0], averaged["basis"][1]),
+            "basis": VariadicTupleBasis(
+                (averaged["basis"][0][0], averaged["basis"][1]), None
+            ),
             "data": averaged["data"],
         },
         ax=ax,

@@ -10,11 +10,9 @@ from matplotlib.colors import LogNorm, Normalize, SymLogNorm
 from matplotlib.figure import Figure
 from matplotlib.scale import LinearScale, LogScale, ScaleBase, SymmetricalLogScale
 
-from surface_potential_analysis.basis.basis_like import convert_vector
+from surface_potential_analysis.basis.legacy import convert_vector
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_basis,
-    stacked_basis_as_fundamental_momentum_basis,
-    stacked_basis_as_fundamental_position_basis,
+    tuple_basis_as_fundamental,
 )
 from surface_potential_analysis.stacked_basis.util import (
     get_k_coordinates_in_axes,
@@ -33,7 +31,7 @@ if TYPE_CHECKING:
     from matplotlib.image import AxesImage
     from matplotlib.lines import Line2D
 
-    from surface_potential_analysis.basis.stacked_basis import (
+    from surface_potential_analysis.basis.legacy import (
         StackedBasisLike,
         StackedBasisWithVolumeLike,
     )
@@ -191,7 +189,7 @@ def plot_data_1d(
 
 
 def plot_data_1d_n(
-    basis: StackedBasisLike[Any, Any, Any],
+    basis: StackedBasisLike,
     data: np.ndarray[tuple[_L0Inv], np.dtype[_DType]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -219,7 +217,7 @@ def plot_data_1d_n(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    fundamental_basis = stacked_basis_as_fundamental_basis(basis)
+    fundamental_basis = tuple_basis_as_fundamental(basis)
     converted = convert_vector(data, basis, fundamental_basis)
 
     idx = get_max_idx(fundamental_basis, converted, axes) if idx is None else idx
@@ -235,7 +233,7 @@ def plot_data_1d_n(
 
 
 def plot_data_1d_k(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    basis: StackedBasisWithVolumeLike,
     data: np.ndarray[tuple[_L0Inv], np.dtype[_DType]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -266,7 +264,7 @@ def plot_data_1d_k(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    basis_k = stacked_basis_as_fundamental_momentum_basis(basis)
+    basis_k = stacked_basis_as_transformed_basis(basis)
     converted_data = convert_vector(data, basis, basis_k)
 
     idx = get_max_idx(basis_k, data, axes) if idx is None else idx
@@ -291,7 +289,7 @@ def plot_data_1d_k(
 
 
 def plot_data_1d_x(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    basis: StackedBasisWithVolumeLike,
     data: np.ndarray[tuple[_L0Inv], np.dtype[_DType]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -324,7 +322,7 @@ def plot_data_1d_x(
     """
     fig, ax = get_figure(ax)
 
-    basis_x = stacked_basis_as_fundamental_position_basis(basis)
+    basis_x = tuple_basis_as_fundamental(basis)
     converted_data = convert_vector(data, basis, basis_x)
 
     idx = get_max_idx(basis_x, converted_data, axes) if idx is None else idx
@@ -367,8 +365,7 @@ def plot_data_2d(
     ax: Axes | None = None,
     scale: Scale = "linear",
     measure: Measure = "abs",
-) -> tuple[Figure, Axes, QuadMesh]:
-    ...
+) -> tuple[Figure, Axes, QuadMesh]: ...
 
 
 @overload
@@ -379,8 +376,7 @@ def plot_data_2d(
     ax: Axes | None = None,
     scale: Scale = "linear",
     measure: Measure = "abs",
-) -> tuple[Figure, Axes, QuadMesh]:
-    ...
+) -> tuple[Figure, Axes, QuadMesh]: ...
 
 
 def plot_data_2d(
@@ -412,7 +408,7 @@ def plot_data_2d(
 
 
 def plot_data_2d_k(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    basis: StackedBasisWithVolumeLike,
     data: np.ndarray[tuple[_L0Inv], np.dtype[_DType]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
@@ -443,7 +439,7 @@ def plot_data_2d_k(
     -------
     tuple[Figure, Axes, QuadMesh]
     """
-    basis_k = stacked_basis_as_fundamental_momentum_basis(basis)
+    basis_k = stacked_basis_as_transformed_basis(basis)
     converted_data = convert_vector(data.ravel(), basis, basis_k)
 
     idx = get_max_idx(basis_k, converted_data, axes) if idx is None else idx
@@ -477,7 +473,7 @@ def plot_data_2d_k(
 
 
 def plot_data_2d_x(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    basis: StackedBasisWithVolumeLike,
     data: np.ndarray[tuple[_L0Inv], np.dtype[_DType]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
@@ -510,7 +506,7 @@ def plot_data_2d_x(
     -------
     tuple[Figure, Axes, QuadMesh]
     """
-    basis_x = stacked_basis_as_fundamental_position_basis(basis)
+    basis_x = tuple_basis_as_fundamental(basis)
     converted_data = convert_vector(data, basis, basis_x)
 
     idx = get_max_idx(basis_x, converted_data, axes) if idx is None else idx
@@ -592,7 +588,7 @@ _L0Inv = TypeVar("_L0Inv", bound=int)
 
 
 def animate_data_through_surface_x(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    basis: StackedBasisWithVolumeLike,
     data: np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]],
     axes: tuple[int, int, int] = (0, 1, 2),
     idx: SingleStackedIndexLike | None = None,
@@ -626,7 +622,7 @@ def animate_data_through_surface_x(
     -------
     tuple[Figure, Axes, ArtistAnimation]
     """
-    idx = tuple(0 for _ in range(basis.ndim - 3)) if idx is None else idx
+    idx = tuple(0 for _ in range(basis.n_dim - 3)) if idx is None else idx
     clim = (0.0, clim[1]) if clim[0] is None and measure == "abs" else clim
 
     coordinates = get_x_coordinates_in_axes(basis, axes, idx)
@@ -653,7 +649,7 @@ def animate_data_through_surface_x(
 
 
 def animate_data_through_list_1d_n(
-    basis: StackedBasisLike[Any, Any, Any],
+    basis: StackedBasisLike,
     data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -709,7 +705,7 @@ def animate_data_through_list_1d_n(
 
 
 def animate_data_through_list_1d_x(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    basis: StackedBasisWithVolumeLike,
     data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -756,7 +752,7 @@ def animate_data_through_list_1d_x(
 
 
 def animate_data_through_list_1d_k(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    basis: StackedBasisWithVolumeLike,
     data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
     axes: tuple[int,] = (0,),
     idx: SingleStackedIndexLike | None = None,
@@ -804,7 +800,7 @@ def animate_data_through_list_1d_k(
 
 
 def animate_data_through_list_2d_k(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    basis: StackedBasisWithVolumeLike,
     data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
@@ -855,7 +851,7 @@ def animate_data_through_list_2d_k(
 
 
 def animate_data_through_list_2d_x(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    basis: StackedBasisWithVolumeLike,
     data: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,

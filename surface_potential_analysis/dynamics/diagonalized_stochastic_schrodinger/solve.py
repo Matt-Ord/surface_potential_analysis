@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 import numpy as np
 from sse_solver_py import solve_sse_euler_bra_ket
 
-from surface_potential_analysis.basis.basis import FundamentalBasis
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
+from surface_potential_analysis.basis.legacy import FundamentalBasis, TupleBasis
 from surface_potential_analysis.state_vector.state_vector_list import (
     get_basis_states,
     get_state_dual_vector,
@@ -14,10 +13,12 @@ from surface_potential_analysis.state_vector.state_vector_list import (
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis_like import BasisLike
-    from surface_potential_analysis.basis.explicit_basis import ExplicitBasis
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
-    from surface_potential_analysis.basis.time_basis_like import EvenlySpacedTimeBasis
+    from surface_potential_analysis.basis.legacy import (
+        BasisLike,
+        EvenlySpacedTimeBasis,
+        ExplicitBasis,
+        TupleBasisLike,
+    )
     from surface_potential_analysis.kernel.kernel import (
         SingleBasisDiagonalNoiseOperator,
     )
@@ -31,9 +32,9 @@ if TYPE_CHECKING:
         StateVectorList,
     )
 
-    _B1Inv = TypeVar("_B1Inv", bound=BasisLike[Any, Any])
+    _B1Inv = TypeVar("_B1Inv", bound=BasisLike)
     _L1Inv = TypeVar("_L1Inv", bound=int)
-    _AX0Inv = TypeVar("_AX0Inv", bound=EvenlySpacedTimeBasis[Any, Any, Any])
+    _AX0Inv = TypeVar("_AX0Inv", bound=EvenlySpacedTimeBasis)
 
 
 @overload
@@ -45,8 +46,7 @@ def solve_stochastic_schrodinger_equation(
     | None = None,
     *,
     n_trajectories: _L1Inv,
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]:
-    ...
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]: ...
 
 
 @overload
@@ -58,8 +58,7 @@ def solve_stochastic_schrodinger_equation(
     | None = None,
     *,
     n_trajectories: Literal[1] = 1,
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]:
-    ...
+) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]: ...
 
 
 def solve_stochastic_schrodinger_equation(  # type: ignore bad overload
@@ -83,12 +82,12 @@ def solve_stochastic_schrodinger_equation(  # type: ignore bad overload
     for operator in collapse_operators:
         # TODO: is it correct to pass bra as a dual_vector..
         states_bra = get_basis_states(operator["basis"][0])
-        assert states_bra["basis"][0].n == 1
+        assert states_bra["basis"][0].size == 1
         state_bra = get_state_dual_vector(states_bra, 0)
         ket.extend(state_bra["data"])
 
         states_ket = get_basis_states(operator["basis"][0])
-        assert states_ket["basis"][0].n == 1
+        assert states_ket["basis"][0].size == 1
         state_ket = get_state_vector(states_ket, 0)
         ket.extend(state_ket["data"])
 
@@ -110,7 +109,7 @@ def solve_stochastic_schrodinger_equation(  # type: ignore bad overload
     return {
         "data": data.reshape(-1),
         "basis": TupleBasis(
-            TupleBasis(FundamentalBasis(n_trajectories), times),
+            VariadicTupleBasis((FundamentalBasis(n_trajectories), None), times),
             initial_state["basis"],
         ),
     }

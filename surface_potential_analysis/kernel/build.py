@@ -4,13 +4,11 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable, TypeVar
 
 import numpy as np
 from scipy.constants import Boltzmann  # type: ignore no stub
+from slate.metadata._metadata import BasisMetadata
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
     FundamentalBasis,
     FundamentalPositionBasis,
-)
-from surface_potential_analysis.basis.stacked_basis import (
-    TupleBasis,
     TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.kernel.kernel import (
@@ -41,16 +39,14 @@ from surface_potential_analysis.operator.operator_list import (
     diagonal_operator_list_as_full,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_position_basis,
+    tuple_basis_as_fundamental,
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis import FundamentalPositionBasis
-    from surface_potential_analysis.basis.basis_like import (
+    from surface_potential_analysis.basis.legacy import (
         BasisLike,
         BasisWithLengthLike,
-    )
-    from surface_potential_analysis.basis.stacked_basis import (
+        FundamentalPositionBasis,
         StackedBasisWithVolumeLike,
     )
     from surface_potential_analysis.kernel.kernel import (
@@ -68,24 +64,24 @@ if TYPE_CHECKING:
         SingleBasisOperatorList,
     )
 
-    _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
-    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-    _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
+    _B1 = TypeVar("_B1", bound=BasisLike)
+    _B0 = TypeVar("_B0", bound=BasisLike)
+    _B2 = TypeVar("_B2", bound=BasisLike)
 
 
 def build_isotropic_kernel_from_function(
-    basis: BasisWithLengthLike[Any, Any, Any],
+    basis: BasisWithLengthLike,
     fn: Callable[
         [np.ndarray[Any, np.dtype[np.float64]]],
         np.ndarray[Any, np.dtype[np.complex128]],
     ],
-) -> IsotropicNoiseKernel[FundamentalPositionBasis[Any, Any],]:
+) -> IsotropicNoiseKernel[FundamentalPositionBasis,]:
     """
     Get an Isotropic Kernel with a correllation beta(x-x').
 
     Parameters
     ----------
-    basis : StackedBasisWithVolumeLike[Any, Any, Any]
+    basis : StackedBasisWithVolumeLike
     fn : Callable[
         [np.ndarray[Any, np.dtype[np.float64]]],
         np.ndarray[Any, np.dtype[np.complex128]],
@@ -95,7 +91,7 @@ def build_isotropic_kernel_from_function(
     Returns
     -------
     IsotropicNoiseKernel[
-        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]],
     ]
     """
     displacements = get_displacements_matrix_x(basis)
@@ -105,20 +101,20 @@ def build_isotropic_kernel_from_function(
 
 
 def build_isotropic_kernel_from_function_stacked(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    basis: StackedBasisWithVolumeLike,
     fn: Callable[
         [np.ndarray[Any, np.dtype[np.float64]]],
         np.ndarray[Any, np.dtype[np.complex128]],
     ],
 ) -> IsotropicNoiseKernel[
-    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]
 ]:
     """
     Get an Isotropic Kernel with a correllation beta(x-x').
 
     Parameters
     ----------
-    basis : StackedBasisWithVolumeLike[Any, Any, Any]
+    basis : StackedBasisWithVolumeLike
     fn : Callable[
         [np.ndarray[Any, np.dtype[np.float64]]],
         np.ndarray[Any, np.dtype[np.complex128]],
@@ -128,7 +124,7 @@ def build_isotropic_kernel_from_function_stacked(
     Returns
     -------
     IsotropicNoiseKernel[
-        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]],
     ]
     """
     displacements = get_total_displacements_matrix_x_stacked(basis)
@@ -138,18 +134,18 @@ def build_isotropic_kernel_from_function_stacked(
 
 
 def build_axis_kernel_from_function_stacked(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    basis: StackedBasisWithVolumeLike,
     fn: Callable[
         [np.ndarray[Any, np.dtype[np.float64]]],
         np.ndarray[Any, np.dtype[np.complex128]],
     ],
-) -> AxisKernel[FundamentalPositionBasis[Any, Any]]:
+) -> AxisKernel[FundamentalPositionBasis]:
     """
     Get an Isotropic Kernel with a correllation beta(x-x').
 
     Parameters
     ----------
-    basis : StackedBasisWithVolumeLike[Any, Any, Any]
+    basis : StackedBasisWithVolumeLike
     fn : Callable[
         [np.ndarray[Any, np.dtype[np.float64]]],
         np.ndarray[Any, np.dtype[np.complex128]],
@@ -159,13 +155,13 @@ def build_axis_kernel_from_function_stacked(
     Returns
     -------
     IsotropicNoiseKernel[
-        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+        TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]],
     ]
     """
-    fundamental = stacked_basis_as_fundamental_position_basis(basis)
+    fundamental = tuple_basis_as_fundamental(basis)
     return tuple(
         build_isotropic_kernel_from_function(fundamental[i], fn)
-        for i in range(basis.ndim)
+        for i in range(basis.n_dim)
     )
 
 
@@ -276,23 +272,25 @@ def get_temperature_corrected_diagonal_noise_operators(
 def truncate_diagonal_noise_operator_list(
     operators: DiagonalNoiseOperatorList[_B2, _B0, _B1],
     truncation: Iterable[int],
-) -> DiagonalNoiseOperatorList[FundamentalBasis[int], _B0, _B1]:
+) -> DiagonalNoiseOperatorList[FundamentalBasis[BasisMetadata], _B0, _B1]:
     """
     Get a truncated list of diagonal operators.
 
     Parameters
     ----------
-    operators : DiagonalNoiseOperatorList[FundamentalBasis[int], _B0, _B1]
+    operators : DiagonalNoiseOperatorList[FundamentalBasis[BasisMetadata], _B0, _B1]
     truncation : Iterable[int]
 
     Returns
     -------
-    DiagonalNoiseOperatorList[FundamentalBasis[int], _B0, _B1]
+    DiagonalNoiseOperatorList[FundamentalBasis[BasisMetadata], _B0, _B1]
     """
     args = np.argsort(np.abs(operators["eigenvalue"]))[::-1][np.array(list(truncation))]
-    data = operators["data"].reshape(operators["basis"][0].n, -1)[args, :]
+    data = operators["data"].reshape(operators["basis"][0].size, -1)[args, :]
     return {
-        "basis": TupleBasis(FundamentalBasis(data.shape[0]), operators["basis"][1]),
+        "basis": VariadicTupleBasis(
+            (FundamentalBasis(data.shape[0]), None), operators["basis"][1]
+        ),
         "data": data,
         "eigenvalue": operators["eigenvalue"][args],
     }
@@ -301,23 +299,25 @@ def truncate_diagonal_noise_operator_list(
 def truncate_noise_operator_list(
     operators: NoiseOperatorList[_B2, _B0, _B1],
     truncation: Iterable[int],
-) -> NoiseOperatorList[FundamentalBasis[int], _B0, _B1]:
+) -> NoiseOperatorList[FundamentalBasis[BasisMetadata], _B0, _B1]:
     """
     Get a truncated list of operators.
 
     Parameters
     ----------
-    operators : NoiseOperatorList[FundamentalBasis[int], _B0, _B1]
+    operators : NoiseOperatorList[FundamentalBasis[BasisMetadata], _B0, _B1]
     truncation : Iterable[int]
 
     Returns
     -------
-    NoiseOperatorList[FundamentalBasis[int], _B0, _B1]
+    NoiseOperatorList[FundamentalBasis[BasisMetadata], _B0, _B1]
     """
     args = np.argsort(operators["eigenvalue"])[::-1][np.array(list(truncation))]
-    data = operators["data"].reshape(operators["basis"][0].n, -1)[args, :]
+    data = operators["data"].reshape(operators["basis"][0].size, -1)[args, :]
     return {
-        "basis": TupleBasis(FundamentalBasis(data.shape[0]), operators["basis"][1]),
+        "basis": VariadicTupleBasis(
+            (FundamentalBasis(data.shape[0]), None), operators["basis"][1]
+        ),
         "data": data,
         "eigenvalue": operators["eigenvalue"][args],
     }

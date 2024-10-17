@@ -3,16 +3,19 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 import numpy as np
+from slate.basis.stacked._tuple_basis import VariadicTupleBasis
 
-from surface_potential_analysis.basis.basis import FundamentalBasis
-from surface_potential_analysis.basis.basis_like import BasisLike, BasisWithLengthLike
-from surface_potential_analysis.basis.stacked_basis import (
+from surface_potential_analysis.basis.legacy import (
+    BasisLike,
+    BasisWithLengthLike,
+    FundamentalBasis,
     TupleBasis,
     TupleBasisLike,
+    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_position_basis,
+    tuple_basis_as_fundamental,
 )
 from surface_potential_analysis.state_vector.conversion import (
     convert_state_vector_list_to_basis,
@@ -25,7 +28,7 @@ from surface_potential_analysis.wavepacket.eigenstate_conversion import (
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis import FundamentalPositionBasis
+    from surface_potential_analysis.basis.legacy import FundamentalPositionBasis
     from surface_potential_analysis.overlap.overlap import Overlap, SingleOverlap
     from surface_potential_analysis.state_vector.state_vector_list import (
         StateVectorList,
@@ -37,22 +40,22 @@ if TYPE_CHECKING:
     )
 
 
-_B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-_BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
-_B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
-_BL1 = TypeVar("_BL1", bound=BasisWithLengthLike[Any, Any, Any])
+_B0 = TypeVar("_B0", bound=BasisLike)
+_BL0 = TypeVar("_BL0", bound=BasisWithLengthLike)
+_B1 = TypeVar("_B1", bound=BasisLike)
+_BL1 = TypeVar("_BL1", bound=BasisWithLengthLike)
 _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
 
 
 @timed
 def calculate_wavepacket_overlap(
     wavepacket_0: BlochWavefunctionList[
-        TupleBasisLike[*tuple[_B0, ...]], TupleBasisLike[*tuple[_BL0, ...]]
+        TupleBasisLike[*tuple[_B0, ...]], TupleBasisWithLengthLike[*tuple[_BL0, ...]]
     ],
     wavepacket_1: BlochWavefunctionList[
-        TupleBasisLike[*tuple[_B1, ...]], TupleBasisLike[*tuple[_BL1, ...]]
+        TupleBasisLike[*tuple[_B1, ...]], TupleBasisWithLengthLike[*tuple[_BL1, ...]]
     ],
-) -> SingleOverlap[TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]]:
+) -> SingleOverlap[TupleBasisLike[*tuple[FundamentalPositionBasis, ...]]]:
     """
     Given two wavepackets in (the same) momentum basis calculate the overlap factor.
 
@@ -98,7 +101,7 @@ def calculate_state_vector_list_overlap(
 
     Returns
     -------
-    Overlap[TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]], _B1, _B1].
+    Overlap[TupleBasisLike[*tuple[FundamentalPositionBasis, ...]], _B1, _B1].
     """
     stacked = states["data"].reshape(states["basis"].shape)
     shift = (
@@ -110,9 +113,12 @@ def calculate_state_vector_list_overlap(
     # stacked = i, j where i indexes the state and j indexes the position
     data = np.conj(stacked)[np.newaxis, :, :] * (stacked_shifted[:, np.newaxis, :])
     return {
-        "basis": TupleBasis(
-            states["basis"][1],
-            TupleBasis(states["basis"][0], states["basis"][0]),
+        "basis": VariadicTupleBasis(
+            (
+                states["basis"][1],
+                VariadicTupleBasis((states["basis"][0], states["basis"][0]), None),
+            ),
+            None,
         ),
         "data": data.swapaxes(-1, 0).ravel(),
     }
@@ -126,8 +132,7 @@ def calculate_wavepacket_list_overlap(
     *,
     shift: SingleIndexLike = 0,
     basis: _SB0,
-) -> Overlap[_SB0, _B1, _B1]:
-    ...
+) -> Overlap[_SB0, _B1, _B1]: ...
 
 
 @overload
@@ -138,8 +143,7 @@ def calculate_wavepacket_list_overlap(
     *,
     shift: SingleIndexLike = 0,
     basis: None = None,
-) -> Overlap[TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]], _B1, _B1]:
-    ...
+) -> Overlap[TupleBasisLike[*tuple[FundamentalPositionBasis, ...]], _B1, _B1]: ...
 
 
 @timed
@@ -149,12 +153,8 @@ def calculate_wavepacket_list_overlap(
     ],
     *,
     shift: SingleIndexLike = 0,
-    basis: _SB0
-    | TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
-    | None = None,
-) -> Overlap[
-    _SB0 | TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]], _B1, _B1
-]:
+    basis: _SB0 | TupleBasisLike[*tuple[FundamentalPositionBasis, ...]] | None = None,
+) -> Overlap[_SB0 | TupleBasisLike[*tuple[FundamentalPositionBasis, ...]], _B1, _B1]:
     """
     Given two wavepackets in (the same) momentum basis calculate the overlap factor.
 
@@ -168,10 +168,6 @@ def calculate_wavepacket_list_overlap(
     Overlap[TupleBasisLike[tuple[PositionBasis[int], PositionBasis[int], _A3d0Inv]]
     """
     states = unfurl_wavepacket_list(wavepackets)
-    basis = (
-        stacked_basis_as_fundamental_position_basis(states["basis"][1])
-        if basis is None
-        else basis
-    )
+    basis = tuple_basis_as_fundamental(states["basis"][1]) if basis is None else basis
     converted = convert_state_vector_list_to_basis(states, basis)
     return calculate_state_vector_list_overlap(converted, shift=shift)

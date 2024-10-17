@@ -26,11 +26,9 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
     from matplotlib.lines import Line2D
 
-    from surface_potential_analysis.basis.basis import (
+    from surface_potential_analysis.basis.legacy import (
+        BasisWithLengthLike,
         FundamentalTransformedPositionBasis,
-    )
-    from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
-    from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisWithVolumeLike,
         TupleBasisLike,
     )
@@ -53,7 +51,7 @@ if TYPE_CHECKING:
             FundamentalTransformedPositionBasis[_L2Inv, Literal[3]],
         ]
     ]
-    _SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+    _SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike)
 
 
 # ruff: noqa: PLR0913
