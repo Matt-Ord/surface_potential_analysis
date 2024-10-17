@@ -511,9 +511,6 @@ def solve_stochastic_schrodinger_equation_rust_banded(  # type: ignore bad overl
     -------
     StateVectorList[_B0Inv, _L0Inv]
     """
-    data = np.zeros(
-        (n_trajectories, times.n, initial_state["data"].size), dtype=np.complex128
-    )
     collapse_operators = [] if collapse_operators is None else collapse_operators
 
     operators_data = [o["data"].reshape(o["basis"].shape) for o in collapse_operators]

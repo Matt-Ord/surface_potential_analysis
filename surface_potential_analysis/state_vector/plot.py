@@ -1522,6 +1522,47 @@ def plot_periodic_x_distribution_1d(
     return fig, ax
 
 
+def _calculate_total_offsset_multiplications_real(
+    lhs: np.ndarray[Any, np.dtype[Any]],
+    rhs: np.ndarray[Any, np.dtype[Any]],
+) -> np.ndarray[Any, np.dtype[Any]]:
+    """Calculate sum_i^N-i A_i B_i+N for all N.
+
+    Parameters
+    ----------
+    lhs : np.ndarray[Any, np.dtype[np.float64]]
+    rhs : np.ndarray[Any, np.dtype[np.float64]]
+
+    Returns
+    -------
+    np.ndarray[Any, np.dtype[np.float64]]
+    """
+    return scipy.signal.correlate(lhs, rhs, mode="full")[lhs.size - 1 :]  # type: ignore unknown
+
+
+def _calculate_total_offsset_multiplications_complex(
+    lhs: np.ndarray[Any, np.dtype[np.complex128]],
+    rhs: np.ndarray[Any, np.dtype[np.complex128]],
+) -> np.ndarray[Any, np.dtype[np.complex128]]:
+    """Calculate sum_i^N-i A_i B_i+N for all N.
+
+    Parameters
+    ----------
+    lhs : np.ndarray[Any, np.dtype[np.float64]]
+    rhs : np.ndarray[Any, np.dtype[np.float64]]
+
+    Returns
+    -------
+    np.ndarray[Any, np.dtype[np.float64]]
+
+    """
+    re_re = _calculate_total_offsset_multiplications_real(np.real(lhs), np.real(rhs))
+    re_im = _calculate_total_offsset_multiplications_real(np.real(lhs), np.imag(rhs))
+    im_re = _calculate_total_offsset_multiplications_real(np.imag(lhs), np.real(rhs))
+    im_im = _calculate_total_offsset_multiplications_real(np.imag(lhs), np.imag(rhs))
+    return re_re - im_im + 1j * (re_im + im_re)
+
+
 def get_average_displacements(
     positions: ValueList[TupleBasisLike[_B0Inv, _BT0]],
 ) -> ValueList[TupleBasisLike[_B0Inv, EvenlySpacedTimeBasis[Any, Any, Any]]]:
@@ -1532,14 +1573,81 @@ def get_average_displacements(
     total = np.cumsum(squared_positions + squared_positions[:, ::-1], axis=1)[:, ::-1]
 
     convolution = np.apply_along_axis(
-        lambda m: scipy.signal.correlate(m, m, mode="full")[basis.shape[1] - 1 :],  # type: ignore unknown
+        lambda m: _calculate_total_offsset_multiplications_real(m, m),
         axis=1,
         arr=stacked,
     ).astype(np.float64)
 
-    squared_diff = (total - 2 * convolution) / (1 + np.arange(basis[1].n))[::-1]  # type: ignore unknown
+    squared_diff = (total - 2 * convolution) / np.arange(1, basis[1].n + 1)[::-1]  # type: ignore unknown
     out_basis = EvenlySpacedTimeBasis(basis[1].n, 1, 0, basis[1].dt * (basis[1].n))  # type: ignore unknown
     return {"basis": TupleBasis(basis[0], out_basis), "data": squared_diff.ravel()}  # type: ignore unknown
+
+
+def get_average_isf(
+    positions: ValueList[TupleBasisLike[_B0Inv, _BT0]],
+    scattered_k: float,
+) -> ValueList[TupleBasisLike[_B0Inv, EvenlySpacedTimeBasis[Any, Any, Any]]]:
+    """Get the average ISF against time difference."""
+    basis = positions["basis"]
+    stacked = positions["data"].reshape(basis.shape)
+    exp_positions = np.exp(1j * scattered_k * stacked)
+
+    # convolution_j = \sum_i^N-j e^(ik.x_i+j) e^(-ik.x_i)
+    convolution = np.apply_along_axis(
+        lambda m: _calculate_total_offsset_multiplications_complex(np.conj(m), m),
+        axis=1,
+        arr=exp_positions,
+    )
+
+    isf = (convolution) / np.arange(1, basis[1].n + 1)[::-1]  # type: ignore unknown
+    out_basis = EvenlySpacedTimeBasis(basis[1].n, 1, 0, basis[1].dt * (basis[1].n))  # type: ignore unknown
+    return {"basis": TupleBasis(basis[0], out_basis), "data": isf.ravel()}  # type: ignore unknown
+
+
+def get_average_normalized_drift(
+    positions: ValueList[TupleBasisLike[_B0Inv, _BT0]],
+    k_values: ValueList[TupleBasisLike[_B0Inv, _BT0]],
+) -> ValueList[TupleBasisLike[_B0Inv, EvenlySpacedTimeBasis[Any, Any, Any]]]:
+    basis = positions["basis"]
+    positions["data"].reshape(basis.shape)
+    stacked_x = positions["data"].reshape(basis.shape)
+    stacked_k = 1 / k_values["data"].reshape(basis.shape)
+
+    # Calculate a_i = sum_j^N-i x_j+i / k_j
+    convolution = np.zeros((basis.shape[0], basis.shape[1]))
+    for i in range(basis.shape[0]):
+        convolution[i] = _calculate_total_offsset_multiplications_real(
+            stacked_x[i], 1 / stacked_k[i]
+        )
+    # Calculate a_i = sum_j^N-i x_j / k_j
+    cumulative = np.cumsum(stacked_x / stacked_k, axis=1)[:, ::-1]
+    diff = cumulative - convolution / cumulative.shape[1]
+
+    out_basis = EvenlySpacedTimeBasis(basis[1].n, 1, 0, basis[1].dt * (basis[1].n))  # type: ignore unknown
+    return {"basis": TupleBasis(basis[0], out_basis), "data": diff.ravel()}  # type: ignore unknown
+
+
+def get_normalized_average_drift(
+    positions: ValueList[TupleBasisLike[_B0Inv, _BT0]],
+    k_values: ValueList[TupleBasisLike[_B0Inv, _BT0]],
+) -> ValueList[TupleBasisLike[_B0Inv, EvenlySpacedTimeBasis[Any, Any, Any]]]:
+    basis = positions["basis"]
+    positions["data"].reshape(basis.shape)
+    stacked_x = positions["data"].reshape(basis.shape)
+    stacked_k = 1 / k_values["data"].reshape(basis.shape)
+
+    # Calculate a_i = sum_j^N-i x_j+i
+    cumulative_rhs = np.cumsum(stacked_x[:, ::-1], axis=1)
+
+    # Calculate a_i = sum_j^N-i x_j
+    cumulative_lhs = np.cumsum(stacked_x, axis=1)
+    # Calculate b_i = sum_j^N-i k_j
+    cumulative_k = np.cumsum(stacked_k, axis=1)
+    # DIvide through by the total k, equivalent to N * average k
+    diff = ((cumulative_lhs - cumulative_rhs) / cumulative_k)[:, ::-1]
+
+    out_basis = EvenlySpacedTimeBasis(basis[1].n, 1, 0, basis[1].dt * (basis[1].n))  # type: ignore unknown
+    return {"basis": TupleBasis(basis[0], out_basis), "data": diff.ravel()}  # type: ignore unknown
 
 
 def plot_average_displacement_1d_x(
@@ -1575,4 +1683,78 @@ def plot_average_displacement_1d_x(
 
     return plot_average_value_list_against_time(
         displacements, ax=ax, measure=measure, scale=scale
+    )
+
+
+def plot_average_drift_1d_x(
+    states: StateVectorList[
+        TupleBasisLike[Any, _BT0],
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ],
+    axes: tuple[int] = (0,),
+    *,
+    ax: Axes | None = None,
+    measure: Measure = "abs",
+    scale: Scale = "linear",
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot the average displacement in 1d.
+
+    Parameters
+    ----------
+    states : StateVectorList[ TupleBasisLike[_B0Inv, _BT0], TupleBasisLike[
+    axes : tuple[int], optional
+        plot axes, by default (0,)
+    ax : Axes | None, optional
+        ax, by default None
+    measure : Measure, optional
+        measure, by default "abs"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    restored_x = _get_restored_x(states, axes[0])
+    k_points = _get_average_k(states, axis=0)
+    drift = get_normalized_average_drift(restored_x, k_points)
+
+    return plot_average_value_list_against_time(
+        drift, ax=ax, measure=measure, scale=scale
+    )
+
+
+def plot_average_isf_1d_x(
+    states: StateVectorList[
+        TupleBasisLike[Any, _BT0],
+        StackedBasisWithVolumeLike[Any, Any, Any],
+    ],
+    scattered_k: float,
+    axes: tuple[int] = (0,),
+    *,
+    ax: Axes | None = None,
+    measure: Measure = "abs",
+    scale: Scale = "linear",
+) -> tuple[Figure, Axes, Line2D]:
+    """
+    Plot the average displacement in 1d.
+
+    Parameters
+    ----------
+    states : StateVectorList[ TupleBasisLike[_B0Inv, _BT0], TupleBasisLike[
+    axes : tuple[int], optional
+        plot axes, by default (0,)
+    ax : Axes | None, optional
+        ax, by default None
+    measure : Measure, optional
+        measure, by default "abs"
+
+    Returns
+    -------
+    tuple[Figure, Axes, Line2D]
+    """
+    restored_x = _get_restored_x(states, axes[0])
+    drift = get_average_isf(restored_x, scattered_k)
+
+    return plot_average_value_list_against_time(
+        drift, ax=ax, measure=measure, scale=scale
     )

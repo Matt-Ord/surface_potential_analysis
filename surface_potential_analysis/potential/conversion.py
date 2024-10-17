@@ -93,10 +93,12 @@ def get_continuous_potential(potential: Potential[_B0]) -> Callable[[float], flo
 
     def _fn(x: float) -> float:
         phases = 1j * k_points * x
-        return np.einsum(  # type:ignore unknown
-            "i,i->",
-            converted["data"],
-            np.exp(phases) / np.sqrt(converted["basis"].n),
+        return np.real(
+            np.einsum(  # type:ignore unknown
+                "i,i->",
+                converted["data"],
+                np.exp(phases) / np.sqrt(converted["basis"].n),
+            )
         )
 
     return _fn
