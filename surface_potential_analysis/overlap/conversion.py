@@ -10,7 +10,6 @@ from surface_potential_analysis.basis.legacy import (
     convert_vector,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_momentum_basis,
     tuple_basis_as_fundamental,
 )
 
@@ -89,7 +88,7 @@ def convert_overlap_to_momentum_basis(
     transformed.reshape(-1)
 
     return convert_overlap_to_basis(
-        overlap, stacked_basis_as_fundamental_momentum_basis(overlap["basis"][0])
+        overlap, stacked_basis_as_transformed_basis(overlap["basis"][0])
     )
 
 

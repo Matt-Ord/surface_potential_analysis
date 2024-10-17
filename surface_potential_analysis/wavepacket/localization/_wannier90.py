@@ -20,9 +20,6 @@ from typing import (
 import numpy as np
 import scipy.ndimage  # type:ignore lib
 
-from surface_potential_analysis.basis.conversion import (
-    basis_as_fundamental_momentum_basis,
-)
 from surface_potential_analysis.basis.legacy import (
     BasisLike,
     FundamentalBasis,
@@ -485,7 +482,7 @@ def _write_localization_files_wannier90(
         wavepackets,
         TupleBasis(
             *tuple(
-                basis_as_fundamental_momentum_basis(axis)
+                basis_as_transformed_basis(axis)
                 if idx not in options.ignore_axes
                 else axis
                 for (idx, axis) in enumerate(wavepackets["basis"][1])

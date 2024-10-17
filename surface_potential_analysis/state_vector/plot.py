@@ -6,16 +6,15 @@ import numpy as np
 import scipy  # type: ignore unknown
 import scipy.signal  # type: ignore unknown
 from matplotlib.animation import ArtistAnimation
+from slate.basis.stacked._tuple_basis import VariadicTupleBasis
 
 from surface_potential_analysis.basis.legacy import (
+    BasisWithTimeLike,
+    EvenlySpacedTimeBasis,
     FundamentalBasis,
     StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisLike,
-)
-from surface_potential_analysis.basis.time_basis_like import (
-    BasisWithTimeLike,
-    EvenlySpacedTimeBasis,
 )
 from surface_potential_analysis.basis.util import (
     BasisUtil,
@@ -24,7 +23,6 @@ from surface_potential_analysis.operator.conversion import (
     convert_diagonal_operator_to_basis,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_momentum_basis,
     tuple_basis_as_fundamental,
 )
 from surface_potential_analysis.stacked_basis.util import (
@@ -265,7 +263,7 @@ def animate_state_over_list_2d_k(
     tuple[Figure, Axes, ArtistAnimation]
     """
     converted = convert_state_vector_list_to_basis(
-        states, stacked_basis_as_fundamental_momentum_basis(states["basis"][1])
+        states, stacked_basis_as_transformed_basis(states["basis"][1])
     )
 
     fig, ax, ani = animate_data_through_list_2d_k(
@@ -357,7 +355,7 @@ def animate_state_over_list_1d_k(
     tuple[Figure, Axes, Line2D]
     """
     converted = convert_state_vector_list_to_basis(
-        states, stacked_basis_as_fundamental_momentum_basis(states["basis"][1])
+        states, stacked_basis_as_transformed_basis(states["basis"][1])
     )
 
     fig, ax, ani = animate_data_through_list_1d_k(
@@ -446,7 +444,7 @@ def plot_state_difference_2d_k(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    basis = stacked_basis_as_fundamental_momentum_basis(state_0["basis"])
+    basis = stacked_basis_as_transformed_basis(state_0["basis"])
 
     converted_0 = convert_state_vector_to_basis(state_0, basis)
     converted_1 = convert_state_vector_to_basis(state_1, basis)
@@ -531,7 +529,7 @@ def plot_state_difference_1d_k(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    basis = stacked_basis_as_fundamental_momentum_basis(state_0["basis"])
+    basis = stacked_basis_as_transformed_basis(state_0["basis"])
 
     converted_0 = convert_state_vector_to_basis(state_0, basis)
     converted_1 = convert_state_vector_to_basis(state_1, basis)
@@ -977,7 +975,7 @@ def _get_periodic_x(
     return calculate_expectation_list(operator, states)
 
 
-_BT0 = TypeVar("_BT0", bound=BasisWithTimeLike[Any, Any])
+_BT0 = TypeVar("_BT0", bound=BasisWithTimeLike)
 
 
 def _get_average_x_periodic(
@@ -1278,7 +1276,7 @@ def _get_k_operator(basis: _SBV0, axis: int) -> SingleBasisOperator[_SBV0]:
     -------
     SingleBasisOperator[_SBV0]
     """
-    basis_k = stacked_basis_as_fundamental_momentum_basis(basis)
+    basis_k = stacked_basis_as_transformed_basis(basis)
     util = BasisUtil(basis_k)
     return convert_diagonal_operator_to_basis(
         {
@@ -1525,7 +1523,7 @@ def plot_periodic_x_distribution_1d(
 
 def get_average_displacements(
     positions: ValueList[TupleBasisLike[_B0Inv, _BT0]],
-) -> ValueList[TupleBasisLike[_B0Inv, EvenlySpacedTimeBasis[Any, Any, Any]]]:
+) -> ValueList[TupleBasisLike[_B0Inv, EvenlySpacedTimeBasis]]:
     """Get the RMS displacement against time."""
     basis = positions["basis"]
     stacked = positions["data"].reshape(basis.shape)

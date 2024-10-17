@@ -16,10 +16,10 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
     from matplotlib.lines import Line2D
 
-    from surface_potential_analysis.basis.legacy import TupleBasisLike
-    from surface_potential_analysis.basis.time_basis_like import (
+    from surface_potential_analysis.basis.legacy import (
         BasisWithTimeLike,
         FundamentalTimeBasis,
+        TupleBasisLike,
     )
     from surface_potential_analysis.dynamics.tunnelling_basis import (
         TunnellingSimulationBasis,

@@ -5,10 +5,11 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
 
 import numpy as np
 
-from surface_potential_analysis.basis.legacy import FundamentalBasis, TupleBasis
-from surface_potential_analysis.basis.time_basis_like import (
+from surface_potential_analysis.basis.legacy import (
     ExplicitTimeBasis,
+    FundamentalBasis,
     FundamentalTimeBasis,
+    TupleBasis,
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.dynamics.incoherent_propagation.eigenstates import (

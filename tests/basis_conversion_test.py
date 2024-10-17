@@ -75,21 +75,21 @@ class BasisConversionTest(unittest.TestCase):
         )
 
         actual = convert_vector(
-            BasisUtil(basis).vectors, basis_as_fundamental_position_basis(basis), basis
+            BasisUtil(basis).vectors, basis_as_fundamental_basisbasis), basis
         )
         expected = np.eye(n)
         np.testing.assert_almost_equal(actual, expected)
         actual = convert_vector(
-            BasisUtil(basis).vectors, basis_as_fundamental_position_basis(basis), basis
+            BasisUtil(basis).vectors, basis_as_fundamental_basisbasis), basis
         )
         expected = convert_vector_simple(
-            BasisUtil(basis).vectors, basis_as_fundamental_position_basis(basis), basis
+            BasisUtil(basis).vectors, basis_as_fundamental_basisbasis), basis
         )
         np.testing.assert_almost_equal(actual, expected)
 
         actual = convert_vector(
             np.eye(fundamental_n),
-            basis_as_fundamental_position_basis(basis),
+            basis_as_fundamental_basisbasis),
             basis,
         )
         expected = BasisUtil(basis).vectors.T
@@ -97,12 +97,12 @@ class BasisConversionTest(unittest.TestCase):
 
         actual = convert_vector(
             np.eye(fundamental_n),
-            basis_as_fundamental_position_basis(basis),
+            basis_as_fundamental_basisbasis),
             basis,
         )
         expected = convert_vector_simple(
             np.eye(fundamental_n).astype(np.complex128),
-            basis_as_fundamental_position_basis(basis),
+            basis_as_fundamental_basisbasis),
             basis,
         )
         np.testing.assert_almost_equal(actual, expected)
@@ -127,7 +127,7 @@ class BasisConversionTest(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(
             convert_vector(
-                np.eye(n), basis, basis_as_fundamental_position_basis(basis)
+                np.eye(n), basis, basis_as_fundamental_basisbasis)
             ),
             np.exp(
                 (1j * 2 * np.pi)
@@ -139,12 +139,12 @@ class BasisConversionTest(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(
             convert_vector(
-                np.eye(n), basis, basis_as_fundamental_position_basis(basis)
+                np.eye(n), basis, basis_as_fundamental_basisbasis)
             ),
             convert_vector_simple(
                 np.eye(n).astype(np.complex128),
                 basis,
-                basis_as_fundamental_position_basis(basis),
+                basis_as_fundamental_basisbasis),
             ),
         )
 

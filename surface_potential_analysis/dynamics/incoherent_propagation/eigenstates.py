@@ -5,9 +5,10 @@ from typing import TYPE_CHECKING, Any, TypeVar
 import numpy as np
 import scipy.linalg  # type: ignore lib
 
-from surface_potential_analysis.basis.legacy import FundamentalBasis, TupleBasis
-from surface_potential_analysis.basis.time_basis_like import (
+from surface_potential_analysis.basis.legacy import (
     ExplicitTimeBasis,
+    FundamentalBasis,
+    TupleBasis,
 )
 from surface_potential_analysis.util.decorators import timed
 

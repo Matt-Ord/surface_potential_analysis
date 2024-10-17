@@ -172,7 +172,7 @@ def get_periodic_noise_operators_real_isotropic_taylor_expansion(
     The noise operators formed using the 2n+1 lowest fourier terms, and the corresponding coefficients.
 
     """
-    basis_x = basis_as_fundamental_position_basis(kernel["basis"])
+    basis_x = basis_as_fundamental_basiskernel["basis"])
 
     n_states: int = basis_x.n
     n = (n_states + 1) // 2 if n is None else n

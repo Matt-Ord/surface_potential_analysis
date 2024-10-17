@@ -17,7 +17,6 @@ from surface_potential_analysis.operator.conversion import (
 from surface_potential_analysis.operator.operator import add_operator, as_operator
 from surface_potential_analysis.potential.conversion import convert_potential_to_basis
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_momentum_basis,
     tuple_basis_as_fundamental,
 )
 
@@ -93,7 +92,7 @@ def hamiltonian_from_mass(
     energy = np.sum(
         np.square(hbar * k_points) / (2 * mass), axis=0, dtype=np.complex128
     )
-    momentum_basis = stacked_basis_as_fundamental_momentum_basis(basis)
+    momentum_basis = stacked_basis_as_transformed_basis(basis)
 
     return {
         "basis": VariadicTupleBasis((momentum_basis, momentum_basis), None),

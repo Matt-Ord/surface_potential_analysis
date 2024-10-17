@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
 import qutip  # type: ignore lib
 import qutip.ui  # type: ignore lib
 import scipy.sparse  # type: ignore lib
 from scipy.constants import hbar  # type: ignore lib
+from slate.basis.stacked._tuple_basis import VariadicTupleBasis
 
 from surface_potential_analysis.state_vector.conversion import (
     convert_state_vector_to_basis,
@@ -16,8 +17,8 @@ from surface_potential_analysis.state_vector.eigenstate_calculation import (
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.legacy import BasisLike
-    from surface_potential_analysis.basis.time_basis_like import (
+    from surface_potential_analysis.basis.legacy import (
+        BasisLike,
         BasisWithTimeLike,
         EvenlySpacedTimeBasis,
     )
@@ -34,9 +35,9 @@ if TYPE_CHECKING:
 
     _B0Inv = TypeVar("_B0Inv", bound=BasisLike)
     _B1Inv = TypeVar("_B1Inv", bound=BasisLike)
-    _BT0 = TypeVar("_BT0", bound=BasisWithTimeLike[Any, Any])
+    _BT0 = TypeVar("_BT0", bound=BasisWithTimeLike)
 
-    _BT1 = TypeVar("_BT1", bound=EvenlySpacedTimeBasis[Any, Any, Any])
+    _BT1 = TypeVar("_BT1", bound=EvenlySpacedTimeBasis)
 
 
 def get_state_vector_decomposition(

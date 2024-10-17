@@ -57,7 +57,7 @@ def get_displacements_x(
     -------
     ValueList[FundamentalPositionBasis]
     """
-    basis_x = basis_as_fundamental_position_basis(basis)
+    basis_x = basis_as_fundamental_basisbasis)
     distances = BasisUtil(basis_x).x_points - origin
     max_distance = np.linalg.norm(basis_x.delta_x) / 2
     data = _wrap_displacements(distances, max_distance)
@@ -157,7 +157,7 @@ def get_displacements_matrix_x(
     -------
     ValueList[FundamentalPositionBasis]
     """
-    basis_x = basis_as_fundamental_position_basis(basis)
+    basis_x = basis_as_fundamental_basisbasis)
     x_points = BasisUtil(basis_x).x_points
     distances = x_points[:, np.newaxis] - x_points[np.newaxis, :] - origin
     max_distance = np.linalg.norm(basis_x.delta_x) / 2

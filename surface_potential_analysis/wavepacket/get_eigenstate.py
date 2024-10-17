@@ -26,7 +26,6 @@ from surface_potential_analysis.operator.conversion import (
     convert_diagonal_operator_to_basis,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_momentum_basis,
     tuple_basis_as_fundamental,
     tuple_basis_as_transformed_fundamental,
 )
@@ -362,7 +361,7 @@ def get_states_at_bloch_idx(
 
     converted = convert_state_vector_list_to_basis(
         wavepackets,
-        stacked_basis_as_fundamental_momentum_basis(wavepackets["basis"][1]),
+        stacked_basis_as_transformed_basis(wavepackets["basis"][1]),
     )
     return {
         "basis": VariadicTupleBasis(
@@ -397,9 +396,7 @@ def _get_fundamental_wavepacket_basis(
     TupleBasisLike[*tuple[FundamentalTransformedBasis, ...]],
     TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis, ...]],
 ]:
-    converted_basis = stacked_basis_as_fundamental_momentum_basis(
-        wavepackets["basis"][1]
-    )
+    converted_basis = stacked_basis_as_transformed_basis(wavepackets["basis"][1])
     converted_list_basis = tuple_basis_as_transformed_fundamental(
         wavepackets["basis"][0][1]
     )

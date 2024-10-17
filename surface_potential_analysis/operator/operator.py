@@ -5,9 +5,7 @@ from typing import TYPE_CHECKING, Any, Callable, Generic, TypedDict, TypeVar
 import numpy as np
 from slate.basis.stacked import VariadicTupleBasis
 
-from surface_potential_analysis.basis.legacy import (
-    BasisLike,TupleBasisLike
-)
+from surface_potential_analysis.basis.legacy import BasisLike, TupleBasisLike
 from surface_potential_analysis.state_vector.conversion import (
     convert_state_vector_to_basis,
 )
@@ -106,12 +104,14 @@ def sum_diagonal_operator_over_axes(
     -------
     DiagonalOperator[Any, Any]
     """
-    
     traced_basis = tuple(
         b for (i, b) in enumerate(operator["basis"][0]) if i not in axes
     )
     return {
-        "basis": VariadicTupleBasis((VariadicTupleBasis((*traced_basis), None), None), VariadicTupleBasis((*traced_basis), None)),
+        "basis": VariadicTupleBasis(
+            (VariadicTupleBasis((traced_basis), None), None),
+            VariadicTupleBasis((traced_basis), None),
+        ),
         "data": np.sum(
             operator["data"].reshape(operator["basis"][0].shape), axis=axes
         ).reshape(-1),
@@ -164,7 +164,9 @@ def average_eigenvalues(
     axis = tuple(range(eigenvalues["basis"].n_dim)) if axis is None else axis
     basis = tuple(b for (i, b) in enumerate(eigenvalues["basis"][0]) if i not in axis)
     return {
-        "basis": VariadicTupleBasis((VariadicTupleBasis((*basis), None), None), VariadicTupleBasis((*basis), None)),
+        "basis": VariadicTupleBasis(
+            (VariadicTupleBasis((basis), None), None), VariadicTupleBasis((basis), None)
+        ),
         "data": np.average(
             eigenvalues["data"].reshape(*eigenvalues["basis"][0].shape),
             axis=tuple(ax for ax in axis),
@@ -201,7 +203,10 @@ def average_eigenvalues_list(
     return {
         "basis": TupleBasis(
             eigenvalues["basis"][0],
-            VariadicTupleBasis((VariadicTupleBasis((*basis), None), None), VariadicTupleBasis((*basis), None)),
+            VariadicTupleBasis(
+                (VariadicTupleBasis((basis), None), None),
+                VariadicTupleBasis((basis), None),
+            ),
         ),
         "data": np.average(
             eigenvalues["data"].reshape(
@@ -237,7 +242,10 @@ def matmul_operator(
         rhs["data"].reshape(rhs["basis"].shape),
         axes=(1, 0),
     )
-    return {"basis": VariadicTupleBasis((lhs["basis"][0], rhs["basis"][1]), None), "data": data}
+    return {
+        "basis": VariadicTupleBasis((lhs["basis"][0], rhs["basis"][1]), None),
+        "data": data,
+    }
 
 
 def add_operator(a: Operator[_B0, _B1], b: Operator[_B0, _B1]) -> Operator[_B0, _B1]:

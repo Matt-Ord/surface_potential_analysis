@@ -11,7 +11,6 @@ from surface_potential_analysis.basis.legacy import (
     TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_momentum_basis,
     tuple_basis_as_transformed_fundamental,
 )
 from surface_potential_analysis.state_vector.state_vector_list import (
@@ -82,7 +81,7 @@ def _unfurl_momentum_basis_wavepacket(
 
     basis = get_fundamental_unfurled_basis(wavepacket["basis"])
     return {
-        "basis": stacked_basis_as_fundamental_momentum_basis(basis),
+        "basis": stacked_basis_as_transformed_basis(basis),
         "data": flattened / np.sqrt(np.prod(list_shape)),
     }
 

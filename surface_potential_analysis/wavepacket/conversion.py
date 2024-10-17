@@ -17,7 +17,6 @@ from surface_potential_analysis.stacked_basis.build import (
     fundamental_stacked_basis_from_shape,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_momentum_basis,
     tuple_basis_as_fundamental,
 )
 
@@ -255,7 +254,7 @@ def convert_wavepacket_to_fundamental_momentum_basis(
     """
     return convert_wavepacket_to_basis(
         wavepacket,
-        basis=stacked_basis_as_fundamental_momentum_basis(wavepacket["basis"][1]),
+        basis=stacked_basis_as_transformed_basis(wavepacket["basis"][1]),
         list_basis=wavepacket["basis"][0] if list_basis is None else list_basis,
     )
 

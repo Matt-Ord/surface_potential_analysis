@@ -10,11 +10,11 @@ import scipy.sparse  # type: ignore lib
 from scipy.constants import hbar  # type: ignore lib
 
 from surface_potential_analysis.basis.legacy import (
+    EvenlySpacedTimeBasis,
     FundamentalBasis,
     TupleBasis,
     TupleBasisLike,
 )
-from surface_potential_analysis.basis.time_basis_like import EvenlySpacedTimeBasis
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.dynamics.tunnelling_basis import (
     get_basis_from_shape,
@@ -99,7 +99,7 @@ if TYPE_CHECKING:
     _L0Inv = TypeVar("_L0Inv", bound=int)
     _L1Inv = TypeVar("_L1Inv", bound=int)
     _L2Inv = TypeVar("_L2Inv", bound=int)
-    _AX0Inv = TypeVar("_AX0Inv", bound=EvenlySpacedTimeBasis[Any, Any, Any])
+    _AX0Inv = TypeVar("_AX0Inv", bound=EvenlySpacedTimeBasis)
 
 
 def get_collapse_operators_from_a_matrix(

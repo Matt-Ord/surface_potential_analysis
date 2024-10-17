@@ -10,7 +10,6 @@ from surface_potential_analysis.basis.legacy import (
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_momentum_basis,
     tuple_basis_as_fundamental,
 )
 
@@ -89,7 +88,7 @@ def get_continuous_potential(
     """
     converted = convert_potential_to_basis(
         potential,
-        stacked_basis_as_fundamental_momentum_basis(potential["basis"]),
+        stacked_basis_as_transformed_basis(potential["basis"]),
     )
     k_points = BasisUtil(converted["basis"]).fundamental_stacked_k_points
 
@@ -126,7 +125,7 @@ def get_potential_derivative(
     """Get the derivative of a potential."""
     converted = convert_potential_to_basis(
         potential,
-        stacked_basis_as_fundamental_momentum_basis(potential["basis"]),
+        stacked_basis_as_transformed_basis(potential["basis"]),
     )
     k_points = BasisUtil(converted["basis"]).k_points[axis]
     return {"basis": converted["basis"], "data": 1j * k_points * converted["data"]}

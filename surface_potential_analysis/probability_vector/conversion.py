@@ -9,7 +9,6 @@ from surface_potential_analysis.basis.legacy import (
     convert_vector,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_momentum_basis,
     tuple_basis_as_fundamental,
 )
 
@@ -114,5 +113,5 @@ def convert_probability_vector_to_momentum_basis(
     """
     return convert_probability_vector_to_basis(
         probability_vector,
-        stacked_basis_as_fundamental_momentum_basis(probability_vector["basis"]),
+        stacked_basis_as_transformed_basis(probability_vector["basis"]),
     )

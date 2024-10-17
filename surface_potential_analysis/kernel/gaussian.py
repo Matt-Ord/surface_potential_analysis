@@ -431,7 +431,7 @@ def get_periodic_gaussian_operators_explicit_taylor(
     Return in the order of [const term, first n cos terms, first n sin terms]
     and also their corresponding coefficients.
     """
-    basis_x = basis_as_fundamental_position_basis(basis)
+    basis_x = basis_as_fundamental_basisbasis)
     n_terms = (basis_x.n // 2) if n_terms is None else n_terms
 
     # expand gaussian and define array containing coefficients for each term in the polynomial
@@ -475,7 +475,7 @@ def get_linear_gaussian_noise_operators_explicit_taylor(
     ]
 
     """
-    basis_x = basis_as_fundamental_position_basis(basis)
+    basis_x = basis_as_fundamental_basisbasis)
     n_terms = basis.n if n_terms is None else n_terms
 
     # expand gaussian and define array containing coefficients for each term in the polynomial

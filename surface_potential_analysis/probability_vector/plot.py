@@ -22,10 +22,10 @@ if TYPE_CHECKING:
 
     from surface_potential_analysis.basis.legacy import (
         BasisLike,
+        BasisWithTimeLike,
         StackedBasisWithVolumeLike,
         TupleBasisLike,
     )
-    from surface_potential_analysis.basis.time_basis_like import BasisWithTimeLike
     from surface_potential_analysis.probability_vector.probability_vector import (
         ProbabilityVectorList,
     )

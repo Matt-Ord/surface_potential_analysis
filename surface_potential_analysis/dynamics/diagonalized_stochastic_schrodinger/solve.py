@@ -15,10 +15,10 @@ from surface_potential_analysis.state_vector.state_vector_list import (
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.legacy import (
         BasisLike,
+        EvenlySpacedTimeBasis,
         ExplicitBasis,
         TupleBasisLike,
     )
-    from surface_potential_analysis.basis.time_basis_like import EvenlySpacedTimeBasis
     from surface_potential_analysis.kernel.kernel import (
         SingleBasisDiagonalNoiseOperator,
     )
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
     _B1Inv = TypeVar("_B1Inv", bound=BasisLike)
     _L1Inv = TypeVar("_L1Inv", bound=int)
-    _AX0Inv = TypeVar("_AX0Inv", bound=EvenlySpacedTimeBasis[Any, Any, Any])
+    _AX0Inv = TypeVar("_AX0Inv", bound=EvenlySpacedTimeBasis)
 
 
 @overload

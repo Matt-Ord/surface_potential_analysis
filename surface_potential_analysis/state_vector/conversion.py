@@ -15,7 +15,6 @@ from surface_potential_analysis.basis.legacy import (
     convert_vector,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_momentum_basis,
     tuple_basis_as_fundamental,
 )
 
@@ -137,7 +136,7 @@ def convert_state_vector_to_momentum_basis(
     """
     return convert_state_vector_to_basis(
         state_vector,
-        stacked_basis_as_fundamental_momentum_basis(state_vector["basis"]),
+        stacked_basis_as_transformed_basis(state_vector["basis"]),
     )
 
 
@@ -179,7 +178,7 @@ def convert_state_dual_vector_to_momentum_basis(
     """
     return convert_state_dual_vector_to_basis(
         state_vector,
-        stacked_basis_as_fundamental_momentum_basis(state_vector["basis"]),
+        stacked_basis_as_transformed_basis(state_vector["basis"]),
     )
 
 
@@ -201,7 +200,7 @@ def interpolate_state_vector_momentum(
     -------
     StateVector[tuple[MomentumBasis[Any, Any, Any], ...]]
     """
-    converted_basis = stacked_basis_as_fundamental_momentum_basis(state_vector["basis"])
+    converted_basis = stacked_basis_as_transformed_basis(state_vector["basis"])
     converted = convert_state_vector_to_basis(state_vector, converted_basis)
 
     final_basis = TupleBasis[*tuple[BasisWithLengthLike, ...]](

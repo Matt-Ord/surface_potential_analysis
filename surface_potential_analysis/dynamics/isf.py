@@ -6,10 +6,11 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 import numpy as np
 import scipy.optimize  # type: ignore lib
 
-from surface_potential_analysis.basis.legacy import FundamentalPositionBasis, TupleBasis
-from surface_potential_analysis.basis.time_basis_like import (
+from surface_potential_analysis.basis.legacy import (
     BasisWithTimeLike,
     ExplicitTimeBasis,
+    FundamentalPositionBasis,
+    TupleBasis,
 )
 from surface_potential_analysis.stacked_basis.util import (
     BasisUtil,
@@ -38,7 +39,7 @@ if TYPE_CHECKING:
     _B1Inv = TypeVar("_B1Inv", bound=TunnellingSimulationBasis[Any, Any, Any])
     _S0Inv = TypeVar("_S0Inv", bound=tuple[int, ...])
 
-    _BT0 = TypeVar("_BT0", bound=BasisWithTimeLike[Any, Any])
+    _BT0 = TypeVar("_BT0", bound=BasisWithTimeLike)
     _L0Inv = TypeVar("_L0Inv", bound=int)
 
 

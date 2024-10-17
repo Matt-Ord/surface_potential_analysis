@@ -118,7 +118,7 @@ def get_localization_operator_for_projections(
 ) -> LocalizationOperator[_SB0, _B1, _B0]:
     converted = convert_state_vector_list_to_basis(
         wavepackets,
-        stacked_basis_as_fundamental_momentum_basis(wavepackets["basis"][1]),
+        stacked_basis_as_transformed_basis(wavepackets["basis"][1]),
     )
     # Note here we localize each bloch k seperately
     states = [
@@ -187,7 +187,7 @@ def get_localization_operator_tight_binding_projections(
     # Better performace if we provide the projection in transformed basis
     converted = convert_state_vector_list_to_basis(
         projections,
-        stacked_basis_as_fundamental_momentum_basis(projections["basis"][1]),
+        stacked_basis_as_transformed_basis(projections["basis"][1]),
     )
     return get_localization_operator_for_projections(wavepackets, converted)
 

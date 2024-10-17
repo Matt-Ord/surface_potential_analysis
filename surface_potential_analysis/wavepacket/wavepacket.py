@@ -141,7 +141,7 @@ def get_fundamental_sample_basis(
     -------
     Basis[_ND0Inv]
     """
-    basis_x = stacked_basis_as_fundamental_momentum_basis(basis[1])
+    basis_x = stacked_basis_as_transformed_basis(basis[1])
     return VariadicTupleBasis(
         tuple(
             FundamentalTransformedPositionBasis(
@@ -170,7 +170,7 @@ def get_fundamental_unfurled_basis(
     Basis[_ND0Inv]
     """
     basis_0 = tuple_basis_as_transformed_fundamental(basis[0])
-    basis_1 = stacked_basis_as_fundamental_momentum_basis(basis[1])
+    basis_1 = stacked_basis_as_transformed_basis(basis[1])
 
     return VariadicTupleBasis(
         tuple(

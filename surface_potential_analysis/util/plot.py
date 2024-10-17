@@ -12,7 +12,6 @@ from matplotlib.scale import LinearScale, LogScale, ScaleBase, SymmetricalLogSca
 
 from surface_potential_analysis.basis.legacy import convert_vector
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_momentum_basis,
     tuple_basis_as_fundamental,
 )
 from surface_potential_analysis.stacked_basis.util import (
@@ -265,7 +264,7 @@ def plot_data_1d_k(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    basis_k = stacked_basis_as_fundamental_momentum_basis(basis)
+    basis_k = stacked_basis_as_transformed_basis(basis)
     converted_data = convert_vector(data, basis, basis_k)
 
     idx = get_max_idx(basis_k, data, axes) if idx is None else idx
@@ -440,7 +439,7 @@ def plot_data_2d_k(
     -------
     tuple[Figure, Axes, QuadMesh]
     """
-    basis_k = stacked_basis_as_fundamental_momentum_basis(basis)
+    basis_k = stacked_basis_as_transformed_basis(basis)
     converted_data = convert_vector(data.ravel(), basis, basis_k)
 
     idx = get_max_idx(basis_k, converted_data, axes) if idx is None else idx

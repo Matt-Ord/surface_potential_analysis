@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar
 import numpy as np
 import scipy.stats  # type: ignore unkown
 
-from surface_potential_analysis.basis.legacy import BasisLike
-from surface_potential_analysis.basis.time_basis_like import (
+from surface_potential_analysis.basis.legacy import (
+    BasisLike,
     BasisWithTimeLike,
     EvenlySpacedTimeBasis,
 )
@@ -32,8 +32,8 @@ if TYPE_CHECKING:
         Measure,
     )
 
-_BT0 = TypeVar("_BT0", bound=BasisWithTimeLike[Any, Any])
-_ETB = TypeVar("_ETB", bound=EvenlySpacedTimeBasis[Any, Any, Any])
+_BT0 = TypeVar("_BT0", bound=BasisWithTimeLike)
+_ETB = TypeVar("_ETB", bound=EvenlySpacedTimeBasis)
 _B0 = TypeVar("_B0", bound=BasisLike)
 
 

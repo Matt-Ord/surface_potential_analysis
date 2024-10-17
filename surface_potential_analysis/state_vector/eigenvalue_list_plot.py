@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
 from scipy.constants import Boltzmann  # type:ignore lib
@@ -13,8 +13,7 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
     from matplotlib.lines import Line2D
 
-    from surface_potential_analysis.basis.legacy import BasisLike
-    from surface_potential_analysis.basis.time_basis_like import BasisWithTimeLike
+    from surface_potential_analysis.basis.legacy import BasisLike, BasisWithTimeLike
     from surface_potential_analysis.operator.operator import (
         SingleBasisDiagonalOperator,
         StatisticalDiagonalOperator,
@@ -25,7 +24,7 @@ if TYPE_CHECKING:
 
     _B0_co = TypeVar(
         "_B0_co",
-        bound=BasisWithTimeLike[Any, Any],
+        bound=BasisWithTimeLike,
         covariant=True,
     )
 
