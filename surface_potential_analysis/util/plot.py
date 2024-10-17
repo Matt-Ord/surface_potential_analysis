@@ -444,7 +444,7 @@ def plot_data_2d_k(
     tuple[Figure, Axes, QuadMesh]
     """
     basis_k = stacked_basis_as_fundamental_momentum_basis(basis)
-    converted_data = convert_vector(data, basis, basis_k)
+    converted_data = convert_vector(data.ravel(), basis, basis_k)
 
     idx = get_max_idx(basis_k, converted_data, axes) if idx is None else idx
 
@@ -519,7 +519,7 @@ def plot_data_2d_x(
     data_in_axis = get_data_in_axes(converted_data.reshape(basis_x.shape), axes, idx)
 
     fig, ax, mesh = plot_data_2d(
-        data_in_axis.ravel(),
+        data_in_axis.reshape(coordinates.shape[1:]),
         coordinates,
         ax=ax,
         scale=scale,

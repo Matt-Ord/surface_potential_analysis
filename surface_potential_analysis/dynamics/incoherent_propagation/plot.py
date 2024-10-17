@@ -47,5 +47,5 @@ def plot_rate_decomposition_against_temperature(
 
     coefficients = np.abs([rate.coefficients for rate in rates])
     for i in range(50):
-        ax.plot(temperatures, sorted_rates[:, i])
+        ax.plot(temperatures, sorted_rates[:, i])  # type: ignore lib
     return fig, ax

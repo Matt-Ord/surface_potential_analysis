@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
-import scipy.linalg
+import scipy.linalg  # type: ignore lib
 
 from surface_potential_analysis.basis.basis import FundamentalBasis
 from surface_potential_analysis.basis.stacked_basis import TupleBasis
@@ -48,13 +48,13 @@ def calculate_tunnelling_eigenstates(
     -------
     TunnellingEigenstates[_S0Inv]
     """
-    eigenvalues, vectors = scipy.linalg.eig(
+    eigenvalues, vectors = scipy.linalg.eig(  # type: ignore lib
         matrix["data"].reshape(matrix["basis"].shape)
     )
     return {
-        "basis": TupleBasis(FundamentalBasis(eigenvalues.size), matrix["basis"][0]),
-        "eigenvalue": eigenvalues - np.max(eigenvalues),
-        "data": vectors.T,
+        "basis": TupleBasis(FundamentalBasis(eigenvalues.size), matrix["basis"][0]),  # type: ignore lib
+        "eigenvalue": eigenvalues - np.max(eigenvalues),  # type: ignore lib
+        "data": vectors.T,  # type: ignore lib
     }
 
 

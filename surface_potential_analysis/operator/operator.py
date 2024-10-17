@@ -228,7 +228,7 @@ def apply_function_to_operator(
 ) -> SingleBasisOperator[_B0]:
     res = np.linalg.eig(operator["data"].reshape(operator["basis"].shape))
     eigenvalues = fn(res.eigenvalues)
-    data = np.einsum(
+    data = np.einsum(  # type: ignore lib
         "k,ak,kb->ab", eigenvalues, res.eigenvectors, np.linalg.inv(res.eigenvectors)
     )
 
@@ -296,7 +296,7 @@ def apply_operator_to_state(
     Operator[_B0Inv]
     """
     converted = convert_state_vector_to_basis(state, lhs["basis"][1])
-    data = np.einsum(
+    data = np.einsum(  # type: ignore lib
         "ik,k->i",
         lhs["data"].reshape(lhs["basis"].shape),
         converted["data"].reshape(converted["basis"].n),
