@@ -192,7 +192,8 @@ def average_probabilities(
     axis: tuple[int, ...],
     *,
     weights: np.ndarray[tuple[int], np.dtype[np.float64]] | None = None,
-) -> ProbabilityVectorList[Any, _B1]: ...
+) -> ProbabilityVectorList[Any, _B1]:
+    ...
 
 
 @overload
@@ -201,7 +202,8 @@ def average_probabilities(
     axis: None = None,
     *,
     weights: np.ndarray[tuple[int], np.dtype[np.float64]] | None = None,
-) -> ProbabilityVector[_B1]: ...
+) -> ProbabilityVector[_B1]:
+    ...
 
 
 def average_probabilities(
@@ -233,9 +235,9 @@ def average_probabilities(
         }
 
     old_basis = cast(TupleBasisLike[*tuple[Any, ...]], probabilities["basis"][0])
-    basis = VariadicTupleBasis((*tuple(b for (i, b), None) in enumerate(old_basis) if i not in axis))
+    basis = TupleBasis(*tuple(b for (i, b) in enumerate(old_basis) if i not in axis))
     return {
-        "basis": VariadicTupleBasis((basis, probabilities["basis"][1]), None),
+        "basis": TupleBasis(basis, probabilities["basis"][1]),
         "data": np.average(
             probabilities["data"].reshape(*old_basis.shape, -1),
             axis=tuple(ax for ax in axis),

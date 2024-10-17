@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import itertools
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Self, TypeVar, cast, overload
 
 import numpy as np
 from slate.basis.stacked._tuple_basis import VariadicTupleBasis
+from slate.explicit_basis._explicit_basis import ExplicitUnitaryBasis
+from slate.metadata._metadata import BasisMetadata
 
 from surface_potential_analysis.basis.legacy import (
     BasisLike,
@@ -156,13 +158,15 @@ def get_wavepacket_state_vector(
 @overload
 def get_bloch_state_vector(
     wavepacket: BlochWavefunctionList[_SB0, _SBV0], idx: SingleFlatIndexLike
-) -> StateVector[_SBV0]: ...
+) -> StateVector[_SBV0]:
+    ...
 
 
 @overload
 def get_bloch_state_vector(
     wavepacket: BlochWavefunctionList[_TB0, _SBV0], idx: SingleIndexLike
-) -> StateVector[_SBV0]: ...
+) -> StateVector[_SBV0]:
+    ...
 
 
 def get_bloch_state_vector(
@@ -498,13 +502,7 @@ def get_bloch_states(
 _S0Inv = TypeVar("_S0Inv", bound=tuple[int, ...])
 
 
-class BlochBasis(
-    ExplicitStackedBasisWithLength[
-        TupleBasisLike[_B0, TupleBasisLike[*tuple[FundamentalTransformedBasis, ...]]],
-        TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis, ...]],
-    ],
-    Generic[_B0],
-):
+class BlochBasis[M: BasisMetadata, DT: np.generic](ExplicitUnitaryBasis[M, DT]):
     """An basis with vectors given as explicit states."""
 
     def __init__(

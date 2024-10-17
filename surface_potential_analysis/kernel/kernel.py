@@ -355,7 +355,7 @@ def as_isotropic_kernel_from_axis(
     full_data = tuple(kernel_i["data"].ravel() for kernel_i in kernels)
 
     return {
-        "basis": VariadicTupleBasis((*full_basis), None),
+        "basis": TupleBasis(*full_basis),
         "data": _outer_product(*full_data).ravel(),
     }
 
@@ -451,7 +451,9 @@ def get_full_kernel_from_operators(
         operators_data,
     )
     return {
-        "basis": VariadicTupleBasis((operators["basis"][1], operators["basis"][1]), None),
+        "basis": VariadicTupleBasis(
+            (operators["basis"][1], operators["basis"][1]), None
+        ),
         "data": data.reshape(-1),
     }
 
@@ -478,7 +480,9 @@ def get_diagonal_kernel_from_diagonal_operators(
         operators_data,
     )
     return {
-        "basis": VariadicTupleBasis((operators["basis"][1], operators["basis"][1]), None),
+        "basis": VariadicTupleBasis(
+            (operators["basis"][1], operators["basis"][1]), None
+        ),
         "data": data.reshape(-1),
     }
 
@@ -623,7 +627,13 @@ def get_diagonal_noise_operators_from_axis(
     )
 
     return {
-        "basis": VariadicTupleBasis((full_basis_shape, VariadicTupleBasis((full_basis_x, full_basis_x), None), None)),
+        "basis": VariadicTupleBasis(
+            (
+                full_basis_shape,
+                VariadicTupleBasis((full_basis_x, full_basis_x), None),
+                None,
+            )
+        ),
         "data": np.einsum(einsum_string, *full_data).ravel(),  # type: ignore unknown
         "eigenvalue": _outer_product(*full_coefficients).ravel(),
     }

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, TypeVarTuple
+from typing import TYPE_CHECKING, Any, TypeVarTuple
 
 import numpy as np
 from scipy.constants import Boltzmann, hbar  # type: ignore no stub
@@ -108,12 +108,12 @@ def _get_explicit_taylor_coefficients_lorentzian(
 def get_lorentzian_operators_explicit_taylor(
     a: float,
     lambda_: float,
-    basis: TupleBasisWithLengthLike[FundamentalPositionBasis[Any, Literal[1]]],
+    basis: TupleBasisWithLengthLike[FundamentalPositionBasis],
     *,
     n_terms: int | None = None,
 ) -> SingleBasisDiagonalNoiseOperatorList[
     FundamentalBasis[BasisMetadata],
-    TupleBasisWithLengthLike[FundamentalPositionBasis[Any, Literal[1]]],
+    TupleBasisWithLengthLike[FundamentalPositionBasis],
 ]:
     """Calculate the noise operators for an isotropic lorentzian noise kernel, using an explicit Taylor expansion.
 
@@ -123,7 +123,7 @@ def get_lorentzian_operators_explicit_taylor(
     Parameters
     ----------
     lambda_: float, the HWHM
-    basis: TupleBasisWithLengthLike[FundamentalPositionBasis[Any, Literal[1]]]
+    basis: TupleBasisWithLengthLike[FundamentalPositionBasis]
     n: int, by default 1
 
     Return in the order of [const term, first n sine terms, first n cos terms]

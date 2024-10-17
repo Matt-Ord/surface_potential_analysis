@@ -60,13 +60,15 @@ def position_basis_3d_from_parent(
 @overload
 def fundamental_stacked_basis_from_shape(
     shape: tuple[_L0],
-) -> TupleBasisLike[FundamentalBasis[_L0]]: ...
+) -> TupleBasisLike[FundamentalBasis[_L0]]:
+    ...
 
 
 @overload
 def fundamental_stacked_basis_from_shape(
     shape: tuple[_L0, _L1],
-) -> TupleBasisLike[FundamentalBasis[_L0], FundamentalBasis[_L1]]: ...
+) -> TupleBasisLike[FundamentalBasis[_L0], FundamentalBasis[_L1]]:
+    ...
 
 
 @overload
@@ -74,13 +76,15 @@ def fundamental_stacked_basis_from_shape(
     shape: tuple[_L0, _L1, _L2],
 ) -> TupleBasisLike[
     FundamentalBasis[_L0], FundamentalBasis[_L1], FundamentalBasis[_L2]
-]: ...
+]:
+    ...
 
 
 @overload
 def fundamental_stacked_basis_from_shape(
     shape: tuple[int, ...],
-) -> TupleBasisLike[*tuple[FundamentalBasis[Any], ...]]: ...
+) -> TupleBasisLike[*tuple[FundamentalBasis[Any], ...]]:
+    ...
 
 
 def fundamental_stacked_basis_from_shape(
@@ -100,21 +104,21 @@ def fundamental_stacked_basis_from_shape(
     -------
     FundamentalPositionTupleBasisLike[tuple[_NF0Inv, _NF1Inv, _NF2Inv]
     """
-    return VariadicTupleBasis((*tuple(FundamentalBasis(n), None) for n in shape))
+    return TupleBasis(*tuple(FundamentalBasis(n) for n in shape))
 
 
 @overload
 def fundamental_transformed_stacked_basis_from_shape(
     shape: tuple[_L0],
-) -> TupleBasisLike[FundamentalTransformedBasis[_L0]]: ...
+) -> TupleBasisLike[FundamentalTransformedBasis[_L0]]:
+    ...
 
 
 @overload
 def fundamental_transformed_stacked_basis_from_shape(
     shape: tuple[_L0, _L1],
-) -> TupleBasisLike[
-    FundamentalTransformedBasis[_L0], FundamentalTransformedBasis[_L1]
-]: ...
+) -> TupleBasisLike[FundamentalTransformedBasis[_L0], FundamentalTransformedBasis[_L1]]:
+    ...
 
 
 @overload
@@ -124,13 +128,15 @@ def fundamental_transformed_stacked_basis_from_shape(
     FundamentalTransformedBasis[_L0],
     FundamentalTransformedBasis[_L1],
     FundamentalTransformedBasis[_L2],
-]: ...
+]:
+    ...
 
 
 @overload
 def fundamental_transformed_stacked_basis_from_shape(
     shape: tuple[int, ...],
-) -> TupleBasisLike[*tuple[FundamentalTransformedBasis, ...]]: ...
+) -> TupleBasisLike[*tuple[FundamentalTransformedBasis, ...]]:
+    ...
 
 
 def fundamental_transformed_stacked_basis_from_shape(
@@ -150,7 +156,7 @@ def fundamental_transformed_stacked_basis_from_shape(
     -------
     FundamentalPositionTupleBasisLike[tuple[_NF0Inv, _NF1Inv, _NF2Inv]
     """
-    return VariadicTupleBasis((*tuple(FundamentalTransformedBasis(n), None) for n in shape))
+    return TupleBasis(*tuple(FundamentalTransformedBasis(n) for n in shape))
 
 
 def position_basis_from_shape(
@@ -211,9 +217,9 @@ def momentum_basis_3d_from_resolution(
     ]
     | None = None,
 ) -> TupleBasis[
-    FundamentalTransformedPositionBasis3d[_L0],
-    FundamentalTransformedPositionBasis3d[_L1],
-    FundamentalTransformedPositionBasis3d[_L2],
+    FundamentalTransformedPositionBasis3d,
+    FundamentalTransformedPositionBasis3d,
+    FundamentalTransformedPositionBasis3d,
 ]:
     """
     Given a resolution and a set of directions construct a FundamentalMomentumBasisConfig.

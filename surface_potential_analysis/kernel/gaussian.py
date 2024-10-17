@@ -5,11 +5,9 @@ from typing import TYPE_CHECKING, Any, Iterable, TypeVar
 import numpy as np
 from scipy.constants import Boltzmann, hbar  # type:ignore bad stub file
 from scipy.special import factorial  # type:ignore bad stub file
-from slate.basis._basis import FundamentalBasis
-from slate.metadata._metadata import BasisMetadata
 
 from surface_potential_analysis.basis.conversion import (
-    basis_as_fundamental_position_basis,
+    basis_as_fundamental_basis,
 )
 from surface_potential_analysis.basis.legacy import (
     StackedBasisWithVolumeLike,
@@ -43,10 +41,14 @@ from surface_potential_analysis.stacked_basis.conversion import (
 )
 
 if TYPE_CHECKING:
+    from slate.basis._basis import FundamentalBasis
+    from slate.metadata._metadata import BasisMetadata
+
     from surface_potential_analysis.basis.legacy import (
         BasisWithLengthLike,
         FundamentalPositionBasis,
         StackedBasisWithVolumeLike,
+        TupleBasisLike,
         TupleBasisWithLengthLike,
     )
     from surface_potential_analysis.kernel.kernel import (
@@ -82,7 +84,7 @@ def get_gaussian_isotropic_noise_kernel(
 
     Returns
     -------
-    SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]] ]
+    SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis] ]
         _description_
     """
 
@@ -117,7 +119,7 @@ def get_gaussian_axis_noise_kernel(
 
     Returns
     -------
-    SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]] ]
+    SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis] ]
         _description_
     """
 
@@ -154,7 +156,7 @@ def get_gaussian_noise_kernel(
 
     Returns
     -------
-    SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]] ]
+    SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis] ]
         _description_
     """
     return as_diagonal_kernel_from_isotropic(
@@ -227,7 +229,7 @@ def get_effective_gaussian_noise_kernel(
 
     Returns
     -------
-    SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]] ]
+    SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis] ]
     """
     a, lambda_ = get_effective_gaussian_parameters(
         basis, eta, temperature, lambda_factor=lambda_factor
@@ -260,7 +262,7 @@ def get_effective_gaussian_isotropic_noise_kernel(
 
     Returns
     -------
-    SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]] ]
+    SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis] ]
     """
     a, lambda_ = get_effective_gaussian_parameters(
         basis, eta, temperature, lambda_factor=lambda_factor
@@ -292,7 +294,7 @@ def get_gaussian_noise_operators_periodic(
     -------
     SingleBasisNoiseOperatorList[
         FundamentalBasis[BasisMetadata],
-        FundamentalPositionBasis[Any, Literal[1]],
+        FundamentalPositionBasis,
     ]
 
     """
@@ -326,7 +328,7 @@ def get_effective_gaussian_noise_operators_periodic(
     -------
     SingleBasisNoiseOperatorList[
         FundamentalBasis[BasisMetadata],
-        FundamentalPositionBasis[Any, Literal[1]],
+        FundamentalPositionBasis,
     ]
 
     """
@@ -357,7 +359,7 @@ def get_temperature_corrected_gaussian_noise_operators(
     -------
     SingleBasisNoiseOperatorList[
         FundamentalBasis[BasisMetadata],
-        FundamentalPositionBasis[Any, Literal[1]],
+        FundamentalPositionBasis,
     ]
 
     """
@@ -390,7 +392,7 @@ def get_temperature_corrected_effective_gaussian_noise_operators(
     -------
     SingleBasisNoiseOperatorList[
         FundamentalBasis[BasisMetadata],
-        FundamentalPositionBasis[Any, Literal[1]],
+        FundamentalPositionBasis,
     ]
 
     """
@@ -421,7 +423,7 @@ def get_periodic_gaussian_operators_explicit_taylor(
     n_terms: int | None = None,
 ) -> SingleBasisDiagonalNoiseOperatorList[
     FundamentalBasis[BasisMetadata],
-    FundamentalPositionBasis[int, Any],
+    FundamentalPositionBasis,
 ]:
     """Calculate the noise operators for an isotropic gaussian noise kernel, using an explicit Taylor expansion.
 
@@ -431,7 +433,7 @@ def get_periodic_gaussian_operators_explicit_taylor(
     Return in the order of [const term, first n cos terms, first n sin terms]
     and also their corresponding coefficients.
     """
-    basis_x = basis_as_fundamental_basisbasis)
+    basis_x = basis_as_fundamental_basis(basis)
     n_terms = (basis_x.n // 2) if n_terms is None else n_terms
 
     # expand gaussian and define array containing coefficients for each term in the polynomial
@@ -456,7 +458,7 @@ def get_linear_gaussian_noise_operators_explicit_taylor(
     n_terms: int | None = None,
 ) -> SingleBasisDiagonalNoiseOperatorList[
     FundamentalBasis[BasisMetadata],
-    FundamentalPositionBasis[int, Any],
+    FundamentalPositionBasis,
 ]:
     """Get the noise operators for a gausssian kernel in the given basis.
 
@@ -471,11 +473,11 @@ def get_linear_gaussian_noise_operators_explicit_taylor(
     -------
     SingleBasisNoiseOperatorList[
         FundamentalBasis[BasisMetadata],
-        FundamentalPositionBasis[Any, Literal[1]],
+        FundamentalPositionBasis,
     ]
 
     """
-    basis_x = basis_as_fundamental_basisbasis)
+    basis_x = basis_as_fundamental_basis(basis)
     n_terms = basis.n if n_terms is None else n_terms
 
     # expand gaussian and define array containing coefficients for each term in the polynomial
@@ -500,7 +502,7 @@ def get_periodic_gaussian_operators_explicit_taylor_stacked(
     shape: tuple[int, ...] | None = None,
 ) -> SingleBasisDiagonalNoiseOperatorList[
     TupleBasisLike[*tuple[FundamentalBasis[BasisMetadata], ...]],
-    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[int, Any], ...]],
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]],
 ]:
     """Calculate the noise operators for an isotropic gaussian noise kernel, using an explicit Taylor expansion.
 
@@ -533,7 +535,7 @@ def get_linear_gaussian_operators_explicit_taylor_stacked(
     shape: tuple[int, ...] | None = None,
 ) -> SingleBasisDiagonalNoiseOperatorList[
     TupleBasisLike[*tuple[FundamentalBasis[BasisMetadata], ...]],
-    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[int, Any], ...]],
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]],
 ]:
     """Calculate the noise operators for an isotropic gaussian noise kernel, using an explicit Taylor expansion.
 

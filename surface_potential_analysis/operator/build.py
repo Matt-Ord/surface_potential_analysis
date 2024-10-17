@@ -5,9 +5,8 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from surface_potential_analysis.basis.conversion import (
-    basis_as_fundamental_position_basis,
+    basis_as_fundamental_basis,
 )
-from surface_potential_analysis.basis.legacy import StackedBasisLike
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.operator.operator_list import (
     SingleBasisOperatorList,
@@ -18,11 +17,14 @@ from surface_potential_analysis.stacked_basis.conversion import (
 )
 
 if TYPE_CHECKING:
+    from slate.metadata._metadata import BasisMetadata
+
     from surface_potential_analysis.basis.legacy import (
         BasisLike,
         BasisWithLengthLike,
         FundamentalBasis,
         FundamentalPositionBasis,
+        StackedBasisLike,
         StackedBasisWithVolumeLike,
         TupleBasisWithLengthLike,
     )
@@ -57,7 +59,7 @@ def get_displacements_x(
     -------
     ValueList[FundamentalPositionBasis]
     """
-    basis_x = basis_as_fundamental_basisbasis)
+    basis_x = basis_as_fundamental_basis(basis)
     distances = BasisUtil(basis_x).x_points - origin
     max_distance = np.linalg.norm(basis_x.delta_x) / 2
     data = _wrap_displacements(distances, max_distance)
@@ -157,7 +159,7 @@ def get_displacements_matrix_x(
     -------
     ValueList[FundamentalPositionBasis]
     """
-    basis_x = basis_as_fundamental_basisbasis)
+    basis_x = basis_as_fundamental_basis(basis)
     x_points = BasisUtil(basis_x).x_points
     distances = x_points[:, np.newaxis] - x_points[np.newaxis, :] - origin
     max_distance = np.linalg.norm(basis_x.delta_x) / 2

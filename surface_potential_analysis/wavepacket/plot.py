@@ -97,7 +97,7 @@ if TYPE_CHECKING:
     _B0 = TypeVar("_B0", bound=BasisLike)
     _B1 = TypeVar("_B1", bound=BasisLike)
     _B2 = TypeVar("_B2", bound=BasisLike)
-    _BF0 = TypeVar("_BF0", bound=BasisWithBlockFractionLike[Any, Any])
+    _BF0 = TypeVar("_BF0", bound=BasisWithBlockFractionLike)
 # ruff: noqa: PLR0913
 
 

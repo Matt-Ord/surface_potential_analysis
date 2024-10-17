@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterable, Literal, TypeVar, TypeVarTuple
+from typing import TYPE_CHECKING, Any, Iterable, TypeVar, TypeVarTuple
 
 import numpy as np
 from scipy.constants import hbar  # type: ignore no stub
 
 from surface_potential_analysis.basis.legacy import (
     FundamentalPositionBasis,
-    TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.kernel.build import (
     truncate_diagonal_noise_operator_list,
@@ -49,6 +48,7 @@ if TYPE_CHECKING:
         BasisLike,
         FundamentalPositionBasis,
         StackedBasisWithVolumeLike,
+        TupleBasisWithLengthLike,
     )
     from surface_potential_analysis.kernel.kernel import (
         DiagonalNoiseKernel,
@@ -273,7 +273,7 @@ def plot_diagonal_noise_operators_single_sample(  # noqa: PLR0913
 
     Parameters
     ----------
-    operators : SingleBasisDiagonalNoiseOperatorList[ FundamentalBasis[BasisMetadata], TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]], ]
+    operators : SingleBasisDiagonalNoiseOperatorList[ FundamentalBasis[BasisMetadata], TupleBasisLike[FundamentalPositionBasis], ]
     axes : tuple[int], optional
         axis to plot, by default (0,)
     idx : SingleStackedIndexLike | None, optional
@@ -346,7 +346,7 @@ def plot_noise_operators_single_sample_x(  # noqa: PLR0913
 
     Parameters
     ----------
-    operators : SingleBasisDiagonalNoiseOperatorList[ FundamentalBasis[BasisMetadata], TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]], ]
+    operators : SingleBasisDiagonalNoiseOperatorList[ FundamentalBasis[BasisMetadata], TupleBasisLike[FundamentalPositionBasis], ]
     axes : tuple[int], optional
         axis to plot, by default (0,)
     idx : SingleStackedIndexLike | None, optional
@@ -379,7 +379,7 @@ def plot_noise_operators_single_sample_x(  # noqa: PLR0913
 
 def plot_noise_kernel_single_sample(  # noqa: PLR0913
     kernel: SingleBasisDiagonalNoiseKernel[
-        TupleBasisWithLengthLike[FundamentalPositionBasis[Any, Literal[1]]],
+        TupleBasisWithLengthLike[FundamentalPositionBasis],
     ],
     truncation: Iterable[int] | None = None,
     axes: tuple[int] = (0,),
@@ -394,7 +394,7 @@ def plot_noise_kernel_single_sample(  # noqa: PLR0913
 
     Parameters
     ----------
-    kernel : SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]], ]
+    kernel : SingleBasisDiagonalNoiseKernel[ TupleBasisLike[FundamentalPositionBasis], ]
     truncation : int | None, optional
         truncation, by default None
     axes : tuple[int], optional
@@ -441,7 +441,7 @@ def plot_diagonal_noise_operators_eigenvalues(
 
     Parameters
     ----------
-    operators : SingleBasisDiagonalNoiseOperatorList[ FundamentalBasis[BasisMetadata], TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]], ]
+    operators : SingleBasisDiagonalNoiseOperatorList[ FundamentalBasis[BasisMetadata], TupleBasisLike[FundamentalPositionBasis], ]
     axes : tuple[int], optional
         axis to plot, by default (0,)
     idx : SingleStackedIndexLike | None, optional

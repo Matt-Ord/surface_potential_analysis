@@ -24,7 +24,9 @@ def get_hop_shift(hop: int, ndim: int) -> tuple[int, ...]:
     -------
     tuple[int, ...]
     """
-    util = BasisUtil(VariadicTupleBasis((*tuple(FundamentalBasis(3), None) for _ in range(ndim))))
+    util = BasisUtil(
+        TupleBasis(*tuple(FundamentalBasis.from_shape((3,)) for _ in range(ndim)))
+    )
     return tuple(x.item(hop) for x in util.stacked_nk_points)
 
 

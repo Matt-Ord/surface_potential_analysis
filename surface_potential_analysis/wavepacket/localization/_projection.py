@@ -17,7 +17,6 @@ from surface_potential_analysis.basis.util import (
     BasisUtil,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_momentum_basis,
     tuple_basis_as_fundamental,
 )
 from surface_potential_analysis.stacked_basis.util import wrap_index_around_origin
@@ -55,6 +54,8 @@ from surface_potential_analysis.wavepacket.wavepacket import (
 )
 
 if TYPE_CHECKING:
+    from slate.metadata._metadata import BasisMetadata
+
     from surface_potential_analysis.basis.legacy import (
         FundamentalPositionBasis,
     )
@@ -107,7 +108,9 @@ def _get_orthogonal_projected_states_many_band(
     )
     orthonormal_a = np.tensordot(u, v_dagger, axes=(1, 0))  # type:ignore lib
     return {
-        "basis": VariadicTupleBasis((projections["basis"][0], states["basis"][0]), None),
+        "basis": VariadicTupleBasis(
+            (projections["basis"][0], states["basis"][0]), None
+        ),
         "data": orthonormal_a.T.reshape(-1),  # Maybe this should be .conj().T ??
     }
 
@@ -132,7 +135,9 @@ def get_localization_operator_for_projections(
     return {
         "basis": TupleBasis(
             wavepackets["basis"][0][1],
-            VariadicTupleBasis((projections["basis"][0], wavepackets["basis"][0][0]), None),
+            VariadicTupleBasis(
+                (projections["basis"][0], wavepackets["basis"][0][0]), None
+            ),
         ),
         "data": np.array(data, dtype=np.complex128).reshape(-1),
     }
@@ -430,7 +435,7 @@ def get_evenly_spaced_points(
     basis: BlochWavefunctionListBasis[Any, Any], shape: tuple[int, ...]
 ) -> StateVectorList[
     TupleBasis[*tuple[FundamentalBasis[BasisMetadata], ...]],
-    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis[int, Any], ...]],
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]],
 ]:
     fundamental_basis = tuple_basis_as_fundamental(
         get_fundamental_unfurled_basis(basis)
@@ -448,7 +453,7 @@ def get_evenly_spaced_points(
 
     return {
         "basis": TupleBasis(
-            VariadicTupleBasis((*tuple(FundamentalBasis(s), None) for s in shape)),
+            TupleBasis(*tuple(FundamentalBasis(s) for s in shape)),
             fundamental_basis,
         ),
         "data": out.ravel(),

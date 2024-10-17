@@ -27,7 +27,8 @@ TS = TypeVarTuple("TS")
 
 
 class TupleBasis[*TS](VariadicTupleBasis[*TS, None, np.complex128]):
-    def __init__(self: Self, *args: *TS) -> None: ...
+    def __init__(self: Self, *args: *TS) -> None:
+        ...
 
     def __call__(self, *args: *TS) -> VariadicTupleBasis[*TS, None, np.complex128]:
         return VariadicTupleBasis(args, None)
@@ -47,7 +48,8 @@ type BasisLike = Basis[BasisMetadata, np.complex128]
 
 
 class FundamentalPositionBasis(FundamentalBasis[LengthMetadata]):
-    def __init__(self: Self, delta: np.ndarray[Any, Any], n: int) -> None: ...
+    def __init__(self: Self, delta: np.ndarray[Any, Any], n: int) -> None:
+        ...
 
     def __call__(
         self, delta: np.ndarray[Any, Any], n: int
@@ -59,21 +61,59 @@ class FundamentalPositionBasis(FundamentalBasis[LengthMetadata]):
         )
 
 
+FundamentalTransformedPositionBasis1d = FundamentalPositionBasis
+
+type FundamentalPositionBasis2d = FundamentalPositionBasis
 type FundamentalPositionBasis3d = FundamentalPositionBasis
 type TransformedPositionBasis = TransformedBasis[LengthMetadata]
-type FundamentalTransformedPositionBasis = TransformedBasis[LengthMetadata]
+type TransformedPositionBasis1d = TransformedPositionBasis
+
+
+class FundamentalTransformedPositionBasis(TransformedBasis[LengthMetadata]):
+    def __init__(self: Self, delta: np.ndarray[Any, Any], n: int) -> None:
+        ...
+
+    def __call__(
+        self, delta: np.ndarray[Any, Any], n: int
+    ) -> TransformedBasis[LengthMetadata]:
+        return TransformedBasis(
+            FundamentalBasis(
+                SpacedLengthMetadata(
+                    (n,), spacing=LabelSpacing(delta=np.linalg.norm(delta).item())
+                )
+            )
+        )
+
+
 type FundamentalTransformedPositionBasis3d = FundamentalTransformedPositionBasis
 
 
 class FundamentalTransformedBasis(TransformedBasis[BasisMetadata]):
-    def __init__(self: Self, n: int) -> None: ...
+    def __init__(self: Self, n: int) -> None:
+        ...
 
     def __call__(self, n: int) -> TransformedBasis[BasisMetadata]:
         return TransformedBasis(FundamentalBasis.from_shape((n,)))
 
 
 type TruncatedBasis = TruncatedBasisNew[Any, np.complex128]
-type EvenlySpacedBasis = EvenlySpacedBasisNew[Any, np.complex128]
+
+
+class EvenlySpacedBasis(EvenlySpacedBasisNew[SpacedLengthMetadata, np.complex128]):
+    def __init__(self: Self, n: int, step: int, offset: int, delta_x: float) -> None:
+        ...
+
+    def __call__(
+        self, n: int, step: int, offset: int, delta_x: float
+    ) -> EvenlySpacedBasisNew[SpacedLengthMetadata, np.complex128]:
+        return EvenlySpacedBasisNew(
+            Spacing(n, step, offset),
+            FundamentalBasis(
+                SpacedLengthMetadata((n * step,), spacing=LabelSpacing(delta=delta_x))
+            ),
+        )
+
+
 type EvenlySpacedTransformedPositionBasis = EvenlySpacedBasisNew[
     LengthMetadata, np.complex128
 ]
@@ -91,7 +131,8 @@ type BasisWithTimeLike = Basis[TimeMetadata, np.complex128]
 
 
 class EvenlySpacedTimeBasis(EvenlySpacedBasisNew[SpacedTimeMetadata, np.complex128]):
-    def __init__(self: Self, n: int, step: int, offset: int, delta: float) -> None: ...
+    def __init__(self: Self, n: int, step: int, offset: int, delta: float) -> None:
+        ...
 
     def __call__(
         self, n: int, step: int, offset: int, delta: float
@@ -197,3 +238,6 @@ def convert_matrix(
     return convert_dual_vector(
         converted, initial_dual_basis, final_dual_basis, axis=axes[1]
     )  # type: ignore[return-value]
+
+
+AxisVector2d = np.ndarray[Any, np.dtype[np.float64]]

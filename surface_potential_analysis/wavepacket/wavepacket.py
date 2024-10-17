@@ -4,15 +4,13 @@ import warnings
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
-from slate.basis.evenly_spaced import EvenlySpacedBasis, Spacing
 from slate.basis.stacked._tuple_basis import VariadicTupleBasis
-from slate.metadata._metadata import BasisMetadata, LabelSpacing
-from slate.metadata.length import SpacedLengthMetadata
 
 from surface_potential_analysis.basis.legacy import (
     BasisLike,
     BasisWithBlockFractionLike,
     BasisWithLengthLike,
+    EvenlySpacedBasis,
     ExplicitBlockFractionBasis,
     FundamentalBasis,
     FundamentalTransformedPositionBasis,
@@ -31,7 +29,6 @@ from surface_potential_analysis.operator.operator import (
     average_eigenvalues,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_momentum_basis,
     tuple_basis_as_fundamental,
     tuple_basis_as_transformed_fundamental,
 )
@@ -46,6 +43,8 @@ from surface_potential_analysis.state_vector.state_vector_list import StateVecto
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
+
+    from slate.metadata._metadata import BasisMetadata
 
     from surface_potential_analysis.operator.operator import SingleBasisOperator
     from surface_potential_analysis.types import (
@@ -110,19 +109,16 @@ def get_fundamental_unfurled_sample_basis_momentum(
     """
     offsets = (0,) * basis[0].n_dim if offsets is None else offsets
     basis_x = tuple_basis_as_fundamental(basis[1])
-    return TupleBasis(
-        tuple(
+    return TupleBasis[*tuple[EvenlySpacedBasis, ...]](
+        *(
             EvenlySpacedBasis(
-                Spacing(n = ),
-                FundamentalBasis(basis_x.metadata.children[i]),
-                # delta_x=basis_x[i].delta_x * basis[0][i].fundamental_n,
-                # n=basis_x[i].fundamental_n,
-                # step=basis[0][i].fundamental_n,
-                # offset=offset,
+                delta_x=basis_x[i].delta_x * basis[0][i].fundamental_n,
+                n=basis_x[i].fundamental_n,
+                step=basis[0][i].fundamental_n,
+                offset=offset,
             )
             for (i, offset) in enumerate(offsets)
-        ),
-        None,
+        )
     )
 
 
@@ -232,7 +228,7 @@ def get_wavepacket_fundamental_sample_frequencies(
     return util.fundamental_stacked_k_points
 
 
-_BF0 = TypeVar("_BF0", bound=BasisWithBlockFractionLike[Any, Any])
+_BF0 = TypeVar("_BF0", bound=BasisWithBlockFractionLike)
 
 
 def generate_uneven_wavepacket(

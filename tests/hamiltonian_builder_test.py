@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import unittest
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 import hamiltonian_generator
 import numpy as np
@@ -13,7 +13,6 @@ from surface_potential_analysis.basis.legacy import (
     FundamentalPositionBasis,
     FundamentalPositionBasis1d,
     FundamentalTransformedPositionBasis,
-    FundamentalTransformedPositionBasis1d,
     StackedBasis,
     TransformedPositionBasis,
 )
@@ -82,9 +81,7 @@ def _generate_symmetrical_points(
 
 class HamiltonianBuilderTest(unittest.TestCase):
     def test_hamiltonian_from_potential_momentum(self) -> None:
-        potential: Potential[
-            StackedBasis[FundamentalTransformedPositionBasis1d[Literal[100]]]
-        ] = {
+        potential: Potential[StackedBasis] = {
             "basis": StackedBasis(
                 FundamentalTransformedPositionBasis(np.array([1]), 100)
             ),

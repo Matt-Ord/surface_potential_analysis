@@ -72,9 +72,7 @@ def get_single_point_state_vectors(
     TupleBasisLike[*tuple[FundamentalPositionBasis, ...]],
 ]:
     """Get the state which are nonzero at idx."""
-    converted = tuple_basis_as_fundamental(
-        get_fundamental_unfurled_basis(basis)
-    )
+    converted = tuple_basis_as_fundamental(get_fundamental_unfurled_basis(basis))
     data = np.zeros((n_bands, converted.n), dtype=np.complex128)
     for i, n in enumerate(range(0, basis[1].n, n_bands)):
         data[i, n] = 1
@@ -118,7 +116,9 @@ def get_most_localized_free_state_vectors(
             for (i, s) in enumerate(shape)
         )
     )
-    bands_basis = VariadicTupleBasis((*tuple(FundamentalBasis(int(n), None)) for n in shape))
+    bands_basis = TupleBasis(
+        *tuple(FundamentalBasis.from_shape((int(n),)) for n in shape)
+    )
     bands_util = BasisUtil(bands_basis)
     sample_fractions = BasisUtil(sample_basis).stacked_nx_points
     sample_fractions = tuple(
@@ -135,7 +135,10 @@ def get_most_localized_free_state_vectors(
         )
     )
     data /= np.sqrt(np.sum(np.abs(data) ** 2, axis=1))[:, np.newaxis]
-    return {"basis": VariadicTupleBasis((bands_basis, sample_basis), None), "data": data.reshape(-1)}
+    return {
+        "basis": VariadicTupleBasis((bands_basis, sample_basis), None),
+        "data": data.reshape(-1),
+    }
 
 
 def get_most_localized_state_vectors_from_probability(

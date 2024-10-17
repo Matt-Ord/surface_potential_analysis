@@ -1691,7 +1691,7 @@ def plot_average_displacement_1d_x(
 def plot_average_drift_1d_x(
     states: StateVectorList[
         TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ],
     axes: tuple[int] = (0,),
     *,
@@ -1728,7 +1728,7 @@ def plot_average_drift_1d_x(
 def plot_average_isf_1d_x(
     states: StateVectorList[
         TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ],
     scattered_k: float,
     axes: tuple[int] = (0,),
