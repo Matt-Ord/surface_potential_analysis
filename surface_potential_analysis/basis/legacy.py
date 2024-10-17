@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, TypeVarTuple
+from typing import Any, Self, TypeVarTuple
 
 import numpy as np
 from slate.basis import Basis, FundamentalBasis, TransformedBasis, VariadicTupleBasis
@@ -9,7 +9,8 @@ from slate.basis import TruncatedBasis as TruncatedBasisNew
 from slate.basis import TupleBasis as TupleBasisNew
 from slate.explicit_basis._explicit_basis import ExplicitUnitaryBasis
 from slate.metadata import BasisMetadata
-from slate.metadata.length import AxisDirections, LengthMetadata
+from slate.metadata._metadata import LabelSpacing
+from slate.metadata.length import AxisDirections, LengthMetadata, SpacedLengthMetadata
 from slate.metadata.stacked import StackedMetadata
 
 from surface_potential_analysis.basis.block_fraction_basis import (
@@ -19,7 +20,14 @@ from surface_potential_analysis.basis.block_fraction_basis import (
 
 TS = TypeVarTuple("TS")
 
-type TupleBasis[*TS] = VariadicTupleBasis[*TS, None, np.complex128]
+
+class TupleBasis[*TS](VariadicTupleBasis[*TS, None, np.complex128]):
+    def __init__(self: Self, *args: *TS) -> None: ...
+
+    def __call__(self, *args: *TS) -> VariadicTupleBasis[*TS, None, np.complex128]:
+        return VariadicTupleBasis(args, None)
+
+
 type TupleBasisLike[*TS] = VariadicTupleBasis[*TS, None, np.complex128]
 type TupleBasisWithLengthLike[*TS] = VariadicTupleBasis[
     *TS, AxisDirections, np.complex128
@@ -30,11 +38,33 @@ type StackedBasisWithVolumeLike = TupleBasisNew[
 ]
 type BasisWithLengthLike = Basis[LengthMetadata, np.complex128]
 type BasisLike = Basis[BasisMetadata, np.complex128]
-type FundamentalPositionBasis = FundamentalBasis[LengthMetadata]
+
+
+class FundamentalPositionBasis(FundamentalBasis[LengthMetadata]):
+    def __init__(self: Self, delta: np.ndarray[Any, Any], n: int) -> None: ...
+
+    def __call__(
+        self, delta: np.ndarray[Any, Any], n: int
+    ) -> FundamentalBasis[LengthMetadata]:
+        return FundamentalBasis(
+            SpacedLengthMetadata(
+                (n,), spacing=LabelSpacing(delta=np.linalg.norm(delta).item())
+            )
+        )
+
+
 type FundamentalPositionBasis3d = FundamentalPositionBasis
 type FundamentalTransformedPositionBasis = TransformedBasis[LengthMetadata]
 type FundamentalTransformedPositionBasis3d = FundamentalTransformedPositionBasis
-type FundamentalTransformedBasis = TransformedBasis[BasisMetadata]
+
+
+class FundamentalTransformedBasis(TransformedBasis[BasisMetadata]):
+    def __init__(self: Self, n: int) -> None: ...
+
+    def __call__(self, n: int) -> TransformedBasis[BasisMetadata]:
+        return TransformedBasis(FundamentalBasis.from_shape((n,)))
+
+
 type TruncatedBasis = TruncatedBasisNew[Any, np.complex128]
 type EvenlySpacedBasis = EvenlySpacedBasisNew[Any, np.complex128]
 type EvenlySpacedTransformedPositionBasis = EvenlySpacedBasisNew[
