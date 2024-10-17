@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar, cast, overlo
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis_like import BasisLike
-from surface_potential_analysis.basis.stacked_basis import (
+from surface_potential_analysis.basis.legacy import (
+    BasisLike,
     TupleBasis,
     TupleBasisLike,
 )
@@ -22,8 +22,8 @@ if TYPE_CHECKING:
         SingleStackedIndexLike,
     )
 
-_B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-_B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
+_B0 = TypeVar("_B0", bound=BasisLike)
+_B1 = TypeVar("_B1", bound=BasisLike)
 _SB0 = TypeVar("_SB0", bound=TupleBasisLike[*tuple[Any, ...]])
 
 
@@ -113,7 +113,7 @@ def get_probability_along_axis(
     -------
     ProbabilityVector[_B0Inv]
     """
-    ndim = probabilities["basis"][0].ndim
+    ndim = probabilities["basis"][0].sizedim
     idx = tuple(0 for _ in range(ndim - 2)) if idx is None else idx
     final_basis = TupleBasis(
         *tuple(b for (i, b) in enumerate(probabilities["basis"][0]) if i in axes)
@@ -125,7 +125,7 @@ def get_probability_along_axis(
         idx,
     ).reshape(*final_basis.shape, -1)
     return {
-        "basis": TupleBasis(final_basis, probabilities["basis"][1]),
+        "basis": VariadicTupleBasis((final_basis, probabilities["basis"][1]), None),
         "data": vector,
     }
 
@@ -145,7 +145,7 @@ def sum_probability(
     -------
     ProbabilityVector[Any]
     """
-    axis = tuple(range(probability["basis"].ndim)) if axis is None else axis
+    axis = tuple(range(probability["basis"].n_dim)) if axis is None else axis
     basis = tuple(b for (i, b) in enumerate(probability["basis"]) if i not in axis)
     return {
         "basis": basis,
@@ -173,12 +173,12 @@ def sum_probabilities(
     -------
     ProbabilityVectorList[Any, _L0Inv]
     """
-    axis = tuple(range(probabilities["basis"].ndim)) if axis is None else axis
+    axis = tuple(range(probabilities["basis"].n_dim)) if axis is None else axis
     basis = TupleBasis(
         *tuple(b for (i, b) in enumerate(probabilities["basis"][1]) if i not in axis)
     )
     return {
-        "basis": TupleBasis(probabilities["basis"][0], basis),
+        "basis": VariadicTupleBasis((probabilities["basis"][0], basis), None),
         "data": np.sum(
             probabilities["data"].reshape(-1, *probabilities["basis"][1].shape),
             axis=tuple(ax + 1 for ax in axis),
@@ -192,8 +192,7 @@ def average_probabilities(
     axis: tuple[int, ...],
     *,
     weights: np.ndarray[tuple[int], np.dtype[np.float64]] | None = None,
-) -> ProbabilityVectorList[Any, _B1]:
-    ...
+) -> ProbabilityVectorList[Any, _B1]: ...
 
 
 @overload
@@ -202,8 +201,7 @@ def average_probabilities(
     axis: None = None,
     *,
     weights: np.ndarray[tuple[int], np.dtype[np.float64]] | None = None,
-) -> ProbabilityVector[_B1]:
-    ...
+) -> ProbabilityVector[_B1]: ...
 
 
 def average_probabilities(
@@ -235,9 +233,9 @@ def average_probabilities(
         }
 
     old_basis = cast(TupleBasisLike[*tuple[Any, ...]], probabilities["basis"][0])
-    basis = TupleBasis(*tuple(b for (i, b) in enumerate(old_basis) if i not in axis))
+    basis = VariadicTupleBasis((*tuple(b for (i, b), None) in enumerate(old_basis) if i not in axis))
     return {
-        "basis": TupleBasis(basis, probabilities["basis"][1]),
+        "basis": VariadicTupleBasis((basis, probabilities["basis"][1]), None),
         "data": np.average(
             probabilities["data"].reshape(*old_basis.shape, -1),
             axis=tuple(ax for ax in axis),

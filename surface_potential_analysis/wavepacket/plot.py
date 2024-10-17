@@ -8,8 +8,8 @@ from scipy.constants import Boltzmann, hbar  # type: ignore lib
 
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_basis,
-    stacked_basis_as_fundamental_transformed_basis,
+    tuple_basis_as_fundamental,
+    tuple_basis_as_transformed_fundamental,
 )
 from surface_potential_analysis.state_vector.plot import (
     animate_state_3d_x,
@@ -69,11 +69,9 @@ if TYPE_CHECKING:
     from matplotlib.collections import QuadMesh
     from matplotlib.figure import Figure
 
-    from surface_potential_analysis.basis.basis_like import BasisLike
-    from surface_potential_analysis.basis.block_fraction_basis import (
+    from surface_potential_analysis.basis.legacy import (
+        BasisLike,
         BasisWithBlockFractionLike,
-    )
-    from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisLike,
         StackedBasisWithVolumeLike,
         TupleBasisLike,
@@ -92,13 +90,13 @@ if TYPE_CHECKING:
         LocalizationOperator,
     )
 
-    _SB1 = TypeVar("_SB1", bound=StackedBasisLike[Any, Any, Any])
-    _SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike[Any, Any, Any])
-    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
-    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
-    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-    _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
-    _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
+    _SB1 = TypeVar("_SB1", bound=StackedBasisLike)
+    _SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike)
+    _SB0 = TypeVar("_SB0", bound=StackedBasisLike)
+    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike)
+    _B0 = TypeVar("_B0", bound=BasisLike)
+    _B1 = TypeVar("_B1", bound=BasisLike)
+    _B2 = TypeVar("_B2", bound=BasisLike)
     _BF0 = TypeVar("_BF0", bound=BasisWithBlockFractionLike[Any, Any])
 # ruff: noqa: PLR0913
 
@@ -275,9 +273,7 @@ def plot_wavepacket_eigenvalues_1d_k(
     """
     converted = convert_wavepacket_with_eigenvalues_to_basis(
         wavepacket,
-        list_basis=stacked_basis_as_fundamental_transformed_basis(
-            wavepacket["basis"][0][1]
-        ),
+        list_basis=tuple_basis_as_transformed_fundamental(wavepacket["basis"][0][1]),
     )
 
     bands = list(range(converted["basis"][0][0].n)) if bands is None else bands
@@ -334,9 +330,7 @@ def plot_wavepacket_eigenvalues_1d_x(
     """
     converted = convert_wavepacket_with_eigenvalues_to_basis(
         wavepacket,
-        list_basis=stacked_basis_as_fundamental_transformed_basis(
-            wavepacket["basis"][0][1]
-        ),
+        list_basis=tuple_basis_as_transformed_fundamental(wavepacket["basis"][0][1]),
     )
 
     bands = list(range(converted["basis"][0][0].n)) if bands is None else bands
@@ -393,7 +387,7 @@ def plot_wavepacket_transformed_energy_1d(
     """
     converted = convert_wavepacket_with_eigenvalues_to_basis(
         wavepacket,
-        list_basis=stacked_basis_as_fundamental_basis(wavepacket["basis"][0][1]),
+        list_basis=tuple_basis_as_fundamental(wavepacket["basis"][0][1]),
     )
 
     bands = list(range(converted["basis"][0][0].n)) if bands is None else bands
@@ -407,7 +401,7 @@ def plot_wavepacket_transformed_energy_1d(
     fig, ax, line = plot_data_1d(
         data[
             :,
-            *tuple(1 if i == axes[0] else 0 for i in range(list_basis.ndim)),
+            *tuple(1 if i == axes[0] else 0 for i in range(list_basis.n_dim)),
         ],
         nx_points.astype(np.float64),
         ax=ax,
@@ -439,7 +433,7 @@ def plot_wavepacket_transformed_energy_1d(
 
 
 def _get_free_energy(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    basis: StackedBasisWithVolumeLike,
     bands: np.ndarray[Any, np.dtype[np.int_]],
     axis: int = 0,
 ) -> np.ndarray[Any, np.dtype[np.float64]]:
@@ -473,13 +467,15 @@ def get_wavepacket_transformed_energy_effective_mass(
     # E(\Delta x)
     converted = convert_wavepacket_with_eigenvalues_to_basis(
         wavefunctions,
-        list_basis=stacked_basis_as_fundamental_basis(wavefunctions["basis"][0][1]),
+        list_basis=tuple_basis_as_fundamental(wavefunctions["basis"][0][1]),
     )
 
     nx_points = BasisUtil(wavefunctions["basis"][0][0]).nx_points
     data = converted["eigenvalue"].reshape(-1, *converted["basis"][0][1].shape)
     list_basis = converted["basis"][0][1]
-    sliced_data = data[:, *tuple(1 if i == axis else 0 for i in range(list_basis.ndim))]
+    sliced_data = data[
+        :, *tuple(1 if i == axis else 0 for i in range(list_basis.n_dim))
+    ]
 
     actual_energy = np.abs(sliced_data)
     free_energy = _get_free_energy(wavefunctions["basis"][1], nx_points, axis)
@@ -629,7 +625,7 @@ def get_wavepacket_localized_effective_mass(
 
     list_basis = localized["basis"][0].vectors["basis"][0][1]
     actual_energy = diagonal.reshape(-1, *list_basis.shape)[
-        :, *tuple(1 if i == axis else 0 for i in range(list_basis.ndim))
+        :, *tuple(1 if i == axis else 0 for i in range(list_basis.n_dim))
     ]
     actual_energy = np.abs(actual_energy)
     nx_points = BasisUtil(wavefunctions["basis"][0][0]).nx_points

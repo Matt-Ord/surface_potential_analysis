@@ -9,14 +9,14 @@ import scipy.linalg
 import scipy.special
 from scipy.constants import hbar
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
     FundamentalPositionBasis,
     FundamentalPositionBasis1d,
     FundamentalTransformedPositionBasis,
     FundamentalTransformedPositionBasis1d,
+    StackedBasis,
     TransformedPositionBasis,
 )
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
 from surface_potential_analysis.basis.util import (
     BasisUtil,
 )
@@ -36,7 +36,7 @@ from surface_potential_analysis.stacked_basis.build import (
 )
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_momentum_basis,
-    stacked_basis_as_fundamental_position_basis,
+    tuple_basis_as_fundamental,
 )
 from surface_potential_analysis.stacked_basis.sho_basis import (
     SHOBasisConfig,
@@ -94,7 +94,7 @@ class HamiltonianBuilderTest(unittest.TestCase):
         actual = momentum_basis.hamiltonian_from_potential(potential)
 
         converted = convert_potential_to_basis(
-            potential, stacked_basis_as_fundamental_position_basis(potential["basis"])
+            potential, tuple_basis_as_fundamental(potential["basis"])
         )
         expected = convert_operator_to_basis(
             {

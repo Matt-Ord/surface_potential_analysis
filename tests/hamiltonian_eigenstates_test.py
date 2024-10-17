@@ -5,10 +5,8 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
     FundamentalTransformedPositionBasis,
-)
-from surface_potential_analysis.basis.stacked_basis import (
     StackedBasis,
     TupleBasisLike,
 )

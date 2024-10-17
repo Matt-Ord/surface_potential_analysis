@@ -4,15 +4,13 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
     FundamentalBasis,
     FundamentalPositionBasis,
     FundamentalTransformedPositionBasis,
-    TransformedPositionBasis,
-)
-from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisLike,
     StackedBasisWithVolumeLike,
+    TransformedPositionBasis,
     TupleBasis,
     TupleBasisWithLengthLike,
 )
@@ -22,7 +20,7 @@ from surface_potential_analysis.probability_vector.probability_vector import (
     from_state_vector_list,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_position_basis,
+    tuple_basis_as_fundamental,
 )
 from surface_potential_analysis.wavepacket.eigenstate_conversion import (
     unfurl_wavepacket_list,
@@ -34,10 +32,8 @@ from surface_potential_analysis.wavepacket.wavepacket import (
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis_like import (
+    from surface_potential_analysis.basis.legacy import (
         BasisLike,
-    )
-    from surface_potential_analysis.basis.stacked_basis import (
         TupleBasisLike,
     )
     from surface_potential_analysis.state_vector.state_vector import StateVector
@@ -52,9 +48,9 @@ if TYPE_CHECKING:
         BlochWavefunctionListBasis,
     )
 
-    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
-    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
+    _B0 = TypeVar("_B0", bound=BasisLike)
+    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike)
+    _SB0 = TypeVar("_SB0", bound=StackedBasisLike)
     _TBL0 = TypeVar("_TBL0", bound=TupleBasisWithLengthLike[*tuple[Any, ...]])
     _L0Inv = TypeVar("_L0Inv", bound=int)
 
@@ -73,17 +69,17 @@ def get_single_point_state_vectors(
     n_bands: _L0Inv,
 ) -> StateVectorList[
     FundamentalBasis[_L0Inv],
-    TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]],
+    TupleBasisLike[*tuple[FundamentalPositionBasis, ...]],
 ]:
     """Get the state which are nonzero at idx."""
-    converted = stacked_basis_as_fundamental_position_basis(
+    converted = tuple_basis_as_fundamental(
         get_fundamental_unfurled_basis(basis)
     )
     data = np.zeros((n_bands, converted.n), dtype=np.complex128)
     for i, n in enumerate(range(0, basis[1].n, n_bands)):
         data[i, n] = 1
     return {
-        "basis": TupleBasis(FundamentalBasis(n_bands), converted),
+        "basis": VariadicTupleBasis((FundamentalBasis(n_bands), None), converted),
         "data": data.reshape(-1),
     }
 
@@ -92,7 +88,7 @@ def get_most_localized_free_state_vectors(
     basis: BlochWavefunctionListBasis[_SB0, _TBL0],
     shape: tuple[IntLike_co, ...],
 ) -> StateVectorList[
-    TupleBasisLike[*tuple[FundamentalBasis[int], ...]],
+    TupleBasisLike[*tuple[FundamentalBasis[BasisMetadata], ...]],
     TupleBasisWithLengthLike[*tuple[TransformedPositionBasis[Any, Any, Any], ...]],
 ]:
     """
@@ -104,7 +100,7 @@ def get_most_localized_free_state_vectors(
 
     Returns
     -------
-    StateVectorList[StackedBasis[*tuple[FundamentalBasis[int], ...]], StackedBasis[Any]]
+    StateVectorList[StackedBasis[*tuple[FundamentalBasis[BasisMetadata], ...]], StackedBasis[Any]]
         The most localized states
     """
     n_bands = np.prod(np.asarray(shape))
@@ -122,7 +118,7 @@ def get_most_localized_free_state_vectors(
             for (i, s) in enumerate(shape)
         )
     )
-    bands_basis = TupleBasis(*tuple(FundamentalBasis(int(n)) for n in shape))
+    bands_basis = VariadicTupleBasis((*tuple(FundamentalBasis(int(n), None)) for n in shape))
     bands_util = BasisUtil(bands_basis)
     sample_fractions = BasisUtil(sample_basis).stacked_nx_points
     sample_fractions = tuple(
@@ -139,15 +135,15 @@ def get_most_localized_free_state_vectors(
         )
     )
     data /= np.sqrt(np.sum(np.abs(data) ** 2, axis=1))[:, np.newaxis]
-    return {"basis": TupleBasis(bands_basis, sample_basis), "data": data.reshape(-1)}
+    return {"basis": VariadicTupleBasis((bands_basis, sample_basis), None), "data": data.reshape(-1)}
 
 
 def get_most_localized_state_vectors_from_probability(
     wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBV0],
     fractions: tuple[np.ndarray[tuple[int], np.dtype[np.float64]], ...],
 ) -> StateVectorList[
-    FundamentalBasis[int],
-    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
+    FundamentalBasis[BasisMetadata],
+    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis, ...]],
 ]:
     """
     Get the most localized free states on the surface.
@@ -158,7 +154,7 @@ def get_most_localized_state_vectors_from_probability(
 
     Returns
     -------
-    StateVectorList[StackedBasis[*tuple[FundamentalBasis[int], ...]], StackedBasis[Any]]
+    StateVectorList[StackedBasis[*tuple[FundamentalBasis[BasisMetadata], ...]], StackedBasis[Any]]
         The most localized states
     """
     n_bands = fractions[0].size
@@ -182,6 +178,6 @@ def get_most_localized_state_vectors_from_probability(
     data *= np.sqrt(averaged["data"])
     data /= np.sqrt(np.sum(np.abs(data) ** 2, axis=1))[:, np.newaxis]
     return {
-        "basis": TupleBasis(FundamentalBasis(n_bands), sample_basis),
+        "basis": VariadicTupleBasis((FundamentalBasis(n_bands), None), sample_basis),
         "data": data.reshape(-1),
     }

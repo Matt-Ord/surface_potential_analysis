@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, TypeVar
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
     FundamentalBasis,
     FundamentalPositionBasis,
     FundamentalTransformedBasis,

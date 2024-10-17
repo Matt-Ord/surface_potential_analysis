@@ -7,13 +7,11 @@ import hamiltonian_generator
 import numpy as np
 from scipy.constants import hbar
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
     FundamentalPositionBasis,
     FundamentalPositionBasis3d,
     TransformedPositionBasis,
     TransformedPositionBasis3d,
-)
-from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
     TupleBasisLike,
 )
@@ -27,7 +25,7 @@ from surface_potential_analysis.stacked_basis.sho_basis import (
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.explicit_basis import ExplicitBasis3d
+    from surface_potential_analysis.basis.legacy import ExplicitBasis3d
     from surface_potential_analysis.operator import SingleBasisOperator
     from surface_potential_analysis.potential.potential import Potential
 
@@ -70,12 +68,12 @@ class _SurfaceHamiltonianUtil(
         self._potential = potential
         self._config = config
         self._resolution = resolution
-        if 2 * (self._resolution[0] - 1) > self._potential["basis"][0].n:
+        if 2 * (self._resolution[0] - 1) > self._potential["basis"][0].size:
             raise AssertionError(  # noqa: TRY003
                 "Not have enough resolution in x0"  # noqa: EM101
             )
 
-        if 2 * (self._resolution[1] - 1) > self._potential["basis"][1].n:
+        if 2 * (self._resolution[1] - 1) > self._potential["basis"][1].size:
             raise AssertionError(  # noqa: TRY003
                 "Not have enough resolution in x1"  # noqa: EM101
             )
@@ -128,12 +126,12 @@ class _SurfaceHamiltonianUtil(
             TransformedPositionBasis(
                 self._potential["basis"][0].delta_x,
                 self._resolution[0],
-                self._potential["basis"][0].n,
+                self._potential["basis"][0].size,
             ),
             TransformedPositionBasis(
                 self._potential["basis"][1].delta_x,
                 self._resolution[1],
-                self._potential["basis"][1].n,
+                self._potential["basis"][1].size,
             ),
             infinate_sho_basis_3d_from_config(
                 FundamentalPositionBasis(
@@ -161,7 +159,7 @@ class _SurfaceHamiltonianUtil(
 
         return {
             "data": energies.reshape(-1),
-            "basis": TupleBasis(self.basis, self.basis),
+            "basis": VariadicTupleBasis((self.basis, self.basis), None),
         }
 
     @cached_property

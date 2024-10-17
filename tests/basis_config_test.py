@@ -17,7 +17,7 @@ from surface_potential_analysis.stacked_basis.build import (
 )
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_momentum_basis,
-    stacked_basis_as_fundamental_position_basis,
+    tuple_basis_as_fundamental,
 )
 from surface_potential_analysis.stacked_basis.util import (
     _wrap_distance,  # type: ignore this is testing module
@@ -140,7 +140,7 @@ class TestBasisConfig(unittest.TestCase):
             reciprocal_util.reciprocal_volume, util.reciprocal_volume
         )
 
-        reciprocal_2 = stacked_basis_as_fundamental_position_basis(reciprocal)
+        reciprocal_2 = tuple_basis_as_fundamental(reciprocal)
         reciprocal_2_util = BasisUtil(reciprocal_2)
 
         np.testing.assert_array_almost_equal(

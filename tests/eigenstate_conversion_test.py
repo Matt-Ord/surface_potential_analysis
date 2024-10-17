@@ -7,14 +7,12 @@ import hamiltonian_generator
 import numpy as np
 from scipy.constants import hbar
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
+    ExplicitBasisWithLength,
     FundamentalPositionBasis3d,
+    StackedBasis,
     TransformedPositionBasis,
     TransformedPositionBasis3d,
-)
-from surface_potential_analysis.basis.explicit_basis import ExplicitBasisWithLength
-from surface_potential_analysis.basis.stacked_basis import (
-    StackedBasis,
     TupleBasisLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
@@ -28,7 +26,7 @@ from surface_potential_analysis.state_vector.conversion import (
 from tests.utils import get_random_explicit_basis
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.explicit_basis import ExplicitBasis3d
+    from surface_potential_analysis.basis.legacy import ExplicitBasis3d
     from surface_potential_analysis.state_vector.state_vector import StateVector
 
 _rng = np.random.default_rng()

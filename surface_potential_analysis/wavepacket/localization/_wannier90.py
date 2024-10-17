@@ -20,14 +20,12 @@ from typing import (
 import numpy as np
 import scipy.ndimage  # type:ignore lib
 
-from surface_potential_analysis.basis.basis import (
-    FundamentalBasis,
-)
-from surface_potential_analysis.basis.basis_like import BasisLike
 from surface_potential_analysis.basis.conversion import (
     basis_as_fundamental_momentum_basis,
 )
-from surface_potential_analysis.basis.stacked_basis import (
+from surface_potential_analysis.basis.legacy import (
+    BasisLike,
+    FundamentalBasis,
     StackedBasisLike,
     StackedBasisWithVolumeLike,
     TupleBasis,
@@ -67,7 +65,7 @@ from ._projection import (
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis import (
+    from surface_potential_analysis.basis.legacy import (
         FundamentalTransformedPositionBasis,
     )
     from surface_potential_analysis.state_vector.state_vector import StateVector
@@ -77,20 +75,20 @@ if TYPE_CHECKING:
 
     _SBL0 = TypeVar(
         "_SBL0",
-        bound=StackedBasisWithVolumeLike[Any, Any, Any],
+        bound=StackedBasisWithVolumeLike,
     )
     _PB1Inv = TypeVar(
         "_PB1Inv",
-        bound=FundamentalTransformedPositionBasis[Any, Any],
+        bound=FundamentalTransformedPositionBasis,
     )
     _FB0 = TypeVar("_FB0", bound=FundamentalBasis[Any])
 
-    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
+    _SB0 = TypeVar("_SB0", bound=StackedBasisLike)
 
-    _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
+    _B2 = TypeVar("_B2", bound=BasisLike)
 
-_B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-_B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
+_B0 = TypeVar("_B0", bound=BasisLike)
+_B1 = TypeVar("_B1", bound=BasisLike)
 Ts = TypeVarTuple("Ts")
 SymmetryOp = Callable[
     [ArrayFlatIndexLike[*Ts], tuple[int, ...]], ArrayFlatIndexLike[*Ts]
@@ -128,9 +126,9 @@ end unit_cell_cart"""
 
 # ! cSpell:disable
 def _build_k_points_block(
-    list_basis: StackedBasisLike[Any, Any, Any],
+    list_basis: StackedBasisLike,
 ) -> str:
-    n_dim = list_basis.ndim
+    n_dim = list_basis.n_dim
     fractions = get_wavepacket_sample_fractions(list_basis)
     fractions_padded = np.zeros((3, fractions.shape[1]))
     fractions_padded[:n_dim] = fractions
@@ -205,7 +203,7 @@ def _get_offset_bloch_state(
     """
     # Note: requires state in k basis
     padded_shape = np.ones(3, dtype=np.int_)
-    padded_shape[: state["basis"].ndim] = state["basis"].shape
+    padded_shape[: state["basis"].n_dim] = state["basis"].shape
     vector = np.roll(
         (state["data"]).reshape(padded_shape),
         tuple(-o for o in offset),
@@ -321,7 +319,7 @@ def _build_amn_file(
     ],
     projections: StateVectorList[_B1, _B2],
 ) -> str:
-    n_projections = projections["basis"][0].n
+    n_projections = projections["basis"][0].size
     n_wavefunctions = wavepackets["basis"][0][0].n
     n_k_points = wavepackets["basis"][0][1].n
     coefficients = np.array(
@@ -453,7 +451,8 @@ def _get_localization_operator_from_u_mat_file(
     )
     return {
         "basis": TupleBasis(
-            wavepackets_basis[1], TupleBasis(projection_basis, wavepackets_basis[0])
+            wavepackets_basis[1],
+            VariadicTupleBasis((projection_basis, wavepackets_basis[0]), None),
         ),
         "data": np.moveaxis(a, -1, 0).reshape(-1),
     }
@@ -565,8 +564,7 @@ def get_localization_operator_wannier90(
     wavefunctions: BlochWavefunctionListList[_B0, _SB0, _SBL0],
     *,
     options: Wannier90Options[_B1],
-) -> LocalizationOperator[_SB0, _B1, _B0]:
-    ...
+) -> LocalizationOperator[_SB0, _B1, _B0]: ...
 
 
 @overload
@@ -574,8 +572,7 @@ def get_localization_operator_wannier90(
     wavefunctions: BlochWavefunctionListList[_B0, _SB0, _SBL0],
     *,
     options: None = None,
-) -> LocalizationOperator[_SB0, FundamentalBasis[int], _B0]:
-    ...
+) -> LocalizationOperator[_SB0, FundamentalBasis[BasisMetadata], _B0]: ...
 
 
 def get_localization_operator_wannier90(
@@ -604,7 +601,7 @@ def get_localization_operator_wannier90(
         Localized wavepackets, with each wavepacket corresponding to a different projection
     """
     options = (
-        Wannier90Options[FundamentalBasis[int]](
+        Wannier90Options[FundamentalBasis[BasisMetadata]](
             projection={
                 "basis": TupleBasis(
                     FundamentalBasis(wavefunctions["basis"][0][0].n),
@@ -683,8 +680,8 @@ def localize_wavepacket_wannier90(
 def get_localization_operator_wannier90_individual_bands(
     wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBL0],
 ) -> LocalizationOperator[_SB0, _B0, _B0]:
-    options = Wannier90Options[FundamentalBasis[int]](
-        projection={"basis": TupleBasis(FundamentalBasis(1))},
+    options = Wannier90Options[FundamentalBasis[BasisMetadata]](
+        projection={"basis": VariadicTupleBasis((FundamentalBasis(1), None))},
         convergence_tolerance=1e-20,
         ignore_axes=(2,),
     )
@@ -706,7 +703,9 @@ def get_localization_operator_wannier90_individual_bands(
     return {
         "basis": TupleBasis(
             wavepackets["basis"][0][1],
-            TupleBasis(wavepackets["basis"][0][0], wavepackets["basis"][0][0]),
+            VariadicTupleBasis(
+                (wavepackets["basis"][0][0], wavepackets["basis"][0][0]), None
+            ),
         ),
         "data": out.reshape(-1),
     }

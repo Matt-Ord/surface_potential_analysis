@@ -5,9 +5,8 @@ from typing import TYPE_CHECKING, Any, Iterable, Literal, TypeVar, TypeVarTuple
 import numpy as np
 from scipy.constants import hbar  # type: ignore no stub
 
-from surface_potential_analysis.basis.basis import FundamentalPositionBasis
-from surface_potential_analysis.basis.stacked_basis import (
-    TupleBasis,
+from surface_potential_analysis.basis.legacy import (
+    FundamentalPositionBasis,
     TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.kernel.build import (
@@ -28,7 +27,7 @@ from surface_potential_analysis.operator.operator_list import (
     select_diagonal_operator,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_position_basis,
+    tuple_basis_as_fundamental,
 )
 from surface_potential_analysis.util.plot import (
     Scale,
@@ -46,11 +45,9 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
     from matplotlib.lines import Line2D
 
-    from surface_potential_analysis.basis.basis import (
+    from surface_potential_analysis.basis.legacy import (
+        BasisLike,
         FundamentalPositionBasis,
-    )
-    from surface_potential_analysis.basis.basis_like import BasisLike
-    from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisWithVolumeLike,
     )
     from surface_potential_analysis.kernel.kernel import (
@@ -66,10 +63,10 @@ if TYPE_CHECKING:
     from surface_potential_analysis.types import SingleStackedIndexLike
 
     _B0s = TypeVarTuple("_B0s")
-    _B0 = TypeVar("_B0", bound=BasisLike[int, int])
-    _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
-    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
-    _SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+    _B0 = TypeVar("_B0", bound=BasisLike)
+    _B1 = TypeVar("_B1", bound=BasisLike)
+    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike)
+    _SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike)
 
 
 def plot_diagonal_kernel_2d(
@@ -276,7 +273,7 @@ def plot_diagonal_noise_operators_single_sample(  # noqa: PLR0913
 
     Parameters
     ----------
-    operators : SingleBasisDiagonalNoiseOperatorList[ FundamentalBasis[int], TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]], ]
+    operators : SingleBasisDiagonalNoiseOperatorList[ FundamentalBasis[BasisMetadata], TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]], ]
     axes : tuple[int], optional
         axis to plot, by default (0,)
     idx : SingleStackedIndexLike | None, optional
@@ -349,7 +346,7 @@ def plot_noise_operators_single_sample_x(  # noqa: PLR0913
 
     Parameters
     ----------
-    operators : SingleBasisDiagonalNoiseOperatorList[ FundamentalBasis[int], TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]], ]
+    operators : SingleBasisDiagonalNoiseOperatorList[ FundamentalBasis[BasisMetadata], TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]], ]
     axes : tuple[int], optional
         axis to plot, by default (0,)
     idx : SingleStackedIndexLike | None, optional
@@ -365,9 +362,9 @@ def plot_noise_operators_single_sample_x(  # noqa: PLR0913
     -------
     tuple[Figure, Axes, Line2D]
     """
-    basis_x = stacked_basis_as_fundamental_position_basis(operators["basis"][1][0])
+    basis_x = tuple_basis_as_fundamental(operators["basis"][1][0])
     converted = convert_noise_operator_list_to_basis(
-        operators, TupleBasis(basis_x, basis_x)
+        operators, VariadicTupleBasis((basis_x, basis_x), None)
     )
     return plot_diagonal_noise_operators_single_sample(
         as_diagonal_noise_operators_from_full(converted),
@@ -444,7 +441,7 @@ def plot_diagonal_noise_operators_eigenvalues(
 
     Parameters
     ----------
-    operators : SingleBasisDiagonalNoiseOperatorList[ FundamentalBasis[int], TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]], ]
+    operators : SingleBasisDiagonalNoiseOperatorList[ FundamentalBasis[BasisMetadata], TupleBasisLike[FundamentalPositionBasis[Any, Literal[1]]], ]
     axes : tuple[int], optional
         axis to plot, by default (0,)
     idx : SingleStackedIndexLike | None, optional
@@ -473,7 +470,7 @@ def plot_diagonal_noise_operators_eigenvalues(
 
 
 def plot_isotropic_noise_kernel_1d_x(  # noqa: PLR0913
-    kernel: IsotropicNoiseKernel[StackedBasisWithVolumeLike[Any, Any, Any]],
+    kernel: IsotropicNoiseKernel[StackedBasisWithVolumeLike],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -486,7 +483,7 @@ def plot_isotropic_noise_kernel_1d_x(  # noqa: PLR0913
 
     Parameters
     ----------
-    kernel : IsotropicNoiseKernel[StackedBasisWithVolumeLike[Any, Any, Any]]
+    kernel : IsotropicNoiseKernel[StackedBasisWithVolumeLike]
     axes : tuple[int], optional
         axes, by default (0,)
     idx : SingleStackedIndexLike | None, optional
@@ -510,7 +507,7 @@ def plot_isotropic_noise_kernel_1d_x(  # noqa: PLR0913
 
 
 def plot_isotropic_noise_kernel_2d_x(  # noqa: PLR0913
-    kernel: IsotropicNoiseKernel[StackedBasisWithVolumeLike[Any, Any, Any]],
+    kernel: IsotropicNoiseKernel[StackedBasisWithVolumeLike],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -523,7 +520,7 @@ def plot_isotropic_noise_kernel_2d_x(  # noqa: PLR0913
 
     Parameters
     ----------
-    kernel : IsotropicNoiseKernel[StackedBasisWithVolumeLike[Any, Any, Any]]
+    kernel : IsotropicNoiseKernel[StackedBasisWithVolumeLike]
     axes : tuple[int], optional
         axes, by default (0,)
     idx : SingleStackedIndexLike | None, optional

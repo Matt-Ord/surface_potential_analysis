@@ -12,13 +12,11 @@ from typing import (
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
     FundamentalBasis,
     FundamentalPositionBasis,
     FundamentalPositionBasis2d,
     FundamentalPositionBasis3d,
-)
-from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisLike,
@@ -33,7 +31,7 @@ from surface_potential_analysis.util.interpolation import (
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from surface_potential_analysis.basis.basis_like import (
+    from surface_potential_analysis.basis.legacy import (
         BasisWithLengthLike,
     )
 
@@ -46,10 +44,8 @@ _L0Inv = TypeVar("_L0Inv", bound=int)
 _L1Inv = TypeVar("_L1Inv", bound=int)
 _L2Inv = TypeVar("_L2Inv", bound=int)
 
-_SB0_co = TypeVar(
-    "_SB0_co", bound=StackedBasisWithVolumeLike[Any, Any, Any], covariant=True
-)
-_SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+_SB0_co = TypeVar("_SB0_co", bound=StackedBasisWithVolumeLike, covariant=True)
+_SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike)
 
 
 class Potential(TypedDict, Generic[_SB0_co]):
@@ -300,10 +296,10 @@ def mock_even_potential(
     return {
         "basis": TupleBasis(
             FundamentalPositionBasis(
-                np.array([*uneven["basis"][0].delta_x, 0]), uneven["basis"][0].n
+                np.array([*uneven["basis"][0].delta_x, 0]), uneven["basis"][0].size
             ),
             FundamentalPositionBasis(
-                np.array([*uneven["basis"][1].delta_x, 0]), uneven["basis"][1].n
+                np.array([*uneven["basis"][1].delta_x, 0]), uneven["basis"][1].size
             ),
             FundamentalPositionBasis(
                 np.array([0, 0, 1], dtype=float),

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar
 import numpy as np
 import scipy.stats  # type: ignore unkown
 
-from surface_potential_analysis.basis.basis_like import BasisLike
+from surface_potential_analysis.basis.legacy import BasisLike
 from surface_potential_analysis.basis.time_basis_like import (
     BasisWithTimeLike,
     EvenlySpacedTimeBasis,
@@ -22,8 +22,8 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
     from matplotlib.lines import Line2D
 
+    from surface_potential_analysis.basis.legacy import TupleBasisLike
     from surface_potential_analysis.basis.momentum_basis_like import MomentumBasis
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.state_vector.eigenstate_list import (
         StatisticalValueList,
         ValueList,
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
 _BT0 = TypeVar("_BT0", bound=BasisWithTimeLike[Any, Any])
 _ETB = TypeVar("_ETB", bound=EvenlySpacedTimeBasis[Any, Any, Any])
-_B0 = TypeVar("_B0", bound=BasisLike[int, int])
+_B0 = TypeVar("_B0", bound=BasisLike)
 
 
 def plot_value_list_against_nx(
@@ -220,7 +220,7 @@ def plot_split_value_list_against_frequency(
     transformed = np.fft.fftshift(np.fft.fft(rolled, axis=1), axes=(1,))
 
     shifted_coordinates = np.fft.fftshift(
-        np.fft.fftfreq(values["basis"][1].n, values["basis"][1].dt)
+        np.fft.fftfreq(values["basis"][1].size, values["basis"][1].dt)
     )
 
     cumulative = np.cumsum(transformed, axis=0)

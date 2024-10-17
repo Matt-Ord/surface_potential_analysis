@@ -4,12 +4,14 @@ from typing import TYPE_CHECKING, Any, Generic, Iterable, TypedDict, TypeVar, Un
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import FundamentalBasis
-from surface_potential_analysis.basis.basis_like import BasisLike
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
+from surface_potential_analysis.basis.legacy import (
+    BasisLike,
+    FundamentalBasis,
+    TupleBasis,
+)
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
+    from surface_potential_analysis.basis.legacy import TupleBasisLike
     from surface_potential_analysis.operator.operator import (
         SingleBasisDiagonalOperator,
     )
@@ -19,14 +21,14 @@ if TYPE_CHECKING:
         DiagonalOperator,
         Operator,
     )
-_B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-_B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
-_B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
+_B0 = TypeVar("_B0", bound=BasisLike)
+_B1 = TypeVar("_B1", bound=BasisLike)
+_B2 = TypeVar("_B2", bound=BasisLike)
 
 
-_B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
-_B1_co = TypeVar("_B1_co", bound=BasisLike[Any, Any], covariant=True)
-_B2_co = TypeVar("_B2_co", bound=BasisLike[Any, Any], covariant=True)
+_B0_co = TypeVar("_B0_co", bound=BasisLike, covariant=True)
+_B1_co = TypeVar("_B1_co", bound=BasisLike, covariant=True)
+_B2_co = TypeVar("_B2_co", bound=BasisLike, covariant=True)
 
 
 class OperatorList(TypedDict, Generic[_B0_co, _B1_co, _B2_co]):
@@ -92,7 +94,7 @@ def select_diagonal_operator(
     return {
         "basis": operator_list["basis"][1],
         "data": operator_list["data"]
-        .reshape(operator_list["basis"][0].n, -1)[idx]
+        .reshape(operator_list["basis"][0].size, -1)[idx]
         .reshape(-1),
     }
 
@@ -147,7 +149,7 @@ def operator_list_as_diagonal(
 
 def operator_list_from_iter(
     iters: Iterable[Operator[_B1, _B2]],
-) -> OperatorList[FundamentalBasis[int], _B1, _B2]:
+) -> OperatorList[FundamentalBasis[BasisMetadata], _B1, _B2]:
     """
     Get a single state vector from a list of states.
 
@@ -165,7 +167,7 @@ def operator_list_from_iter(
     n = len(operators)
     data = np.array([x["data"] for x in operators])
     return {
-        "basis": TupleBasis(FundamentalBasis(n), basis),
+        "basis": VariadicTupleBasis((FundamentalBasis(n), None), basis),
         "data": data.ravel(),
     }
 
@@ -216,7 +218,7 @@ def as_flat_operator(
         operator_list["basis"][0], *operator_list["basis"][1]
     )
     return {
-        "basis": TupleBasis(basis, basis),
+        "basis": VariadicTupleBasis((basis, basis), None),
         "data": operator_list["data"],
     }
 
@@ -240,6 +242,6 @@ def as_diagonal_operator(
     return {
         "basis": operator_list["basis"][1],
         "data": operator_list["data"]
-        .reshape(operator_list["basis"][0].n, -1)[idx]
+        .reshape(operator_list["basis"][0].size, -1)[idx]
         .reshape(-1),
     }

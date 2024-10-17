@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import FundamentalBasis
-from surface_potential_analysis.basis.block_fraction_basis import (
+from surface_potential_analysis.basis.legacy import (
     ExplicitBlockFractionBasis,
+    FundamentalBasis,
+    StackedBasis,
 )
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
 from surface_potential_analysis.stacked_basis.build import (
     position_basis_3d_from_shape,
 )

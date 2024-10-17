@@ -10,15 +10,13 @@ import scipy  # type: ignore lib
 import scipy.special  # type: ignore lib
 from scipy.constants import hbar  # type: ignore lib
 
-from surface_potential_analysis.basis.basis import (
-    FundamentalBasis,
-    FundamentalPositionBasis,
-)
-from surface_potential_analysis.basis.explicit_basis import (
+from surface_potential_analysis.basis.legacy import (
     ExplicitBasisWithLength,
     ExplicitStackedBasisWithLength,
+    FundamentalBasis,
+    FundamentalPositionBasis,
+    TupleBasis,
 )
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.stacked_basis.potential_basis import (
     PotentialBasisConfig,
@@ -26,7 +24,7 @@ from surface_potential_analysis.stacked_basis.potential_basis import (
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis_like import BasisWithLengthLike3d
+    from surface_potential_analysis.basis.legacy import BasisWithLengthLike3d
 
 _L0Inv = TypeVar("_L0Inv", bound=int)
 _L1Inv = TypeVar("_L1Inv", bound=int)
@@ -179,5 +177,8 @@ def infinate_sho_basis_3d_from_config(
     util = BasisUtil(parent)
     vectors *= np.sqrt(np.linalg.norm(util.fundamental_dx))
     return ExplicitBasisWithLength(
-        {"basis": TupleBasis(FundamentalBasis(n), parent), "data": vectors}
+        {
+            "basis": VariadicTupleBasis((FundamentalBasis(n), None), parent),
+            "data": vectors,
+        }
     )

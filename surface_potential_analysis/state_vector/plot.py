@@ -7,10 +7,8 @@ import scipy  # type: ignore unknown
 import scipy.signal  # type: ignore unknown
 from matplotlib.animation import ArtistAnimation
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
     FundamentalBasis,
-)
-from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisLike,
@@ -27,7 +25,7 @@ from surface_potential_analysis.operator.conversion import (
 )
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_momentum_basis,
-    stacked_basis_as_fundamental_position_basis,
+    tuple_basis_as_fundamental,
 )
 from surface_potential_analysis.stacked_basis.util import (
     calculate_cumulative_x_distances_along_path,
@@ -74,7 +72,7 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
     from matplotlib.lines import Line2D
 
-    from surface_potential_analysis.basis.basis import (
+    from surface_potential_analysis.basis.legacy import (
         BasisLike,
     )
     from surface_potential_analysis.operator.operator import (
@@ -93,12 +91,12 @@ if TYPE_CHECKING:
     from surface_potential_analysis.util.plot import Scale
     from surface_potential_analysis.wavepacket.get_eigenstate import BlochBasis
 
-    _B0Inv = TypeVar("_B0Inv", bound=BasisLike[Any, Any])
-    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
-    _SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+    _B0Inv = TypeVar("_B0Inv", bound=BasisLike)
+    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike)
+    _SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike)
 
-    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-    _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
+    _B0 = TypeVar("_B0", bound=BasisLike)
+    _B1 = TypeVar("_B1", bound=BasisLike)
 
 
 # ruff: noqa: PLR0913
@@ -203,7 +201,7 @@ def animate_state_over_list_1d_x(
 
     Parameters
     ----------
-    states : StateVectorList[BasisLike[Any, Any], TupleBasisLike[*tuple[Any, ...]]]
+    states : StateVectorList[BasisLike, TupleBasisLike[*tuple[Any, ...]]]
     idx : SingleStackedIndexLike, optional
         index in the perpendicular directions, by default (0,0)
     axis : int, optional
@@ -220,7 +218,7 @@ def animate_state_over_list_1d_x(
     tuple[Figure, Axes, Line2D]
     """
     converted = convert_state_vector_list_to_basis(
-        states, stacked_basis_as_fundamental_position_basis(states["basis"][1])
+        states, tuple_basis_as_fundamental(states["basis"][1])
     )
 
     fig, ax, ani = animate_data_through_list_1d_x(
@@ -250,7 +248,7 @@ def animate_state_over_list_2d_k(
 
     Parameters
     ----------
-    states : StateVectorList[BasisLike[Any, Any], TupleBasisLike[*tuple[Any, ...]]]
+    states : StateVectorList[BasisLike, TupleBasisLike[*tuple[Any, ...]]]
     axes : tuple[int, int, int], optional
         axes to plot in, by default (0, 1)
     idx : SingleStackedIndexLike | None, optional
@@ -297,7 +295,7 @@ def animate_state_over_list_2d_x(
 
     Parameters
     ----------
-    states : StateVectorList[BasisLike[Any, Any], TupleBasisLike[*tuple[Any, ...]]]
+    states : StateVectorList[BasisLike, TupleBasisLike[*tuple[Any, ...]]]
     axes : tuple[int, int, int], optional
         axes to plot in, by default (0, 1)
     idx : SingleStackedIndexLike | None, optional
@@ -314,7 +312,7 @@ def animate_state_over_list_2d_x(
     tuple[Figure, Axes, ArtistAnimation]
     """
     converted = convert_state_vector_list_to_basis(
-        states, stacked_basis_as_fundamental_position_basis(states["basis"][1])
+        states, tuple_basis_as_fundamental(states["basis"][1])
     )
 
     return animate_data_through_list_2d_x(
@@ -342,7 +340,7 @@ def animate_state_over_list_1d_k(
 
     Parameters
     ----------
-    states : StateVectorList[BasisLike[Any, Any], TupleBasisLike[*tuple[Any, ...]]]
+    states : StateVectorList[BasisLike, TupleBasisLike[*tuple[Any, ...]]]
     idx : SingleStackedIndexLike, optional
         index in the perpendicular directions, by default (0,0)
     axis : int, optional
@@ -577,7 +575,7 @@ def plot_state_difference_2d_x(
     -------
     tuple[Figure, Axes, QuadMesh]
     """
-    basis = stacked_basis_as_fundamental_position_basis(state_0["basis"])
+    basis = tuple_basis_as_fundamental(state_0["basis"])
 
     converted_0 = convert_state_vector_to_basis(state_0, basis)
     converted_1 = convert_state_vector_to_basis(state_1, basis)
@@ -683,10 +681,10 @@ def plot_state_along_path(
 
 def _get_eigenstate_occupation(
     hamiltonian: SingleBasisOperator[_B0Inv],
-    states: StateVectorList[BasisLike[Any, Any], _B0Inv],
+    states: StateVectorList[BasisLike, _B0Inv],
 ) -> tuple[
     np.ndarray[tuple[int], np.dtype[np.float64]],
-    Operator[BasisLike[Any, Any], FundamentalBasis[int]],
+    Operator[BasisLike, FundamentalBasis[BasisMetadata]],
 ]:
     eigenstates = calculate_eigenvectors_hermitian(hamiltonian)
     energies = eigenstates["eigenvalue"].astype(np.float64)
@@ -697,7 +695,7 @@ def _get_eigenstate_occupation(
 
 def plot_all_eigenstate_occupations(
     hamiltonian: SingleBasisOperator[_B0Inv],
-    states: StateVectorList[BasisLike[Any, Any], _B0Inv],
+    states: StateVectorList[BasisLike, _B0Inv],
     *,
     ax: Axes | None = None,
     scale: Scale = "linear",
@@ -708,7 +706,7 @@ def plot_all_eigenstate_occupations(
     Parameters
     ----------
     hamiltonian : SingleBasisOperator[_B0Inv]
-    states : StateVectorList[BasisLike[Any, Any], _B0Inv]
+    states : StateVectorList[BasisLike, _B0Inv]
     ax : Axes | None, optional
         axis, by default None
     scale : Scale, optional
@@ -722,7 +720,7 @@ def plot_all_eigenstate_occupations(
 
     energies, occupations = _get_eigenstate_occupation(hamiltonian, states)
 
-    n_states = states["basis"][0].n
+    n_states = states["basis"][0].size
     for i, occupation in enumerate(occupations["data"].reshape(n_states, -1)):
         measured = np.abs(occupation) ** 2
         (line,) = ax.plot(energies, measured)  # type: ignore unknown
@@ -738,7 +736,7 @@ def plot_all_eigenstate_occupations(
 
 def animate_all_eigenstate_occupations(
     hamiltonian: SingleBasisOperator[_B0Inv],
-    states: StateVectorList[BasisLike[Any, Any], _B0Inv],
+    states: StateVectorList[BasisLike, _B0Inv],
     *,
     ax: Axes | None = None,
     scale: Scale = "linear",
@@ -749,7 +747,7 @@ def animate_all_eigenstate_occupations(
     Parameters
     ----------
     hamiltonian : SingleBasisOperator[_B0Inv]
-    states : StateVectorList[BasisLike[Any, Any], _B0Inv]
+    states : StateVectorList[BasisLike, _B0Inv]
     ax : Axes | None, optional
         axis, by default None
     scale : Scale, optional
@@ -765,7 +763,7 @@ def animate_all_eigenstate_occupations(
     energies, occupations = _get_eigenstate_occupation(hamiltonian, states)
 
     frames: list[list[Line2D]] = []
-    n_states = states["basis"][0].n
+    n_states = states["basis"][0].size
     for i, occupation in enumerate(occupations["data"].reshape(n_states, -1)):
         measured = np.abs(occupation) ** 2
         (line,) = ax.plot(energies, measured)  # type: ignore unknown
@@ -812,7 +810,7 @@ def plot_eigenstate_occupation(
 
 def plot_average_eigenstate_occupation(
     hamiltonian: SingleBasisOperator[_B0Inv],
-    states: StateVectorList[BasisLike[Any, Any], _B0Inv],
+    states: StateVectorList[BasisLike, _B0Inv],
     *,
     ax: Axes | None = None,
     scale: Scale = "linear",
@@ -837,7 +835,7 @@ def plot_average_eigenstate_occupation(
 
     energies, occupations = _get_eigenstate_occupation(hamiltonian, states)
 
-    n_states = states["basis"][0].n
+    n_states = states["basis"][0].size
     occupations["data"].reshape(n_states, -1)
     probabilities = np.abs(occupations["data"].reshape(n_states, -1)) ** 2
     average = np.average(probabilities, axis=0)
@@ -938,8 +936,8 @@ def get_periodic_x_operator(
     -------
     SingleBasisOperator[_SBV0]
     """
-    direction = tuple(1 for _ in range(basis.ndim)) if direction is None else direction
-    basis_x = stacked_basis_as_fundamental_position_basis(basis)
+    direction = tuple(1 for _ in range(basis.n_dim)) if direction is None else direction
+    basis_x = tuple_basis_as_fundamental(basis)
     util = BasisUtil(basis_x)
     dk = tuple(n / f for (n, f) in zip(direction, util.shape))
 
@@ -949,15 +947,18 @@ def get_periodic_x_operator(
         dk,
     )
     return convert_diagonal_operator_to_basis(
-        {"basis": TupleBasis(basis_x, basis_x), "data": np.exp(1j * phi)},
-        TupleBasis(basis, basis),
+        {
+            "basis": VariadicTupleBasis((basis_x, basis_x), None),
+            "data": np.exp(1j * phi),
+        },
+        VariadicTupleBasis((basis, basis), None),
     )
 
 
 def _get_periodic_x(
     states: StateVectorList[
         _B0Inv,
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ],
     direction: tuple[int, ...] | None = None,
 ) -> ValueList[_B0Inv]:
@@ -982,11 +983,11 @@ _BT0 = TypeVar("_BT0", bound=BasisWithTimeLike[Any, Any])
 def _get_average_x_periodic(
     states: StateVectorList[
         _B0Inv,
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ],
     axis: int,
 ) -> ValueList[_B0Inv]:
-    direction = tuple(1 if i == axis else 0 for i in range(states["basis"][1].ndim))
+    direction = tuple(1 if i == axis else 0 for i in range(states["basis"][1].sizedim))
     periodic_x = _get_periodic_x(states, direction)
     angle = np.angle(periodic_x["data"]) % (2 * np.pi)
 
@@ -999,11 +1000,11 @@ def _get_average_x_periodic(
 def _get_restored_x(
     states: StateVectorList[
         TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ],
     axis: int,
 ) -> ValueList[TupleBasisLike[Any, _BT0]]:
-    direction = tuple(1 if i == axis else 0 for i in range(states["basis"][1].ndim))
+    direction = tuple(1 if i == axis else 0 for i in range(states["basis"][1].sizedim))
     periodic_x = _get_periodic_x(states, direction)
     unravelled = np.unwrap(
         np.angle(periodic_x["data"].reshape(states["basis"][0].shape)), axis=1
@@ -1020,7 +1021,7 @@ def _get_restored_x(
 def plot_periodic_averaged_occupation_1d_x(
     states: StateVectorList[
         TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ],
     axes: tuple[int] = (0,),
     *,
@@ -1062,14 +1063,14 @@ def _get_x_operator(basis: _SBV0, axis: int) -> SingleBasisOperator[_SBV0]:
     -------
     SingleBasisOperator[_SBV0]
     """
-    basis_x = stacked_basis_as_fundamental_position_basis(basis)
+    basis_x = tuple_basis_as_fundamental(basis)
     util = BasisUtil(basis_x)
     return convert_diagonal_operator_to_basis(
         {
-            "basis": TupleBasis(basis_x, basis_x),
+            "basis": VariadicTupleBasis((basis_x, basis_x), None),
             "data": util.dx_stacked[axis] * util.stacked_nx_points[axis],
         },
-        TupleBasis(basis, basis),
+        VariadicTupleBasis((basis, basis), None),
     )
 
 
@@ -1125,7 +1126,7 @@ def plot_averaged_occupation_1d_x(
 def _get_x_spread(
     states: StateVectorList[
         _B0Inv,
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ],
     axis: int,
 ) -> ValueList[_B0Inv]:
@@ -1142,14 +1143,14 @@ def _get_x_spread(
 
     Parameters
     ----------
-    states : StateVectorList[TupleBasisLike[Any, _BT0], StackedBasisWithVolumeLike[Any, Any, Any]]
+    states : StateVectorList[TupleBasisLike[Any, _BT0], StackedBasisWithVolumeLike]
     axis : int
 
     Returns
     -------
     ValueList[TupleBasisLike[Any, _BT0]]
     """
-    direction = tuple(1 if i == axis else 0 for i in range(states["basis"][1].ndim))
+    direction = tuple(1 if i == axis else 0 for i in range(states["basis"][1].sizedim))
 
     data = states["data"].reshape(states["basis"].shape)
     data /= np.linalg.norm(data, axis=1)[:, np.newaxis]
@@ -1166,7 +1167,7 @@ def _get_x_spread(
 def get_coherent_coordinates(
     states: StateVectorList[
         _B0Inv,
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ],
     axis: int,
 ) -> ValueList[TupleBasisLike[FundamentalBasis[Literal[3]], _B0Inv]]:
@@ -1174,7 +1175,7 @@ def get_coherent_coordinates(
 
     Parameters
     ----------
-    states : StateVectorList[ _B0Inv, StackedBasisWithVolumeLike[Any, Any, Any], ]
+    states : StateVectorList[ _B0Inv, StackedBasisWithVolumeLike, ]
     axis : int
 
     Returns
@@ -1196,7 +1197,7 @@ def get_coherent_coordinates(
 def plot_spread_1d(
     states: StateVectorList[
         TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ],
     axes: tuple[int] = (0,),
     *,
@@ -1210,7 +1211,7 @@ def plot_spread_1d(
     ----------
     states : StateVectorList[
         TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ]
     axes : tuple[int], optional
         direction to plot along, by default (0,)
@@ -1231,7 +1232,7 @@ def plot_spread_1d(
 def plot_spread_distribution_1d(
     states: StateVectorList[
         TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ],
     axes: tuple[int] = (0,),
     *,
@@ -1245,7 +1246,7 @@ def plot_spread_distribution_1d(
     ----------
     states : StateVectorList[
         TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ]
     axes : tuple[int], optional
         direction to plot along, by default (0,)
@@ -1281,10 +1282,10 @@ def _get_k_operator(basis: _SBV0, axis: int) -> SingleBasisOperator[_SBV0]:
     util = BasisUtil(basis_k)
     return convert_diagonal_operator_to_basis(
         {
-            "basis": TupleBasis(basis_k, basis_k),
+            "basis": VariadicTupleBasis((basis_k, basis_k), None),
             "data": util.dk_stacked[axis] * util.stacked_nk_points[axis],
         },
-        TupleBasis(basis, basis),
+        VariadicTupleBasis((basis, basis), None),
     )
 
 
@@ -1340,7 +1341,7 @@ def plot_averaged_occupation_1d_k(
 def plot_spread_against_k(
     states: StateVectorList[
         TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ],
     axes: tuple[int] = (0,),
     *,
@@ -1353,7 +1354,7 @@ def plot_spread_against_k(
     ----------
     states : StateVectorList[
         TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ]
     axes : tuple[int], optional
         direction to plot along, by default (0,)
@@ -1379,7 +1380,7 @@ def plot_spread_against_k(
 def plot_spread_against_x(
     states: StateVectorList[
         TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ],
     axes: tuple[int] = (0,),
     *,
@@ -1392,7 +1393,7 @@ def plot_spread_against_x(
     ----------
     states : StateVectorList[
         TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ]
     axes : tuple[int], optional
         direction to plot along, by default (0,)
@@ -1418,7 +1419,7 @@ def plot_spread_against_x(
 def plot_k_distribution_1d(
     states: StateVectorList[
         TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ],
     axes: tuple[int] = (0,),
     *,
@@ -1432,7 +1433,7 @@ def plot_k_distribution_1d(
     ----------
     states : StateVectorList[
         TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ]
     axes : tuple[int], optional
         direction to plot along, by default (0,)
@@ -1455,7 +1456,7 @@ def plot_k_distribution_1d(
 def plot_x_distribution_1d(
     states: StateVectorList[
         TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ],
     axes: tuple[int] = (0,),
     *,
@@ -1469,7 +1470,7 @@ def plot_x_distribution_1d(
     ----------
     states : StateVectorList[
         TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ]
     axes : tuple[int], optional
         direction to plot along, by default (0,)
@@ -1490,7 +1491,7 @@ def plot_x_distribution_1d(
 def plot_periodic_x_distribution_1d(
     states: StateVectorList[
         TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ],
     axes: tuple[int] = (0,),
     *,
@@ -1504,7 +1505,7 @@ def plot_periodic_x_distribution_1d(
     ----------
     states : StateVectorList[
         TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ]
     axes : tuple[int], optional
         direction to plot along, by default (0,)
@@ -1539,13 +1540,16 @@ def get_average_displacements(
 
     squared_diff = (total - 2 * convolution) / (1 + np.arange(basis[1].n))[::-1]  # type: ignore unknown
     out_basis = EvenlySpacedTimeBasis(basis[1].n, 1, 0, basis[1].dt * (basis[1].n))  # type: ignore unknown
-    return {"basis": TupleBasis(basis[0], out_basis), "data": squared_diff.ravel()}  # type: ignore unknown
+    return {
+        "basis": VariadicTupleBasis((basis[0], out_basis), None),
+        "data": squared_diff.ravel(),
+    }  # type: ignore unknown
 
 
 def plot_average_displacement_1d_x(
     states: StateVectorList[
         TupleBasisLike[Any, _BT0],
-        StackedBasisWithVolumeLike[Any, Any, Any],
+        StackedBasisWithVolumeLike,
     ],
     axes: tuple[int] = (0,),
     *,

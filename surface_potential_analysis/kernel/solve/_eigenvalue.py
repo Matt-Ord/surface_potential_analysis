@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
+from slate.metadata._metadata import BasisMetadata
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
     FundamentalBasis,
-)
-from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
 )
 from surface_potential_analysis.kernel.kernel import (
@@ -16,7 +15,7 @@ from surface_potential_analysis.kernel.kernel import (
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis_like import (
+    from surface_potential_analysis.basis.legacy import (
         BasisLike,
     )
     from surface_potential_analysis.kernel.kernel import (
@@ -26,13 +25,13 @@ if TYPE_CHECKING:
         NoiseOperatorList,
     )
 
-    _B0 = TypeVar("_B0", bound=BasisLike[int, int])
-    _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
+    _B0 = TypeVar("_B0", bound=BasisLike)
+    _B1 = TypeVar("_B1", bound=BasisLike)
 
 
 def get_periodic_noise_operators_eigenvalue(
     kernel: NoiseKernel[_B0, _B1, _B0, _B1],
-) -> NoiseOperatorList[FundamentalBasis[int], _B0, _B1]:
+) -> NoiseOperatorList[FundamentalBasis[BasisMetadata], _B0, _B1]:
     r"""
     Given a noise kernel, find the noise operator which diagonalizes the kernel.
 
@@ -49,14 +48,14 @@ def get_periodic_noise_operators_eigenvalue(
 
     Returns
     -------
-    NoiseOperatorList[FundamentalBasis[int], _B0, _B0]
+    NoiseOperatorList[FundamentalBasis[BasisMetadata], _B0, _B0]
         _description_
     """
     data = (
         kernel["data"]
         .reshape(*kernel["basis"][0].shape, *kernel["basis"][1].shape)
         .swapaxes(0, 1)
-        .reshape(kernel["basis"][0].n, kernel["basis"][1].n)
+        .reshape(kernel["basis"][0].size, kernel["basis"][1].size)
     )
     # Find the n^2 operators which are independent
     # I think this is always true
@@ -76,7 +75,9 @@ def get_periodic_noise_operators_eigenvalue(
     # When we diagonalize we have \hat{Z}'_\beta = U^\dagger_{\beta, \alpha} \hat{Z}_\alpha
     # np.conj(res.eigenvectors) is U^\dagger_{\beta, \alpha}
     return {
-        "basis": TupleBasis(FundamentalBasis(kernel["basis"][0].n), kernel["basis"][0]),
+        "basis": TupleBasis(
+            FundamentalBasis(kernel["basis"][0].size), kernel["basis"][0]
+        ),
         "data": np.conj(np.transpose(res.eigenvectors)).reshape(-1),
         "eigenvalue": res.eigenvalues,
     }
@@ -84,7 +85,7 @@ def get_periodic_noise_operators_eigenvalue(
 
 def get_periodic_noise_operators_diagonal_eigenvalue(
     kernel: DiagonalNoiseKernel[_B0, _B1, _B0, _B1],
-) -> DiagonalNoiseOperatorList[FundamentalBasis[int], _B0, _B1]:
+) -> DiagonalNoiseOperatorList[FundamentalBasis[BasisMetadata], _B0, _B1]:
     r"""
     For a diagonal kernel it is possible to find N independent noise sources, each of which is diagonal.
 
@@ -103,7 +104,7 @@ def get_periodic_noise_operators_diagonal_eigenvalue(
 
     Returns
     -------
-    DiagonalNoiseOperator[BasisLike[Any, Any], BasisLike[Any, Any]]
+    DiagonalNoiseOperator[BasisLike, BasisLike]
         _description_
     """
     data = kernel["data"].reshape(kernel["basis"][0][0].n, -1)

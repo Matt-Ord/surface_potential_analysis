@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, TypeVarTuple
 import numpy as np
 
 from surface_potential_analysis.basis.conversion import basis_as_single_point_basis
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
+from surface_potential_analysis.basis.legacy import TupleBasis
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.stacked_basis.util import (
     wrap_index_around_origin,
@@ -15,8 +15,10 @@ from surface_potential_analysis.util.decorators import timed
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from surface_potential_analysis.basis.basis import FundamentalPositionBasis
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
+    from surface_potential_analysis.basis.legacy import (
+        FundamentalPositionBasis,
+        TupleBasisLike,
+    )
     from surface_potential_analysis.overlap.overlap import SingleOverlap
     from surface_potential_analysis.types import IntLike_co
 
@@ -44,9 +46,7 @@ ArrayStackedIndexFractionLike = tuple[
 
 
 def get_overlap_momentum_interpolator_k_fractions(
-    overlap: SingleOverlap[
-        TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
-    ],
+    overlap: SingleOverlap[TupleBasisLike[*tuple[FundamentalPositionBasis, ...]]],
 ) -> Callable[
     [ArrayStackedIndexFractionLike[_S0Inv]],
     np.ndarray[_S0Inv, np.dtype[np.complex128]],
@@ -115,9 +115,7 @@ def get_overlap_momentum_interpolator(
 
 @timed
 def get_overlap_momentum_interpolator_flat(
-    overlap: SingleOverlap[
-        TupleBasisLike[*tuple[FundamentalPositionBasis[Any, Any], ...]]
-    ],
+    overlap: SingleOverlap[TupleBasisLike[*tuple[FundamentalPositionBasis, ...]]],
     n_points: IntLike_co | None = None,
 ) -> Callable[
     [np.ndarray[tuple[Literal[2], *Ts], np.dtype[np.float64]]],

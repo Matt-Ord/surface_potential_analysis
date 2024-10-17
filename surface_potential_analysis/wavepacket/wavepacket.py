@@ -4,30 +4,24 @@ import warnings
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
+from slate.basis.evenly_spaced import EvenlySpacedBasis, Spacing
+from slate.basis.stacked._tuple_basis import VariadicTupleBasis
+from slate.metadata._metadata import BasisMetadata, LabelSpacing
+from slate.metadata.length import SpacedLengthMetadata
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
+    BasisLike,
+    BasisWithBlockFractionLike,
+    BasisWithLengthLike,
+    ExplicitBlockFractionBasis,
     FundamentalBasis,
     FundamentalTransformedPositionBasis,
-    TruncatedBasis,
-)
-from surface_potential_analysis.basis.basis_like import (
-    BasisLike,
-    BasisWithLengthLike,
-    convert_vector,
-)
-from surface_potential_analysis.basis.block_fraction_basis import (
-    BasisWithBlockFractionLike,
-    ExplicitBlockFractionBasis,
-)
-from surface_potential_analysis.basis.evenly_spaced_basis import (
-    EvenlySpacedBasis,
-    EvenlySpacedTransformedPositionBasis,
-)
-from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisLike,
     StackedBasisWithVolumeLike,
+    TruncatedBasis,
     TupleBasis,
     TupleBasisLike,
+    convert_vector,
 )
 from surface_potential_analysis.basis.util import (
     BasisUtil,
@@ -38,8 +32,8 @@ from surface_potential_analysis.operator.operator import (
 )
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_momentum_basis,
-    stacked_basis_as_fundamental_position_basis,
-    stacked_basis_as_fundamental_transformed_basis,
+    tuple_basis_as_fundamental,
+    tuple_basis_as_transformed_fundamental,
 )
 from surface_potential_analysis.state_vector.eigenstate_calculation import (
     calculate_eigenvectors_hermitian,
@@ -62,14 +56,12 @@ if TYPE_CHECKING:
 _ND0Inv = TypeVar("_ND0Inv", bound=int)
 
 
-_B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-_TRB0 = TypeVar(
-    "_TRB0", bound=TruncatedBasis[Any, Any] | EvenlySpacedBasis[Any, Any, Any]
-)
-_SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
-_SB1 = TypeVar("_SB1", bound=StackedBasisLike[Any, Any, Any])
+_B0 = TypeVar("_B0", bound=BasisLike)
+_TRB0 = TypeVar("_TRB0", bound=TruncatedBasis | EvenlySpacedBasis)
+_SB0 = TypeVar("_SB0", bound=StackedBasisLike)
+_SB1 = TypeVar("_SB1", bound=StackedBasisLike)
 _TB0 = TypeVar("_TB0", bound=TupleBasisLike[*tuple[Any, ...]])
-_SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+_SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike)
 
 
 BlochWavefunctionListBasis = TupleBasisLike[_SB0, _SB1]
@@ -110,30 +102,33 @@ sample in the first brillouin zone
 def get_fundamental_unfurled_sample_basis_momentum(
     basis: BlochWavefunctionListBasis[_TB0, _SBV0],
     offsets: tuple[int, ...] | None = None,
-) -> TupleBasis[*tuple[EvenlySpacedTransformedPositionBasis[int, int, int, int], ...]]:
+) -> TupleBasis[*tuple[EvenlySpacedBasis, ...]]:
     """
     Get the basis of an individual wavefunction from the wavepacket.
 
     This takes states from the fundamental list_basis, for the sample at offset
     """
-    offsets = (0,) * basis[0].ndim if offsets is None else offsets
-    basis_x = stacked_basis_as_fundamental_position_basis(basis[1])
+    offsets = (0,) * basis[0].n_dim if offsets is None else offsets
+    basis_x = tuple_basis_as_fundamental(basis[1])
     return TupleBasis(
-        *tuple(
-            EvenlySpacedTransformedPositionBasis[int, int, int, int](
-                delta_x=basis_x[i].delta_x * basis[0][i].fundamental_n,
-                n=basis_x[i].fundamental_n,
-                step=basis[0][i].fundamental_n,
-                offset=offset,
+        tuple(
+            EvenlySpacedBasis(
+                Spacing(n = ),
+                FundamentalBasis(basis_x.metadata.children[i]),
+                # delta_x=basis_x[i].delta_x * basis[0][i].fundamental_n,
+                # n=basis_x[i].fundamental_n,
+                # step=basis[0][i].fundamental_n,
+                # offset=offset,
             )
             for (i, offset) in enumerate(offsets)
-        )
+        ),
+        None,
     )
 
 
 def get_fundamental_sample_basis(
     basis: BlochWavefunctionListBasis[_SB0, _SBV0],
-) -> TupleBasis[*tuple[BasisWithLengthLike[Any, Any, Any], ...]]:
+) -> TupleBasis[*tuple[BasisWithLengthLike, ...]]:
     """
     Given the basis for a wavepacket, get the basis used to sample the packet.
 
@@ -147,20 +142,21 @@ def get_fundamental_sample_basis(
     Basis[_ND0Inv]
     """
     basis_x = stacked_basis_as_fundamental_momentum_basis(basis[1])
-    return TupleBasis(
-        *tuple(
+    return VariadicTupleBasis(
+        tuple(
             FundamentalTransformedPositionBasis(
                 basis_x[i].delta_x * basis[0].fundamental_shape[i],
                 basis[0].fundamental_shape[i],
             )
-            for (i) in range(basis[0].ndim)
-        )
+            for (i) in range(basis[0].n_dim)
+        ),
+        None,
     )
 
 
 def get_fundamental_unfurled_basis(
     basis: BlochWavefunctionListBasis[_SB0, _SBV0],
-) -> TupleBasis[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]]:
+) -> TupleBasis[*tuple[FundamentalTransformedPositionBasis, ...]]:
     """
     Given the basis for a wavepacket, get the basis for the unfurled wavepacket.
 
@@ -173,22 +169,23 @@ def get_fundamental_unfurled_basis(
     -------
     Basis[_ND0Inv]
     """
-    basis_0 = stacked_basis_as_fundamental_transformed_basis(basis[0])
+    basis_0 = tuple_basis_as_transformed_fundamental(basis[0])
     basis_1 = stacked_basis_as_fundamental_momentum_basis(basis[1])
 
-    return TupleBasis(
-        *tuple(
+    return VariadicTupleBasis(
+        tuple(
             FundamentalTransformedPositionBasis(
                 basis_0[i].n * basis_1[i].delta_x,
                 basis_0[i].n * basis_1[i].n,
             )
-            for i in range(basis_0.ndim)
-        )
+            for i in range(basis_0.n_dim)
+        ),
+        None,
     )
 
 
 def get_wavepacket_sample_fractions(
-    list_basis: StackedBasisLike[Any, Any, Any],
+    list_basis: StackedBasisLike,
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     """
     Get the frequencies of the samples in a wavepacket, as a fraction of dk.
@@ -206,7 +203,7 @@ def get_wavepacket_sample_fractions(
         util.fundamental_stacked_nk_points
         / np.array(util.fundamental_shape, dtype=np.int_)[:, np.newaxis]
     )
-    fundamental_basis = stacked_basis_as_fundamental_transformed_basis(list_basis)
+    fundamental_basis = tuple_basis_as_transformed_fundamental(list_basis)
     with warnings.catch_warnings(
         category=np.exceptions.ComplexWarning, action="ignore"
     ):
@@ -261,8 +258,8 @@ def generate_uneven_wavepacket(
     """
     bloch_fractions = list_basis.bloch_fractions
     h = hamiltonian_generator(bloch_fractions[:, 0])
-    assert list_basis.ndim == h["basis"][0].ndim
-    basis_size = h["basis"][0].n
+    assert list_basis.n_dim == h["basis"][0].sizedim
+    basis_size = h["basis"][0].size
 
     offset, step = (
         (band_basis.offset, band_basis.step)
@@ -288,7 +285,9 @@ def generate_uneven_wavepacket(
             energies[b][i] = eigenstates["eigenvalue"][band_idx]
 
     return {
-        "basis": TupleBasis(TupleBasis(band_basis, list_basis), h["basis"][0]),
+        "basis": VariadicTupleBasis(
+            (VariadicTupleBasis((band_basis, list_basis), None), None), h["basis"][0]
+        ),
         "data": vectors.reshape(-1),
         "eigenvalue": energies.reshape(-1),
     }
@@ -320,7 +319,10 @@ def generate_wavepacket(
         hamiltonian_generator, ExplicitBlockFractionBasis(bloch_fractions), band_basis
     )
     return {
-        "basis": TupleBasis(TupleBasis(band_basis, list_basis), wavepacket["basis"][1]),
+        "basis": VariadicTupleBasis(
+            (VariadicTupleBasis((band_basis, list_basis), None), None),
+            wavepacket["basis"][1],
+        ),
         "data": wavepacket["data"].reshape(-1),
         "eigenvalue": wavepacket["eigenvalue"].reshape(-1),
     }
@@ -340,7 +342,7 @@ def get_wavepacket_basis(
     -------
     WavepacketBasis[_SB0, _SB1]
     """
-    return TupleBasis(basis[0][1], basis[1])
+    return VariadicTupleBasis((basis[0][1], basis[1]), None)
 
 
 def get_wavepacket(
@@ -393,7 +395,7 @@ def get_wavepacket_at_band(
 def get_wavepackets(
     wavepackets: BlochWavefunctionListList[_B0, _SB0, _SB1],
     idx: slice,
-) -> BlochWavefunctionListList[FundamentalBasis[int], _SB0, _SB1]:
+) -> BlochWavefunctionListList[FundamentalBasis[BasisMetadata], _SB0, _SB1]:
     """
     Get the wavepackets at the given slice.
 
@@ -404,13 +406,15 @@ def get_wavepackets(
 
     Returns
     -------
-    WavepacketList[BasisLike[Any, Any], _SB0, _SB1]
+    WavepacketList[BasisLike, _SB0, _SB1]
     """
     stacked = wavepackets["data"].reshape(wavepackets["basis"][0][0].n, -1)
     stacked = stacked[idx]
     return {
         "basis": TupleBasis(
-            TupleBasis(FundamentalBasis(len(stacked)), wavepackets["basis"][0][1]),
+            VariadicTupleBasis(
+                (FundamentalBasis(len(stacked), None)), wavepackets["basis"][0][1]
+            ),
             wavepackets["basis"][1],
         ),
         "data": stacked.reshape(-1),
@@ -420,7 +424,9 @@ def get_wavepackets(
 def get_wavepackets_with_eigenvalues(
     wavepackets: BlochWavefunctionListWithEigenvaluesList[_B0, _SB0, _SB1],
     idx: slice,
-) -> BlochWavefunctionListWithEigenvaluesList[FundamentalBasis[int], _SB0, _SB1]:
+) -> BlochWavefunctionListWithEigenvaluesList[
+    FundamentalBasis[BasisMetadata], _SB0, _SB1
+]:
     """
     Get the wavepackets at the given slice.
 
@@ -431,13 +437,15 @@ def get_wavepackets_with_eigenvalues(
 
     Returns
     -------
-    WavepacketList[BasisLike[Any, Any], _SB0, _SB1]
+    WavepacketList[BasisLike, _SB0, _SB1]
     """
     stacked = wavepackets["data"].reshape(wavepackets["basis"][0][0].n, -1)
     stacked = stacked[idx]
     return {
         "basis": TupleBasis(
-            TupleBasis(FundamentalBasis(len(stacked)), wavepackets["basis"][0][1]),
+            VariadicTupleBasis(
+                (FundamentalBasis(len(stacked), None)), wavepackets["basis"][0][1]
+            ),
             wavepackets["basis"][1],
         ),
         "data": stacked.reshape(-1),
@@ -449,7 +457,7 @@ def get_wavepackets_with_eigenvalues(
 
 def as_wavepacket_list(
     wavepackets: Iterable[BlochWavefunctionList[_SB0, _SB1]],
-) -> BlochWavefunctionListList[FundamentalBasis[int], _SB0, _SB1]:
+) -> BlochWavefunctionListList[FundamentalBasis[BasisMetadata], _SB0, _SB1]:
     """
     Convert an iterable of wavepackets into a wavepacket list.
 
@@ -459,13 +467,15 @@ def as_wavepacket_list(
 
     Returns
     -------
-    WavepacketList[FundamentalBasis[int], _SB0, _SB1]
+    WavepacketList[FundamentalBasis[BasisMetadata], _SB0, _SB1]
     """
     wavepacket_0 = next(iter(wavepackets))
     vectors = np.array([w["data"] for w in wavepackets])
     return {
         "basis": TupleBasis(
-            TupleBasis(FundamentalBasis(len(vectors)), wavepacket_0["basis"][0]),
+            VariadicTupleBasis(
+                (FundamentalBasis(len(vectors), None)), wavepacket_0["basis"][0]
+            ),
             wavepacket_0["basis"][1],
         ),
         "data": vectors.reshape(-1),
@@ -508,6 +518,8 @@ def get_average_eigenvalues(
     eigenvalues = get_eigenvalues_list(wavepackets)
     averaged = average_eigenvalues(eigenvalues, axis=(1,))
     return {
-        "basis": TupleBasis(averaged["basis"][0][0], averaged["basis"][0][0]),
+        "basis": VariadicTupleBasis(
+            (averaged["basis"][0][0], averaged["basis"][0][0]), None
+        ),
         "data": averaged["data"],
     }

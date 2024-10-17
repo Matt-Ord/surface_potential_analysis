@@ -20,8 +20,8 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
     from matplotlib.lines import Line2D
 
-    from surface_potential_analysis.basis.basis_like import BasisLike
-    from surface_potential_analysis.basis.stacked_basis import (
+    from surface_potential_analysis.basis.legacy import (
+        BasisLike,
         StackedBasisWithVolumeLike,
         TupleBasisLike,
     )
@@ -35,8 +35,8 @@ if TYPE_CHECKING:
 
 if TYPE_CHECKING:
     _B0 = TypeVar("_B0", bound=BasisWithTimeLike[int, int])
-    _B1 = TypeVar("_B1", bound=BasisLike[int, int])
-    _SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+    _B1 = TypeVar("_B1", bound=BasisLike)
+    _SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike)
     _TB0 = TypeVar("_TB0", bound=TupleBasisLike[*tuple[Any, ...]])
 
 

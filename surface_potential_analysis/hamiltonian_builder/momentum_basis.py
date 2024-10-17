@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 import numpy as np
 from scipy.constants import hbar
 
-from surface_potential_analysis.basis.stacked_basis import (
-    TupleBasis,
+from surface_potential_analysis.basis.legacy import (
     TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import (
@@ -19,14 +18,14 @@ from surface_potential_analysis.operator.operator import add_operator, as_operat
 from surface_potential_analysis.potential.conversion import convert_potential_to_basis
 from surface_potential_analysis.stacked_basis.conversion import (
     stacked_basis_as_fundamental_momentum_basis,
-    stacked_basis_as_fundamental_position_basis,
+    tuple_basis_as_fundamental,
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis import (
+    from surface_potential_analysis.basis.legacy import (
         FundamentalTransformedPositionBasis,
+        TupleBasisLike,
     )
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
     from surface_potential_analysis.operator.operator import (
         DiagonalOperator,
         SingleBasisOperator,
@@ -52,15 +51,15 @@ def hamiltonian_from_potential(
     Hamiltonian[_B0Inv]
     """
     converted = convert_potential_to_basis(
-        potential, stacked_basis_as_fundamental_position_basis(potential["basis"])
+        potential, tuple_basis_as_fundamental(potential["basis"])
     )
 
     return convert_operator_to_basis(
         {
-            "basis": TupleBasis(converted["basis"], converted["basis"]),
+            "basis": VariadicTupleBasis((converted["basis"], converted["basis"]), None),
             "data": np.diag(converted["data"]).reshape(-1),
         },
-        TupleBasis(potential["basis"], potential["basis"]),
+        VariadicTupleBasis((potential["basis"], potential["basis"]), None),
     )
 
 
@@ -69,8 +68,8 @@ def hamiltonian_from_mass(
     mass: float,
     bloch_fraction: np.ndarray[tuple[_L0], np.dtype[np.float64]] | None = None,
 ) -> DiagonalOperator[
-    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
-    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis[Any, Any], ...]],
+    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis, ...]],
+    TupleBasisLike[*tuple[FundamentalTransformedPositionBasis, ...]],
 ]:
     """
     Given a mass and a basis calculate the kinetic part of the Hamiltonian.
@@ -86,7 +85,7 @@ def hamiltonian_from_mass(
     -------
     Hamiltonian[_B0Inv]
     """
-    bloch_fraction = np.zeros(basis.ndim) if bloch_fraction is None else bloch_fraction
+    bloch_fraction = np.zeros(basis.n_dim) if bloch_fraction is None else bloch_fraction
     util = BasisUtil(basis)
 
     bloch_phase = np.tensordot(util.fundamental_dk_stacked, bloch_fraction, axes=(0, 0))
@@ -96,7 +95,10 @@ def hamiltonian_from_mass(
     )
     momentum_basis = stacked_basis_as_fundamental_momentum_basis(basis)
 
-    return {"basis": TupleBasis(momentum_basis, momentum_basis), "data": energy}
+    return {
+        "basis": VariadicTupleBasis((momentum_basis, momentum_basis), None),
+        "data": energy,
+    }
 
 
 def hamiltonian_from_mass_in_basis(
@@ -119,7 +121,9 @@ def hamiltonian_from_mass_in_basis(
     Hamiltonian[_B0Inv]
     """
     hamiltonian = hamiltonian_from_mass(basis, mass, bloch_fraction)
-    return convert_operator_to_basis(as_operator(hamiltonian), TupleBasis(basis, basis))
+    return convert_operator_to_basis(
+        as_operator(hamiltonian), VariadicTupleBasis((basis, basis), None)
+    )
 
 
 def total_surface_hamiltonian(

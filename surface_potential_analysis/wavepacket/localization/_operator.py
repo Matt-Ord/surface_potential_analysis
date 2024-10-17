@@ -4,13 +4,10 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
     FundamentalBasis,
-)
-from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisLike,
     StackedBasisWithVolumeLike,
-    TupleBasis,
     TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import (
@@ -20,7 +17,7 @@ from surface_potential_analysis.operator.conversion import (
     convert_operator_to_basis,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_position_basis,
+    tuple_basis_as_fundamental,
 )
 from surface_potential_analysis.state_vector.conversion import (
     convert_state_vector_to_basis,
@@ -43,11 +40,9 @@ from surface_potential_analysis.wavepacket.wavepacket import (
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis_like import (
+    from surface_potential_analysis.basis.legacy import (
         BasisLike,
         BasisWithLengthLike,
-    )
-    from surface_potential_analysis.basis.stacked_basis import (
         TupleBasisLike,
     )
     from surface_potential_analysis.operator.operator import SingleBasisOperator
@@ -55,13 +50,13 @@ if TYPE_CHECKING:
         BlochWavefunctionListWithEigenvalues,
     )
 
-    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
+    _SB0 = TypeVar("_SB0", bound=StackedBasisLike)
 
-    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
-    _SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+    _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike)
+    _SBV1 = TypeVar("_SBV1", bound=StackedBasisWithVolumeLike)
 
-    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-    _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
+    _B0 = TypeVar("_B0", bound=BasisLike)
+    _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike)
 
 
 def _get_position_operator(basis: _SBV0) -> SingleBasisOperator[_SBV0]:
@@ -69,12 +64,12 @@ def _get_position_operator(basis: _SBV0) -> SingleBasisOperator[_SBV0]:
     # We only get the location in the x0 direction here
     locations = util.fundamental_x_points_stacked[0]
 
-    basis_position = stacked_basis_as_fundamental_position_basis(basis)
+    basis_position = tuple_basis_as_fundamental(basis)
     operator: SingleBasisOperator[Any] = {
-        "basis": TupleBasis(basis_position, basis_position),
+        "basis": VariadicTupleBasis((basis_position, basis_position), None),
         "data": np.diag(locations),
     }
-    return convert_operator_to_basis(operator, TupleBasis(basis, basis))
+    return convert_operator_to_basis(operator, VariadicTupleBasis((basis, basis), None))
 
 
 @timed
@@ -92,7 +87,7 @@ def _get_operator_between_states(
             )
 
     basis = FundamentalBasis(n_states)
-    return {"data": array, "basis": TupleBasis(basis, basis)}
+    return {"data": array, "basis": VariadicTupleBasis((basis, basis), None)}
 
 
 def _localize_operator(
@@ -129,7 +124,7 @@ def localize_position_operator(
     -------
     list[Wavepacket[_S0Inv, _B0Inv]]
     """
-    basis = stacked_basis_as_fundamental_position_basis(
+    basis = tuple_basis_as_fundamental(
         get_fundamental_unfurled_basis(wavepacket["basis"])
     )
     operator_position = _get_position_operator(basis)
@@ -155,7 +150,7 @@ def localize_position_operator_many_band(
     -------
     list[StateVector[Any]]
     """
-    basis = stacked_basis_as_fundamental_position_basis(
+    basis = tuple_basis_as_fundamental(
         get_fundamental_unfurled_basis(wavepackets[0]["basis"])
     )
     states = [

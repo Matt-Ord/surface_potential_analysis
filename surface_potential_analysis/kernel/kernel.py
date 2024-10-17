@@ -10,8 +10,8 @@ from typing import (
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis_like import BasisLike
-from surface_potential_analysis.basis.stacked_basis import (
+from surface_potential_analysis.basis.legacy import (
+    BasisLike,
     TupleBasis,
     TupleBasisLike,
 )
@@ -28,14 +28,14 @@ from surface_potential_analysis.operator.operator_list import (
 )
 from surface_potential_analysis.util.util import slice_ignoring_axes
 
-_B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
-_B1_co = TypeVar("_B1_co", bound=BasisLike[Any, Any], covariant=True)
-_B2_co = TypeVar("_B2_co", bound=BasisLike[Any, Any], covariant=True)
-_B3_co = TypeVar("_B3_co", bound=BasisLike[Any, Any], covariant=True)
+_B0_co = TypeVar("_B0_co", bound=BasisLike, covariant=True)
+_B1_co = TypeVar("_B1_co", bound=BasisLike, covariant=True)
+_B2_co = TypeVar("_B2_co", bound=BasisLike, covariant=True)
+_B3_co = TypeVar("_B3_co", bound=BasisLike, covariant=True)
 
-_B0 = TypeVar("_B0", bound=BasisLike[int, int])
-_B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
-_B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
+_B0 = TypeVar("_B0", bound=BasisLike)
+_B1 = TypeVar("_B1", bound=BasisLike)
+_B2 = TypeVar("_B2", bound=BasisLike)
 
 _TB0 = TypeVar("_TB0", bound=TupleBasisLike[*tuple[Any, ...]])
 
@@ -220,8 +220,8 @@ def as_diagonal_kernel_from_isotropic(
 
     return {
         "basis": TupleBasis(
-            TupleBasis(kernel["basis"], kernel["basis"]),
-            TupleBasis(kernel["basis"], kernel["basis"]),
+            VariadicTupleBasis((kernel["basis"], kernel["basis"]), None),
+            VariadicTupleBasis((kernel["basis"], kernel["basis"]), None),
         ),
         "data": data.ravel(),
     }
@@ -292,8 +292,8 @@ def as_diagonal_kernel_from_isotropic_stacked(
 
     return {
         "basis": TupleBasis(
-            TupleBasis(kernel["basis"], kernel["basis"]),
-            TupleBasis(kernel["basis"], kernel["basis"]),
+            VariadicTupleBasis((kernel["basis"], kernel["basis"]), None),
+            VariadicTupleBasis((kernel["basis"], kernel["basis"]), None),
         ),
         "data": data.ravel(),
     }
@@ -355,7 +355,7 @@ def as_isotropic_kernel_from_axis(
     full_data = tuple(kernel_i["data"].ravel() for kernel_i in kernels)
 
     return {
-        "basis": TupleBasis(*full_basis),
+        "basis": VariadicTupleBasis((*full_basis), None),
         "data": _outer_product(*full_data).ravel(),
     }
 
@@ -364,7 +364,7 @@ def as_axis_kernel_from_isotropic(
     kernels: IsotropicNoiseKernel[TupleBasisLike[*tuple[_B0, ...]]],
 ) -> AxisKernel[_B0]:
     """Convert an isotropic kernel to an axis kernel."""
-    n_axis = kernels["basis"].ndim
+    n_axis = kernels["basis"].n_dim
 
     data_stacked = kernels["data"].reshape(kernels["basis"].shape)
     slice_without_idx = tuple(0 for _ in range(n_axis - 1))
@@ -434,14 +434,14 @@ def get_full_kernel_from_operators(
 
     Parameters
     ----------
-    operators : NoiseOperatorList[FundamentalBasis[int], _B0, _B1]
+    operators : NoiseOperatorList[FundamentalBasis[BasisMetadata], _B0, _B1]
 
     Returns
     -------
     NoiseKernel[_B0, _B1, _B0, _B1]
     """
     operators_data = operators["data"].reshape(
-        operators["basis"][0].n, *operators["basis"][1].shape
+        operators["basis"][0].size, *operators["basis"][1].shape
     )
 
     data = np.einsum(  # type:ignore  unknown
@@ -451,7 +451,7 @@ def get_full_kernel_from_operators(
         operators_data,
     )
     return {
-        "basis": TupleBasis(operators["basis"][1], operators["basis"][1]),
+        "basis": VariadicTupleBasis((operators["basis"][1], operators["basis"][1]), None),
         "data": data.reshape(-1),
     }
 
@@ -464,13 +464,13 @@ def get_diagonal_kernel_from_diagonal_operators(
 
     Parameters
     ----------
-    operators : DiagonalNoiseOperatorList[BasisLike[Any, Any], _B0, _B1]
+    operators : DiagonalNoiseOperatorList[BasisLike, _B0, _B1]
 
     Returns
     -------
     DiagonalNoiseKernel[_B0, _B1, _B0, _B1]
     """
-    operators_data = operators["data"].reshape(operators["basis"][0].n, -1)
+    operators_data = operators["data"].reshape(operators["basis"][0].size, -1)
     data = np.einsum(  # type:ignore  unknown
         "a,ai,aj->ij",
         operators["eigenvalue"],
@@ -478,7 +478,7 @@ def get_diagonal_kernel_from_diagonal_operators(
         operators_data,
     )
     return {
-        "basis": TupleBasis(operators["basis"][1], operators["basis"][1]),
+        "basis": VariadicTupleBasis((operators["basis"][1], operators["basis"][1]), None),
         "data": data.reshape(-1),
     }
 
@@ -491,7 +491,7 @@ def get_diagonal_kernel_from_operators(
 
     Parameters
     ----------
-    operators : NoiseOperatorList[BasisLike[Any, Any], _B0, _B1]
+    operators : NoiseOperatorList[BasisLike, _B0, _B1]
 
     Returns
     -------
@@ -615,7 +615,7 @@ def get_diagonal_noise_operators_from_axis(
     einsum_string = f"{input_subscripts}->{output_subscript}"
 
     full_data = tuple(
-        operators["data"].reshape(operators["basis"][0].n, -1)
+        operators["data"].reshape(operators["basis"][0].size, -1)
         for operators in operators_list
     )
     full_coefficients = tuple(
@@ -623,7 +623,7 @@ def get_diagonal_noise_operators_from_axis(
     )
 
     return {
-        "basis": TupleBasis(full_basis_shape, TupleBasis(full_basis_x, full_basis_x)),
+        "basis": VariadicTupleBasis((full_basis_shape, VariadicTupleBasis((full_basis_x, full_basis_x), None), None)),
         "data": np.einsum(einsum_string, *full_data).ravel(),  # type: ignore unknown
         "eigenvalue": _outer_product(*full_coefficients).ravel(),
     }

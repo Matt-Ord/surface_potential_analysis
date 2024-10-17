@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 import numpy as np
 
 from surface_potential_analysis.basis.conversion import basis_as_single_point_basis
-from surface_potential_analysis.basis.stacked_basis import (
-    TupleBasis,
+from surface_potential_analysis.basis.legacy import (
     TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
@@ -26,11 +25,13 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
     from matplotlib.lines import Line2D
 
-    from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
+    from surface_potential_analysis.basis.legacy import (
+        BasisWithLengthLike,
+        TupleBasisLike,
+    )
     from surface_potential_analysis.types import IndexLike, SingleStackedIndexLike
 
-    _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
+    _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike)
 
 
 def plot_k_points_projected_2d(
@@ -92,7 +93,9 @@ def plot_brillouin_zone_points_projected_2d(
     tuple[Figure, Axes, Line2D]
     """
     util = BasisUtil(
-        TupleBasis(basis[0], basis[1], basis_as_single_point_basis(basis[2]))
+        VariadicTupleBasis(
+            (basis[0], basis[1], basis_as_single_point_basis(basis[2]), None)
+        )
     )
     coordinates = decrement_brillouin_zone(basis, util.stacked_nk_points)
     coordinates = decrement_brillouin_zone(basis, coordinates)
@@ -221,10 +224,10 @@ def plot_fundamental_x_in_plane_projected_2d(
     util = BasisUtil(basis)
     points = (
         np.array(util.fundamental_x_points_stacked)
-        .reshape(basis.ndim, *util.fundamental_shape)[
+        .reshape(basis.n_dim, *util.fundamental_shape)[
             slice_ignoring_axes(idx, (0, *[1 + ax for ax in axes]))
         ]
-        .reshape(basis.ndim, -1)
+        .reshape(basis.n_dim, -1)
     )
     return plot_x_points_projected_2d(basis, axes, points, ax=ax)
 

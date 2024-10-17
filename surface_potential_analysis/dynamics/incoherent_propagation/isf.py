@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import FundamentalBasis
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
+from surface_potential_analysis.basis.legacy import FundamentalBasis, TupleBasis
 from surface_potential_analysis.basis.time_basis_like import (
     ExplicitTimeBasis,
     FundamentalTimeBasis,
@@ -116,11 +115,15 @@ def calculate_equilibrium_state_averaged_isf(
         )
         eigenvalues[band] = isf
     isf_per_band: SingleBasisDiagonalOperator[
-        TupleBasis[FundamentalBasis[int], ExplicitTimeBasis[_L0Inv]]
+        TupleBasis[FundamentalBasis[BasisMetadata], ExplicitTimeBasis[_L0Inv]]
     ] = {
         "basis": TupleBasis(
-            TupleBasis(FundamentalBasis(util.shape[2]), ExplicitTimeBasis(times)),
-            TupleBasis(FundamentalBasis(util.shape[2]), ExplicitTimeBasis(times)),
+            VariadicTupleBasis(
+                (FundamentalBasis(util.shape[2]), None), ExplicitTimeBasis(times)
+            ),
+            VariadicTupleBasis(
+                (FundamentalBasis(util.shape[2]), None), ExplicitTimeBasis(times)
+            ),
         ),
         "data": eigenvalues.reshape(-1),
     }
@@ -161,7 +164,7 @@ def calculate_equilibrium_initial_state_isf(
         final_probabilities = density_matrix_list_as_probabilities(final_state)
         vectors[band] = final_probabilities["data"]
     probability_per_band: ProbabilityVectorList[
-        TupleBasis[FundamentalBasis[int], ExplicitTimeBasis[_L0Inv]], _B0Inv
+        TupleBasis[FundamentalBasis[BasisMetadata], ExplicitTimeBasis[_L0Inv]], _B0Inv
     ] = {
         "basis": TupleBasis(
             TupleBasis(

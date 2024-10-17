@@ -5,20 +5,18 @@ import unittest
 import numpy as np
 from scipy.stats import special_ortho_group
 
-from surface_potential_analysis.basis.basis import (
-    FundamentalPositionBasis,
-    TransformedPositionBasis,
-)
-from surface_potential_analysis.basis.basis_like import (
-    convert_matrix,
-    convert_vector,
-)
 from surface_potential_analysis.basis.conversion import (
     basis_as_fundamental_momentum_basis,
     basis_as_fundamental_position_basis,
 )
-from surface_potential_analysis.basis.explicit_basis import ExplicitBasisWithLength
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
+from surface_potential_analysis.basis.legacy import (
+    ExplicitBasisWithLength,
+    FundamentalPositionBasis,
+    StackedBasis,
+    TransformedPositionBasis,
+    convert_matrix,
+    convert_vector,
+)
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.util.interpolation import (
     interpolate_points_fftn,

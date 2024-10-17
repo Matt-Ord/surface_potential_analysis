@@ -3,16 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Callable, Generic, TypedDict, TypeVar
 
 import numpy as np
+from slate.basis.stacked import VariadicTupleBasis
 
-from surface_potential_analysis.basis.basis_like import (
-    BasisLike,
-)
-from surface_potential_analysis.basis.stacked_basis import (
-    TupleBasis,
-    TupleBasisLike,
-)
-from surface_potential_analysis.basis.util import (
-    BasisUtil,
+from surface_potential_analysis.basis.legacy import (
+    BasisLike,TupleBasisLike
 )
 from surface_potential_analysis.state_vector.conversion import (
     convert_state_vector_to_basis,
@@ -28,13 +22,13 @@ if TYPE_CHECKING:
     from surface_potential_analysis.state_vector.state_vector import StateVector
     from surface_potential_analysis.types import SingleFlatIndexLike
 
-_B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-_B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
-_B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
+_B0 = TypeVar("_B0", bound=BasisLike)
+_B1 = TypeVar("_B1", bound=BasisLike)
+_B2 = TypeVar("_B2", bound=BasisLike)
 
 
-_B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
-_B1_co = TypeVar("_B1_co", bound=BasisLike[Any, Any], covariant=True)
+_B0_co = TypeVar("_B0_co", bound=BasisLike, covariant=True)
+_B1_co = TypeVar("_B1_co", bound=BasisLike, covariant=True)
 
 _SB0Inv = TypeVar("_SB0Inv", bound=TupleBasisLike[*tuple[Any, ...]])
 _SB1Inv = TypeVar("_SB1Inv", bound=TupleBasisLike[*tuple[Any, ...]])
@@ -43,7 +37,7 @@ _SB1Inv = TypeVar("_SB1Inv", bound=TupleBasisLike[*tuple[Any, ...]])
 class Operator(TypedDict, Generic[_B0_co, _B1_co]):
     """Represents an operator in the given basis."""
 
-    basis: TupleBasisLike[_B0_co, _B1_co]
+    basis: VariadicTupleBasis[_B0_co, _B1_co, Any, np.complex128]
     # We need higher kinded types, and const generics to do this properly
     data: np.ndarray[tuple[int], np.dtype[np.complex128]]
 
@@ -55,7 +49,7 @@ SingleBasisOperator = Operator[_B0_co, _B0_co]
 class DiagonalOperator(TypedDict, Generic[_B0_co, _B1_co]):
     """Represents an operator in the given basis."""
 
-    basis: TupleBasisLike[_B0_co, _B1_co]
+    basis: VariadicTupleBasis[_B0_co, _B1_co, Any, np.complex128]
     """Basis of the lhs (first index in array)"""
     data: np.ndarray[tuple[int], np.dtype[np.complex128]]
 
@@ -112,12 +106,12 @@ def sum_diagonal_operator_over_axes(
     -------
     DiagonalOperator[Any, Any]
     """
-    BasisUtil(operator["basis"])
+    
     traced_basis = tuple(
         b for (i, b) in enumerate(operator["basis"][0]) if i not in axes
     )
     return {
-        "basis": TupleBasis(TupleBasis(*traced_basis), TupleBasis(*traced_basis)),
+        "basis": VariadicTupleBasis((VariadicTupleBasis((*traced_basis), None), None), VariadicTupleBasis((*traced_basis), None)),
         "data": np.sum(
             operator["data"].reshape(operator["basis"][0].shape), axis=axes
         ).reshape(-1),
@@ -128,7 +122,7 @@ SingleBasisDiagonalOperator = DiagonalOperator[_B0, _B0]
 
 
 def get_eigenvalue(
-    eigenvalue_list: SingleBasisDiagonalOperator[BasisLike[Any, Any]],
+    eigenvalue_list: SingleBasisDiagonalOperator[BasisLike],
     idx: SingleFlatIndexLike,
 ) -> np.complex128:
     """
@@ -167,10 +161,10 @@ def average_eigenvalues(
     -------
     EigenvalueList[Any]
     """
-    axis = tuple(range(eigenvalues["basis"].ndim)) if axis is None else axis
+    axis = tuple(range(eigenvalues["basis"].n_dim)) if axis is None else axis
     basis = tuple(b for (i, b) in enumerate(eigenvalues["basis"][0]) if i not in axis)
     return {
-        "basis": TupleBasis(TupleBasis(*basis), TupleBasis(*basis)),
+        "basis": VariadicTupleBasis((VariadicTupleBasis((*basis), None), None), VariadicTupleBasis((*basis), None)),
         "data": np.average(
             eigenvalues["data"].reshape(*eigenvalues["basis"][0].shape),
             axis=tuple(ax for ax in axis),
@@ -200,18 +194,18 @@ def average_eigenvalues_list(
     -------
     EigenvalueList[Any]
     """
-    axis = tuple(range(eigenvalues["basis"].ndim)) if axis is None else axis
+    axis = tuple(range(eigenvalues["basis"].n_dim)) if axis is None else axis
     basis = tuple(
         b for (i, b) in enumerate(eigenvalues["basis"][1][0]) if i not in axis
     )
     return {
         "basis": TupleBasis(
             eigenvalues["basis"][0],
-            TupleBasis(TupleBasis(*basis), TupleBasis(*basis)),
+            VariadicTupleBasis((VariadicTupleBasis((*basis), None), None), VariadicTupleBasis((*basis), None)),
         ),
         "data": np.average(
             eigenvalues["data"].reshape(
-                eigenvalues["basis"][0].n, *eigenvalues["basis"][1][0].shape
+                eigenvalues["basis"][0].size, *eigenvalues["basis"][1][0].shape
             ),
             axis=tuple(1 + ax for ax in axis),
             weights=weights,
@@ -243,7 +237,7 @@ def matmul_operator(
         rhs["data"].reshape(rhs["basis"].shape),
         axes=(1, 0),
     )
-    return {"basis": TupleBasis(lhs["basis"][0], rhs["basis"][1]), "data": data}
+    return {"basis": VariadicTupleBasis((lhs["basis"][0], rhs["basis"][1]), None), "data": data}
 
 
 def add_operator(a: Operator[_B0, _B1], b: Operator[_B0, _B1]) -> Operator[_B0, _B1]:

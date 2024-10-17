@@ -5,14 +5,12 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import (
-    FundamentalTransformedPositionBasis,
-)
-from surface_potential_analysis.basis.basis_like import (
-    convert_vector,
-)
 from surface_potential_analysis.basis.conversion import (
     basis_as_fundamental_position_basis,
+)
+from surface_potential_analysis.basis.legacy import (
+    FundamentalTransformedPositionBasis,
+    convert_vector,
 )
 from surface_potential_analysis.basis.util import (
     BasisUtil,
@@ -20,7 +18,7 @@ from surface_potential_analysis.basis.util import (
 from tests.utils import get_random_explicit_basis
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
+    from surface_potential_analysis.basis.legacy import BasisWithLengthLike
 
     _S0Inv = TypeVar("_S0Inv", bound=tuple[int, ...])
     _NDInv = TypeVar("_NDInv", bound=int)
@@ -57,8 +55,8 @@ def get_basis_conversion_matrix(
 
 def convert_vector_simple(
     vector: np.ndarray[_S0Inv, np.dtype[np.complex128]],
-    initial_basis: BasisWithLengthLike[Any, Any, Any],
-    final_basis: BasisWithLengthLike[Any, Any, Any],
+    initial_basis: BasisWithLengthLike,
+    final_basis: BasisWithLengthLike,
     axis: int = -1,
 ) -> np.ndarray[Any, np.dtype[np.complex128]]:
     matrix = get_basis_conversion_matrix(initial_basis, final_basis)

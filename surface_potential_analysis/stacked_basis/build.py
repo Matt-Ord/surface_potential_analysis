@@ -5,24 +5,22 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
     FundamentalBasis,
     FundamentalPositionBasis,
     FundamentalTransformedBasis,
     FundamentalTransformedPositionBasis,
     FundamentalTransformedPositionBasis3d,
-)
-from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
     TupleBasisLike,
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
+    from surface_potential_analysis.basis.legacy import BasisWithLengthLike
 
-    _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
-    _BL1 = TypeVar("_BL1", bound=BasisWithLengthLike[Any, Any, Any])
-    _BL2 = TypeVar("_BL2", bound=BasisWithLengthLike[Any, Any, Any])
+    _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike)
+    _BL1 = TypeVar("_BL1", bound=BasisWithLengthLike)
+    _BL2 = TypeVar("_BL2", bound=BasisWithLengthLike)
     _S1Inv = TypeVar("_S1Inv", bound=tuple[int, int])
 
 
@@ -35,9 +33,9 @@ def position_basis_3d_from_parent(
     parent: TupleBasisLike[_BL0, _BL1, _BL2],
     resolution: tuple[_L0, _L1, _L2],
 ) -> TupleBasisLike[
-    FundamentalPositionBasis[_L0, Literal[3]],
-    FundamentalPositionBasis[_L1, Literal[3]],
-    FundamentalPositionBasis[_L2, Literal[3]],
+    FundamentalPositionBasis,
+    FundamentalPositionBasis,
+    FundamentalPositionBasis,
 ]:
     """
     Given a parent basis construct another basis with the same lattice vectors.
@@ -62,15 +60,13 @@ def position_basis_3d_from_parent(
 @overload
 def fundamental_stacked_basis_from_shape(
     shape: tuple[_L0],
-) -> TupleBasisLike[FundamentalBasis[_L0]]:
-    ...
+) -> TupleBasisLike[FundamentalBasis[_L0]]: ...
 
 
 @overload
 def fundamental_stacked_basis_from_shape(
     shape: tuple[_L0, _L1],
-) -> TupleBasisLike[FundamentalBasis[_L0], FundamentalBasis[_L1]]:
-    ...
+) -> TupleBasisLike[FundamentalBasis[_L0], FundamentalBasis[_L1]]: ...
 
 
 @overload
@@ -78,15 +74,13 @@ def fundamental_stacked_basis_from_shape(
     shape: tuple[_L0, _L1, _L2],
 ) -> TupleBasisLike[
     FundamentalBasis[_L0], FundamentalBasis[_L1], FundamentalBasis[_L2]
-]:
-    ...
+]: ...
 
 
 @overload
 def fundamental_stacked_basis_from_shape(
     shape: tuple[int, ...],
-) -> TupleBasisLike[*tuple[FundamentalBasis[Any], ...]]:
-    ...
+) -> TupleBasisLike[*tuple[FundamentalBasis[Any], ...]]: ...
 
 
 def fundamental_stacked_basis_from_shape(
@@ -106,21 +100,21 @@ def fundamental_stacked_basis_from_shape(
     -------
     FundamentalPositionTupleBasisLike[tuple[_NF0Inv, _NF1Inv, _NF2Inv]
     """
-    return TupleBasis(*tuple(FundamentalBasis(n) for n in shape))
+    return VariadicTupleBasis((*tuple(FundamentalBasis(n), None) for n in shape))
 
 
 @overload
 def fundamental_transformed_stacked_basis_from_shape(
     shape: tuple[_L0],
-) -> TupleBasisLike[FundamentalTransformedBasis[_L0]]:
-    ...
+) -> TupleBasisLike[FundamentalTransformedBasis[_L0]]: ...
 
 
 @overload
 def fundamental_transformed_stacked_basis_from_shape(
     shape: tuple[_L0, _L1],
-) -> TupleBasisLike[FundamentalTransformedBasis[_L0], FundamentalTransformedBasis[_L1]]:
-    ...
+) -> TupleBasisLike[
+    FundamentalTransformedBasis[_L0], FundamentalTransformedBasis[_L1]
+]: ...
 
 
 @overload
@@ -130,20 +124,18 @@ def fundamental_transformed_stacked_basis_from_shape(
     FundamentalTransformedBasis[_L0],
     FundamentalTransformedBasis[_L1],
     FundamentalTransformedBasis[_L2],
-]:
-    ...
+]: ...
 
 
 @overload
 def fundamental_transformed_stacked_basis_from_shape(
     shape: tuple[int, ...],
-) -> TupleBasisLike[*tuple[FundamentalTransformedBasis[Any], ...]]:
-    ...
+) -> TupleBasisLike[*tuple[FundamentalTransformedBasis, ...]]: ...
 
 
 def fundamental_transformed_stacked_basis_from_shape(
     shape: tuple[Any, ...] | tuple[Any, Any, Any] | tuple[Any, Any] | tuple[Any],
-) -> TupleBasisLike[*tuple[FundamentalTransformedBasis[Any], ...]]:
+) -> TupleBasisLike[*tuple[FundamentalTransformedBasis, ...]]:
     """
     Given a resolution and a set of directions construct a FundamentalPositionBasisConfig.
 
@@ -158,7 +150,7 @@ def fundamental_transformed_stacked_basis_from_shape(
     -------
     FundamentalPositionTupleBasisLike[tuple[_NF0Inv, _NF1Inv, _NF2Inv]
     """
-    return TupleBasis(*tuple(FundamentalTransformedBasis(n) for n in shape))
+    return VariadicTupleBasis((*tuple(FundamentalTransformedBasis(n), None) for n in shape))
 
 
 def position_basis_from_shape(

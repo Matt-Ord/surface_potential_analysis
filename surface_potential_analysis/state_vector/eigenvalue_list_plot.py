@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
     from matplotlib.lines import Line2D
 
-    from surface_potential_analysis.basis.basis_like import BasisLike
+    from surface_potential_analysis.basis.legacy import BasisLike
     from surface_potential_analysis.basis.time_basis_like import BasisWithTimeLike
     from surface_potential_analysis.operator.operator import (
         SingleBasisDiagonalOperator,
@@ -75,7 +75,7 @@ def plot_eigenvalue_against_time(
 
 
 def plot_eigenstate_occupations(
-    eigenstates: EigenstateList[BasisLike[Any, Any], BasisLike[Any, Any]],
+    eigenstates: EigenstateList[BasisLike, BasisLike],
     temperature: float,
     *,
     ax: Axes | None = None,
@@ -86,7 +86,7 @@ def plot_eigenstate_occupations(
 
     Parameters
     ----------
-    eigenstates : EigenstateList[BasisLike[Any, Any], BasisLike[Any, Any]]
+    eigenstates : EigenstateList[BasisLike, BasisLike]
     temperature : float
     ax : Axes | None, optional
         ax, by default None
@@ -119,7 +119,7 @@ def plot_eigenstate_occupations(
 
 
 def plot_eigenvalues(
-    eigenstates: EigenstateList[BasisLike[Any, Any], BasisLike[Any, Any]],
+    eigenstates: EigenstateList[BasisLike, BasisLike],
     *,
     ax: Axes | None = None,
     scale: Scale = "linear",
@@ -130,7 +130,7 @@ def plot_eigenvalues(
 
     Parameters
     ----------
-    eigenstates : EigenstateList[BasisLike[Any, Any], BasisLike[Any, Any]]
+    eigenstates : EigenstateList[BasisLike, BasisLike]
     temperature : float
     ax : Axes | None, optional
         ax, by default None
