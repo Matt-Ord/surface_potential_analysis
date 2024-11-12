@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
-from slate.metadata._metadata import BasisMetadata
 
 from surface_potential_analysis.basis.legacy import (
     FundamentalBasis,
@@ -15,6 +14,8 @@ from surface_potential_analysis.kernel.kernel import (
 )
 
 if TYPE_CHECKING:
+    from slate.metadata._metadata import BasisMetadata
+
     from surface_potential_analysis.basis.legacy import (
         BasisLike,
     )

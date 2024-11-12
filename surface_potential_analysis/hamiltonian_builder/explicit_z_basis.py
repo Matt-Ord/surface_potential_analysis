@@ -19,7 +19,7 @@ from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.hamiltonian_builder.momentum_basis import (
     hamiltonian_from_mass_in_basis,
 )
-from surface_potential_analysis.operator.operator import add_operator
+from surface_potential_analysis.operator.operator import add_legacy_operator
 from surface_potential_analysis.stacked_basis.potential_basis import (
     get_potential_basis_config_eigenstates,
 )
@@ -27,7 +27,7 @@ from surface_potential_analysis.util.decorators import timed
 
 if TYPE_CHECKING:
     from surface_potential_analysis.operator import SingleBasisOperator
-    from surface_potential_analysis.potential.potential import Potential
+    from surface_potential_analysis.potential.potential import LegacyPotential
     from surface_potential_analysis.stacked_basis.potential_basis import (
         PotentialBasisConfig,
     )
@@ -81,7 +81,7 @@ def _get_xy_hamiltonian(
 class _SurfaceHamiltonianUtil(
     Generic[_N0Inv, _N1Inv, _N2Inv, _NF0Inv, _NF1Inv, _NF2Inv]
 ):
-    _potential: Potential[
+    _potential: LegacyPotential[
         TupleBasisLike[
             FundamentalPositionBasis3d[_NF0Inv],
             FundamentalPositionBasis3d[_NF1Inv],
@@ -94,7 +94,7 @@ class _SurfaceHamiltonianUtil(
 
     def __init__(
         self,
-        potential: Potential[
+        potential: LegacyPotential[
             TupleBasisLike[
                 FundamentalPositionBasis3d[_NF0Inv],
                 FundamentalPositionBasis3d[_NF1Inv],
@@ -207,7 +207,7 @@ class _SurfaceHamiltonianUtil(
         xy_hamiltonian = _get_xy_hamiltonian(
             z_hamiltonian["basis"][0], self._config["mass"], self._bloch_fraction[:2]
         )
-        return add_operator(xy_hamiltonian, z_hamiltonian)
+        return add_legacy_operator(xy_hamiltonian, z_hamiltonian)
 
     def _calculate_off_diagonal_energies(
         self,
@@ -241,7 +241,7 @@ class _SurfaceHamiltonianUtil(
 
 @timed
 def total_surface_hamiltonian(
-    potential: Potential[
+    potential: LegacyPotential[
         TupleBasisLike[
             FundamentalPositionBasis3d[_NF0Inv],
             FundamentalPositionBasis3d[_NF1Inv],
@@ -279,7 +279,7 @@ def total_surface_hamiltonian(
 
 
 def total_surface_hamiltonian_as_fundamental(
-    potential: Potential[
+    potential: LegacyPotential[
         TupleBasisLike[
             FundamentalPositionBasis3d[_NF0Inv],
             FundamentalPositionBasis3d[_NF1Inv],

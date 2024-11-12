@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from slate.basis._basis import Basis
 from slate.basis.transformed import TransformedBasis
 from slate.metadata._metadata import BasisMetadata
 
@@ -12,6 +11,7 @@ from surface_potential_analysis.basis.legacy import (
 
 if TYPE_CHECKING:
     import numpy as np
+    from slate.basis._basis import Basis
 
 
 def basis_as_fundamental_basis[M: BasisMetadata, DT: np.generic](

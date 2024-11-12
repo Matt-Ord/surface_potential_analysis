@@ -19,7 +19,7 @@ from surface_potential_analysis.util.util import get_data_in_axes
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from surface_potential_analysis.operator.operator import Operator
+    from surface_potential_analysis.operator.operator import LegacyOperator
     from surface_potential_analysis.state_vector.eigenstate_list import (
         EigenstateList,
         ValueList,
@@ -59,14 +59,16 @@ class StateVectorList(TypedDict, Generic[_B0_co, _B1_co]):
 def get_state_vector(
     state_list: StateVectorList[_TB0, _B1],
     idx: SingleFlatIndexLike | SingleStackedIndexLike,
-) -> StateVector[_B1]: ...
+) -> StateVector[_B1]:
+    ...
 
 
 @overload
 def get_state_vector(
     state_list: StateVectorList[_B0, _B1],
     idx: SingleFlatIndexLike,
-) -> StateVector[_B1]: ...
+) -> StateVector[_B1]:
+    ...
 
 
 def get_state_vector(
@@ -183,7 +185,7 @@ def as_state_vector_list(
 def calculate_inner_products(
     state_0: StateVectorList[_B0, _B2],
     state_1: StateVectorList[_B1, _B3],
-) -> Operator[_B0, _B1]:
+) -> LegacyOperator[_B0, _B1]:
     """
     Calculate the inner product of two states.
 
@@ -237,7 +239,7 @@ def calculate_inner_products_elementwise(
 def calculate_inner_products_eigenvalues(
     state_0: EigenstateList[_B0, _B2],
     state_1: EigenstateList[_B1, _B2],
-) -> Operator[_B0, _B1]:
+) -> LegacyOperator[_B0, _B1]:
     """
     Calculate the inner product of two states.
 

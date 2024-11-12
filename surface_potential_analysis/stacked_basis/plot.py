@@ -5,9 +5,6 @@ from typing import TYPE_CHECKING, Any, TypeVar
 import numpy as np
 
 from surface_potential_analysis.basis.conversion import basis_as_single_point_basis
-from surface_potential_analysis.basis.legacy import (
-    TupleBasisWithLengthLike,
-)
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.stacked_basis.brillouin_zone import (
     decrement_brillouin_zone,
@@ -28,6 +25,7 @@ if TYPE_CHECKING:
     from surface_potential_analysis.basis.legacy import (
         BasisWithLengthLike,
         TupleBasisLike,
+        TupleBasisWithLengthLike,
     )
     from surface_potential_analysis.types import IndexLike, SingleStackedIndexLike
 

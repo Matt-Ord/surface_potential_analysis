@@ -27,7 +27,7 @@ from surface_potential_analysis.stacked_basis.sho_basis import (
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.legacy import ExplicitBasis3d
     from surface_potential_analysis.operator import SingleBasisOperator
-    from surface_potential_analysis.potential.potential import Potential
+    from surface_potential_analysis.potential.potential import LegacyPotential
 
 
 _N0Inv = TypeVar("_N0Inv", bound=int)
@@ -41,7 +41,7 @@ _NF2Inv = TypeVar("_NF2Inv", bound=int)
 class _SurfaceHamiltonianUtil(
     Generic[_N0Inv, _N1Inv, _N2Inv, _NF0Inv, _NF1Inv, _NF2Inv]
 ):
-    _potential: Potential[
+    _potential: LegacyPotential[
         TupleBasisLike[
             FundamentalPositionBasis3d[_NF0Inv],
             FundamentalPositionBasis3d[_NF1Inv],
@@ -55,7 +55,7 @@ class _SurfaceHamiltonianUtil(
 
     def __init__(
         self,
-        potential: Potential[
+        potential: LegacyPotential[
             TupleBasisLike[
                 FundamentalPositionBasis3d[_NF0Inv],
                 FundamentalPositionBasis3d[_NF1Inv],
@@ -264,7 +264,7 @@ class _SurfaceHamiltonianUtil(
 
 
 def total_surface_hamiltonian(
-    potential: Potential[
+    potential: LegacyPotential[
         TupleBasisLike[
             FundamentalPositionBasis3d[_NF0Inv],
             FundamentalPositionBasis3d[_NF1Inv],

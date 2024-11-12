@@ -18,8 +18,8 @@ if TYPE_CHECKING:
     from surface_potential_analysis.types import SingleFlatIndexLike
 
     from .operator import (
-        DiagonalOperator,
-        Operator,
+        LegacyDiagonalOperator,
+        LegacyOperator,
     )
 _B0 = TypeVar("_B0", bound=BasisLike)
 _B1 = TypeVar("_B1", bound=BasisLike)
@@ -44,7 +44,7 @@ SingleBasisOperatorList = OperatorList[_B0, _B1, _B1]
 
 def select_operator(
     operator_list: OperatorList[_B0, _B1, _B2], idx: SingleFlatIndexLike
-) -> Operator[_B1, _B2]:
+) -> LegacyOperator[_B1, _B2]:
     """
     Get a single state vector from a list of states.
 
@@ -78,7 +78,7 @@ SingleBasisDiagonalOperatorList = DiagonalOperatorList[_B0, _B1, _B1]
 
 def select_diagonal_operator(
     operator_list: DiagonalOperatorList[_B0, _B1, _B2], idx: SingleFlatIndexLike
-) -> DiagonalOperator[_B1, _B2]:
+) -> LegacyDiagonalOperator[_B1, _B2]:
     """
     Get a single state vector from a list of states.
 
@@ -148,7 +148,7 @@ def operator_list_as_diagonal(
 
 
 def operator_list_from_iter(
-    iters: Iterable[Operator[_B1, _B2]],
+    iters: Iterable[LegacyOperator[_B1, _B2]],
 ) -> OperatorList[FundamentalBasis[BasisMetadata], _B1, _B2]:
     """
     Get a single state vector from a list of states.
@@ -174,7 +174,7 @@ def operator_list_from_iter(
 
 def operator_list_into_iter(
     operators: OperatorList[Any, _B1, _B2],
-) -> Iterable[Operator[_B1, _B2]]:
+) -> Iterable[LegacyOperator[_B1, _B2]]:
     """
     Get a single state vector from a list of states.
 
@@ -226,7 +226,7 @@ def as_flat_operator(
 def as_diagonal_operator(
     operator_list: DiagonalOperatorList[_B0, _B1, _B2],
     idx: SingleFlatIndexLike,
-) -> DiagonalOperator[_B1, _B2]:
+) -> LegacyDiagonalOperator[_B1, _B2]:
     """
     Get a single state vector from a list of states.
 

@@ -4,12 +4,6 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 
-from surface_potential_analysis.basis.legacy import (
-    StackedBasisLike,
-    StackedBasisWithVolumeLike,
-    TupleBasisLike,
-    TupleBasisWithLengthLike,
-)
 from surface_potential_analysis.stacked_basis.conversion import (
     tuple_basis_as_transformed_fundamental,
 )
@@ -30,6 +24,10 @@ if TYPE_CHECKING:
     from surface_potential_analysis.basis.legacy import (
         BasisLike,
         FundamentalTransformedPositionBasis,
+        StackedBasisLike,
+        StackedBasisWithVolumeLike,
+        TupleBasisLike,
+        TupleBasisWithLengthLike,
     )
     from surface_potential_analysis.state_vector.state_vector import (
         StateVector,

@@ -17,8 +17,8 @@ from surface_potential_analysis.basis.legacy import (
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.operator.operator import (
-    DiagonalOperator,
-    Operator,
+    LegacyDiagonalOperator,
+    LegacyOperator,
 )
 from surface_potential_analysis.operator.operator_list import (
     DiagonalOperatorList,
@@ -107,7 +107,7 @@ class IsotropicNoiseKernel(TypedDict, Generic[_B0_co]):
     data: np.ndarray[tuple[int], np.dtype[np.complex128]]
 
 
-class EigenOperator(Operator[_B0_co, _B1_co], TypedDict):
+class EigenOperator(LegacyOperator[_B0_co, _B1_co], TypedDict):
     """A State vector which is the eigenvector of some operator."""
 
     eigenvalue: complex | np.complex128
@@ -136,10 +136,10 @@ class DiagonalEigenOperatorList(
 # random operator
 
 
-NoiseOperator = Operator
+NoiseOperator = LegacyOperator
 SingleBasisNoiseOperator = NoiseOperator[_B0, _B0]
 
-DiagonalNoiseOperator = DiagonalOperator
+DiagonalNoiseOperator = LegacyDiagonalOperator
 SingleBasisDiagonalNoiseOperator = DiagonalNoiseOperator[_B0, _B0]
 
 NoiseOperatorList = EigenOperatorList[_B0, _B1, _B2]
@@ -147,7 +147,7 @@ SingleBasisNoiseOperatorList = EigenOperatorList[_B0, _B1, _B1]
 
 DiagonalNoiseOperatorList = DiagonalEigenOperatorList[_B0, _B1, _B2]
 SingleBasisDiagonalNoiseOperatorList = DiagonalEigenOperatorList[_B0, _B1, _B1]
-DiagonalNoiseOperator = DiagonalOperator
+DiagonalNoiseOperator = LegacyDiagonalOperator
 
 
 def as_full_kernel_from_diagonal(

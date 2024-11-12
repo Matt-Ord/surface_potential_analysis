@@ -4,10 +4,10 @@ from typing import Any, Self, TypeVarTuple
 
 import numpy as np
 from slate.basis import Basis, FundamentalBasis, TransformedBasis, VariadicTupleBasis
-from slate.basis import EvenlySpacedBasis as EvenlySpacedBasisNew
+from slate.basis import CroppedBasis as CroppedBasisNew
 from slate.basis import TruncatedBasis as TruncatedBasisNew
 from slate.basis import TupleBasis as TupleBasisNew
-from slate.basis.evenly_spaced import Spacing
+from slate.basis.truncated import Truncation
 from slate.explicit_basis._explicit_basis import ExplicitUnitaryBasis
 from slate.metadata import BasisMetadata
 from slate.metadata._metadata import LabelSpacing
@@ -26,17 +26,19 @@ from surface_potential_analysis.basis.time_basis_like import (
 TS = TypeVarTuple("TS")
 
 
-class TupleBasis[*TS](VariadicTupleBasis[*TS, None, np.complex128]):
+class TupleBasis[*TS](VariadicTupleBasis[np.complex128, *TS, None]):
     def __init__(self: Self, *args: *TS) -> None:
         ...
 
-    def __call__(self, *args: *TS) -> VariadicTupleBasis[*TS, None, np.complex128]:
+    def __call__(self, *args: *TS) -> VariadicTupleBasis[np.complex128, *TS, None]:
         return VariadicTupleBasis(args, None)
 
 
-type TupleBasisLike[*TS] = VariadicTupleBasis[*TS, None, np.complex128]
+type TupleBasisLike[*TS] = VariadicTupleBasis[np.complex128, *TS, None]
 type TupleBasisWithLengthLike[*TS] = VariadicTupleBasis[
-    *TS, AxisDirections, np.complex128
+    np.complex128,
+    *TS,
+    AxisDirections,
 ]
 type StackedBasisLike = TupleBasisNew[BasisMetadata, Any, np.complex128]
 type StackedBasis = StackedBasisLike
@@ -96,25 +98,25 @@ class FundamentalTransformedBasis(TransformedBasis[BasisMetadata]):
         return TransformedBasis(FundamentalBasis.from_shape((n,)))
 
 
-type TruncatedBasis = TruncatedBasisNew[Any, np.complex128]
+type TruncatedBasis = CroppedBasisNew[Any, np.complex128]
 
 
-class EvenlySpacedBasis(EvenlySpacedBasisNew[SpacedLengthMetadata, np.complex128]):
+class EvenlySpacedBasis(TruncatedBasisNew[SpacedLengthMetadata, np.complex128]):
     def __init__(self: Self, n: int, step: int, offset: int, delta_x: float) -> None:
         ...
 
     def __call__(
         self, n: int, step: int, offset: int, delta_x: float
-    ) -> EvenlySpacedBasisNew[SpacedLengthMetadata, np.complex128]:
-        return EvenlySpacedBasisNew(
-            Spacing(n, step, offset),
+    ) -> TruncatedBasisNew[SpacedLengthMetadata, np.complex128]:
+        return TruncatedBasisNew(
+            Truncation(n, step, offset),
             FundamentalBasis(
                 SpacedLengthMetadata((n * step,), spacing=LabelSpacing(delta=delta_x))
             ),
         )
 
 
-type EvenlySpacedTransformedPositionBasis = EvenlySpacedBasisNew[
+type EvenlySpacedTransformedPositionBasis = TruncatedBasisNew[
     LengthMetadata, np.complex128
 ]
 type ExplicitBlockFractionBasis = Basis[ExplicitBlochFractionMetadata, np.complex128]
@@ -130,15 +132,15 @@ type ExplicitBasisWithLength = ExplicitUnitaryBasis[LengthMetadata, np.complex12
 type BasisWithTimeLike = Basis[TimeMetadata, np.complex128]
 
 
-class EvenlySpacedTimeBasis(EvenlySpacedBasisNew[SpacedTimeMetadata, np.complex128]):
+class EvenlySpacedTimeBasis(TruncatedBasisNew[SpacedTimeMetadata, np.complex128]):
     def __init__(self: Self, n: int, step: int, offset: int, delta: float) -> None:
         ...
 
     def __call__(
         self, n: int, step: int, offset: int, delta: float
-    ) -> EvenlySpacedBasisNew[SpacedTimeMetadata, np.complex128]:
-        return EvenlySpacedBasisNew(
-            Spacing(n, step, offset),
+    ) -> TruncatedBasisNew[SpacedTimeMetadata, np.complex128]:
+        return TruncatedBasisNew(
+            Truncation(n, step, offset),
             FundamentalBasis(
                 SpacedTimeMetadata((n * step,), spacing=LabelSpacing(delta=delta))
             ),

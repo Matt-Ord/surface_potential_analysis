@@ -8,7 +8,6 @@ from matplotlib.figure import Figure
 
 from surface_potential_analysis.basis.legacy import (
     BasisLike,
-    StackedBasisWithVolumeLike,
 )
 from surface_potential_analysis.operator.conversion import convert_operator_to_basis
 from surface_potential_analysis.operator.operator import (
@@ -50,15 +49,18 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
     from matplotlib.lines import Line2D
 
-    from surface_potential_analysis.basis.legacy import BasisLike
+    from surface_potential_analysis.basis.legacy import (
+        BasisLike,
+        StackedBasisWithVolumeLike,
+    )
     from surface_potential_analysis.operator.operator import (
-        DiagonalOperator,
+        LegacyDiagonalOperator,
         SingleBasisOperator,
     )
     from surface_potential_analysis.operator.operator_list import DiagonalOperatorList
     from surface_potential_analysis.types import SingleStackedIndexLike
 
-    from .operator import Operator
+    from .operator import LegacyOperator
 
     _SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike)
 
@@ -68,7 +70,7 @@ if TYPE_CHECKING:
 
 
 def plot_operator_sparsity(
-    operator: Operator[BasisLike, BasisLike],
+    operator: LegacyOperator[BasisLike, BasisLike],
     *,
     ax: Axes | None = None,
     measure: Measure = "abs",
@@ -111,7 +113,7 @@ def plot_operator_sparsity(
 
 
 def _get_operator_diagonals(
-    operator: Operator[BasisLike, BasisLike],
+    operator: LegacyOperator[BasisLike, BasisLike],
 ) -> np.ndarray[tuple[int, int], np.dtype[np.complex128]]:
     stacked = operator["data"].reshape(operator["basis"].shape)
     out = np.zeros_like(stacked)
@@ -121,7 +123,7 @@ def _get_operator_diagonals(
 
 
 def plot_operator_diagonal_sparsity(
-    operator: Operator[BasisLike, BasisLike],
+    operator: LegacyOperator[BasisLike, BasisLike],
     *,
     ax: Axes | None = None,
     scale: Scale = "linear",
@@ -225,7 +227,7 @@ def plot_eigenvalues(
 
 
 def plot_diagonal_operator_along_diagonal(
-    operator: DiagonalOperator[_B1, _B2],
+    operator: LegacyDiagonalOperator[_B1, _B2],
     *,
     ax: Axes | None = None,
     scale: Scale = "linear",

@@ -6,7 +6,7 @@ import numpy as np
 
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.potential.conversion import (
-    convert_potential_to_basis,
+    convert_legacy_potential_to_basis,
     convert_potential_to_position_basis,
 )
 from surface_potential_analysis.stacked_basis.util import (
@@ -42,7 +42,7 @@ if TYPE_CHECKING:
         StackedBasisWithVolumeLike,
         TupleBasisWithLengthLike,
     )
-    from surface_potential_analysis.potential.potential import Potential
+    from surface_potential_analysis.potential.potential import LegacyPotential
     from surface_potential_analysis.types import (
         SingleStackedIndexLike,
     )
@@ -56,7 +56,7 @@ if TYPE_CHECKING:
 
 
 def plot_potential_1d_x(
-    potential: Potential[StackedBasisWithVolumeLike],
+    potential: LegacyPotential[StackedBasisWithVolumeLike],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -94,7 +94,7 @@ def plot_potential_1d_x(
 
 
 def plot_potential_1d_comparison(
-    potential: Potential[StackedBasisWithVolumeLike],
+    potential: LegacyPotential[StackedBasisWithVolumeLike],
     comparison_points: Mapping[str, tuple[tuple[int, int], int]],
     *,
     ax: Axes | None = None,
@@ -128,7 +128,7 @@ def plot_potential_1d_comparison(
 
 
 def plot_potential_1d_x2_comparison_111(
-    potential: Potential[
+    potential: LegacyPotential[
         TupleBasisWithLengthLike[
             FundamentalPositionBasis3d[_L0Inv],
             FundamentalPositionBasis3d[_L1Inv],
@@ -169,7 +169,7 @@ def plot_potential_1d_x2_comparison_111(
 
 
 def plot_potential_1d_x2_comparison_100(
-    potential: Potential[
+    potential: LegacyPotential[
         TupleBasisWithLengthLike[
             FundamentalPositionBasis3d[_L0Inv],
             FundamentalPositionBasis3d[_L1Inv],
@@ -210,7 +210,7 @@ def plot_potential_1d_x2_comparison_100(
 
 
 def plot_potential_2d_x(
-    potential: Potential[StackedBasisWithVolumeLike],
+    potential: LegacyPotential[StackedBasisWithVolumeLike],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -250,8 +250,8 @@ def plot_potential_2d_x(
 
 
 def plot_potential_difference_2d_x(
-    potential0: Potential[StackedBasisWithVolumeLike],
-    potential1: Potential[StackedBasisWithVolumeLike],
+    potential0: LegacyPotential[StackedBasisWithVolumeLike],
+    potential1: LegacyPotential[StackedBasisWithVolumeLike],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -278,8 +278,8 @@ def plot_potential_difference_2d_x(
     -------
     tuple[Figure, Axes, QuadMesh]
     """
-    converted_1 = convert_potential_to_basis(potential1, potential0["basis"])
-    potential: Potential[StackedBasisWithVolumeLike] = {
+    converted_1 = convert_legacy_potential_to_basis(potential1, potential0["basis"])
+    potential: LegacyPotential[StackedBasisWithVolumeLike] = {
         "basis": potential0["basis"],
         "data": potential0["data"] - converted_1["data"],
     }
@@ -287,7 +287,7 @@ def plot_potential_difference_2d_x(
 
 
 def animate_potential_3d_x(
-    potential: Potential[StackedBasisWithVolumeLike],
+    potential: LegacyPotential[StackedBasisWithVolumeLike],
     axes: tuple[int, int, int] = (0, 1, 2),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -333,8 +333,8 @@ def animate_potential_3d_x(
 
 
 def animate_potential_difference_3d_x(
-    potential0: Potential[StackedBasisWithVolumeLike],
-    potential1: Potential[StackedBasisWithVolumeLike],
+    potential0: LegacyPotential[StackedBasisWithVolumeLike],
+    potential1: LegacyPotential[StackedBasisWithVolumeLike],
     axes: tuple[int, int, int] = (0, 1, 2),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -362,8 +362,8 @@ def animate_potential_difference_3d_x(
     -------
     tuple[Figure, Axes, QuadMesh]
     """
-    converted_1 = convert_potential_to_basis(potential1, potential0["basis"])
-    potential: Potential[StackedBasisWithVolumeLike] = {
+    converted_1 = convert_legacy_potential_to_basis(potential1, potential0["basis"])
+    potential: LegacyPotential[StackedBasisWithVolumeLike] = {
         "basis": potential0["basis"],
         "data": np.abs((potential0["data"] - converted_1["data"]) / potential0["data"]),
     }
@@ -371,7 +371,7 @@ def animate_potential_difference_3d_x(
 
 
 def plot_potential_along_path(
-    potential: Potential[StackedBasisWithVolumeLike],
+    potential: LegacyPotential[StackedBasisWithVolumeLike],
     path: np.ndarray[tuple[int, int], np.dtype[np.int_]],
     *,
     wrap_distances: bool = False,
@@ -419,7 +419,7 @@ def plot_potential_along_path(
 
 
 def get_minimum_path(
-    potential: Potential[StackedBasisWithVolumeLike],
+    potential: LegacyPotential[StackedBasisWithVolumeLike],
     path: np.ndarray[tuple[int, int], np.dtype[np.int_]],
     axis: int = 0,
 ) -> np.ndarray[tuple[int, int], np.dtype[np.int_]]:
@@ -447,7 +447,7 @@ def get_minimum_path(
 
 
 def plot_potential_minimum_along_path(
-    potential: Potential[StackedBasisWithVolumeLike],
+    potential: LegacyPotential[StackedBasisWithVolumeLike],
     path: np.ndarray[tuple[int, int], np.dtype[np.int_]],
     axis: int = 0,
     *,

@@ -23,7 +23,7 @@ from surface_potential_analysis.state_vector.eigenstate_calculation import (
 
 if TYPE_CHECKING:
     from surface_potential_analysis.potential.potential import (
-        Potential,
+        LegacyPotential,
     )
     from surface_potential_analysis.state_vector.eigenstate_list import (
         EigenstateList,
@@ -38,7 +38,7 @@ _L1_co = TypeVar("_L1_co", covariant=True, bound=int)
 class PotentialBasisConfig(TypedDict, Generic[_B1d0Inv, _L1_co]):
     """Configures the generation of an explicit basis from a given potential."""
 
-    potential: Potential[TupleBasisWithLengthLike[_B1d0Inv]]
+    potential: LegacyPotential[TupleBasisWithLengthLike[_B1d0Inv]]
     mass: float
     n: _L1_co
 
@@ -94,8 +94,8 @@ def get_potential_basis_config_basis(
 
 
 def select_minimum_potential_3d(
-    potential: Potential[TupleBasisWithLengthLike[Any, Any, _B3d0]],
-) -> Potential[TupleBasisWithLengthLike[FundamentalPositionBasis1d[Any]]]:
+    potential: LegacyPotential[TupleBasisWithLengthLike[Any, Any, _B3d0]],
+) -> LegacyPotential[TupleBasisWithLengthLike[FundamentalPositionBasis1d[Any]]]:
     """
     Given a 3D potential in the standard configuration select the minimum potential.
 

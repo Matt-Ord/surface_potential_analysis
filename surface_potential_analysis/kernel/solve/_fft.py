@@ -25,6 +25,8 @@ from surface_potential_analysis.stacked_basis.build import (
 from surface_potential_analysis.util.interpolation import pad_ft_points
 
 if TYPE_CHECKING:
+    from slate.metadata._metadata import BasisMetadata
+
     from surface_potential_analysis.basis.legacy import (
         BasisLike,
     )

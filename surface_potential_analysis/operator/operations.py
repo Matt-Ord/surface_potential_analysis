@@ -11,7 +11,7 @@ from surface_potential_analysis.operator.conversion import (
 )
 from surface_potential_analysis.operator.operator import (
     SingleBasisOperator,
-    add_operator,
+    add_legacy_operator,
     matmul_operator,
     subtract_operator,
 )
@@ -30,7 +30,7 @@ from surface_potential_analysis.util.decorators import timed
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.legacy import BasisLike
     from surface_potential_analysis.operator.operator import (
-        Operator,
+        LegacyOperator,
         SingleBasisOperator,
     )
     from surface_potential_analysis.operator.operator_list import (
@@ -53,7 +53,7 @@ if TYPE_CHECKING:
 
 
 def matmul_list_operator(
-    lhs: OperatorList[_B3, _B0, _B1], rhs: Operator[_B4, _B2]
+    lhs: OperatorList[_B3, _B0, _B1], rhs: LegacyOperator[_B4, _B2]
 ) -> OperatorList[_B3, _B0, _B2]:
     """
     Multiply each operator in rhs by lhs.
@@ -88,7 +88,7 @@ def matmul_list_operator(
 
 
 def matmul_operator_list(
-    lhs: Operator[_B0, _B1], rhs: OperatorList[_B3, _B4, _B2]
+    lhs: LegacyOperator[_B0, _B1], rhs: OperatorList[_B3, _B4, _B2]
 ) -> OperatorList[_B3, _B0, _B2]:
     """
     Multiply each operator in rhs by lhs.
@@ -123,7 +123,7 @@ def matmul_operator_list(
 
 def matmul_diagonal_list_operator(
     lhs: DiagonalOperatorList[_B3, _B0, _B1],
-    rhs: Operator[_B4, _B2],
+    rhs: LegacyOperator[_B4, _B2],
 ) -> OperatorList[_B3, _B0, _B2]:
     """
     Multiply each operator in rhs by lhs.
@@ -157,7 +157,7 @@ def matmul_diagonal_list_operator(
 
 
 def matmul_operator_diagonal_list(
-    lhs: Operator[_B0, _B1], rhs: DiagonalOperatorList[_B3, _B4, _B2]
+    lhs: LegacyOperator[_B0, _B1], rhs: DiagonalOperatorList[_B3, _B4, _B2]
 ) -> OperatorList[_B3, _B0, _B2]:
     """
     Multiply each operator in rhs by lhs.
@@ -297,7 +297,9 @@ def scale_operator_list(
     }
 
 
-def scale_operator(factor: complex, operator: Operator[_B0, _B1]) -> Operator[_B0, _B1]:
+def scale_operator(
+    factor: complex, operator: LegacyOperator[_B0, _B1]
+) -> LegacyOperator[_B0, _B1]:
     """
     Scale the operator.
 
@@ -315,7 +317,7 @@ def scale_operator(factor: complex, operator: Operator[_B0, _B1]) -> Operator[_B
 
 @timed
 def apply_operator_to_states(
-    lhs: Operator[_B0, _B1], states: StateVectorList[_B2, _B3]
+    lhs: LegacyOperator[_B0, _B1], states: StateVectorList[_B2, _B3]
 ) -> EigenstateList[_B2, _B0]:
     """
     Apply an operator to all states in a state vector list.
@@ -384,7 +386,7 @@ def get_anti_commutator(
     """
     lhs_rhs = matmul_operator(lhs, rhs)
     rhs_lhs = matmul_operator(rhs, lhs)
-    return add_operator(lhs_rhs, rhs_lhs)
+    return add_legacy_operator(lhs_rhs, rhs_lhs)
 
 
 def exp_operator(operator: SingleBasisOperator[_B0]) -> SingleBasisOperator[_B0]:

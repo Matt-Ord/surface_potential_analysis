@@ -29,7 +29,7 @@ if TYPE_CHECKING:
         TupleBasisWithLengthLike,
     )
     from surface_potential_analysis.operator.operator import (
-        Operator,
+        LegacyOperator,
         SingleBasisOperator,
     )
     from surface_potential_analysis.state_vector.eigenstate_list import ValueList
@@ -144,7 +144,7 @@ def get_displacements_matrix_nx(
 def get_displacements_matrix_x(
     basis: BasisWithLengthLike,
     origin: float = 0.0,
-) -> Operator[
+) -> LegacyOperator[
     FundamentalPositionBasis,
     FundamentalPositionBasis,
 ]:
@@ -209,7 +209,7 @@ def get_displacements_matrix_x_stacked(
 def get_total_displacements_matrix_x_stacked(
     basis: StackedBasisWithVolumeLike,
     origin: tuple[float, ...] | None = None,
-) -> Operator[
+) -> LegacyOperator[
     TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]],
     TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]],
 ]:

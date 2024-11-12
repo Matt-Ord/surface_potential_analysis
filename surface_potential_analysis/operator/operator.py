@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Generic, TypedDict, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Generic, Self, TypedDict, TypeVar, cast
 
 import numpy as np
+from slate.array.array import SlateArray
+from slate.basis._basis import Basis
 from slate.basis.stacked import VariadicTupleBasis
+from slate.metadata._metadata import BasisMetadata
+from slate.metadata.stacked import StackedMetadata
 
 from surface_potential_analysis.basis.legacy import BasisLike, TupleBasisLike
 from surface_potential_analysis.state_vector.conversion import (
@@ -32,7 +36,24 @@ _SB0Inv = TypeVar("_SB0Inv", bound=TupleBasisLike[*tuple[Any, ...]])
 _SB1Inv = TypeVar("_SB1Inv", bound=TupleBasisLike[*tuple[Any, ...]])
 
 
-class Operator(TypedDict, Generic[_B0_co, _B1_co]):
+class Operator[DT: np.generic, B: Basis[StackedMetadata[BasisMetadata, Any], Any]](
+    SlateArray[DT, B]
+):
+    def with_basis[B1: Basis[Any, Any]](  # B1: B
+        self: Self, basis: B1
+    ) -> Operator[DT, B1]:
+        """Get the Operator with the basis set to basis."""
+        return Operator(basis, self.basis.__convert_vector_into__(self.raw_data, basis))
+
+    def __add__[_DT: np.number[Any], M: StackedMetadata[BasisMetadata, Any]](
+        self: Operator[_DT, Basis[M, Any]], other: Operator[_DT, Basis[M, Any]]
+    ) -> Operator[_DT, Basis[M, Any]]:
+        res = self.raw_data + other.with_basis(self.basis).raw_data
+        data = cast(np.ndarray[Any, np.dtype[_DT]], res)
+        return Operator[_DT, Basis[M, Any]](self.basis, data)
+
+
+class LegacyOperator(TypedDict, Generic[_B0_co, _B1_co]):
     """Represents an operator in the given basis."""
 
     basis: VariadicTupleBasis[_B0_co, _B1_co, Any, np.complex128]
@@ -40,11 +61,11 @@ class Operator(TypedDict, Generic[_B0_co, _B1_co]):
     data: np.ndarray[tuple[int], np.dtype[np.complex128]]
 
 
-SingleBasisOperator = Operator[_B0_co, _B0_co]
+SingleBasisOperator = LegacyOperator[_B0_co, _B0_co]
 """Represents an operator where both vector and dual vector uses the same basis"""
 
 
-class DiagonalOperator(TypedDict, Generic[_B0_co, _B1_co]):
+class LegacyDiagonalOperator(TypedDict, Generic[_B0_co, _B1_co]):
     """Represents an operator in the given basis."""
 
     basis: VariadicTupleBasis[_B0_co, _B1_co, Any, np.complex128]
@@ -52,13 +73,13 @@ class DiagonalOperator(TypedDict, Generic[_B0_co, _B1_co]):
     data: np.ndarray[tuple[int], np.dtype[np.complex128]]
 
 
-class StatisticalDiagonalOperator(DiagonalOperator[_B0_co, _B1_co]):
+class StatisticalDiagonalOperator(LegacyDiagonalOperator[_B0_co, _B1_co]):
     """Represents a statistical operator in the given basis."""
 
     standard_deviation: np.ndarray[tuple[int], np.dtype[np.float64]]
 
 
-def as_operator(operator: DiagonalOperator[_B0, _B1]) -> Operator[_B0, _B1]:
+def as_operator(operator: LegacyDiagonalOperator[_B0, _B1]) -> LegacyOperator[_B0, _B1]:
     """
     Convert a diagonal operator into an operator.
 
@@ -73,7 +94,9 @@ def as_operator(operator: DiagonalOperator[_B0, _B1]) -> Operator[_B0, _B1]:
     return {"basis": operator["basis"], "data": np.diag(operator["data"])}
 
 
-def as_diagonal_operator(operator: Operator[_B0, _B1]) -> DiagonalOperator[_B0, _B1]:
+def as_diagonal_operator(
+    operator: LegacyOperator[_B0, _B1],
+) -> LegacyDiagonalOperator[_B0, _B1]:
     """
     Convert an operator into a diagonal operator.
 
@@ -90,8 +113,8 @@ def as_diagonal_operator(operator: Operator[_B0, _B1]) -> DiagonalOperator[_B0, 
 
 
 def sum_diagonal_operator_over_axes(
-    operator: DiagonalOperator[_SB0Inv, _SB1Inv], axes: tuple[int, ...]
-) -> DiagonalOperator[Any, Any]:
+    operator: LegacyDiagonalOperator[_SB0Inv, _SB1Inv], axes: tuple[int, ...]
+) -> LegacyDiagonalOperator[Any, Any]:
     """
     given a diagonal operator, sum the states over axes.
 
@@ -118,7 +141,7 @@ def sum_diagonal_operator_over_axes(
     }
 
 
-SingleBasisDiagonalOperator = DiagonalOperator[_B0, _B0]
+SingleBasisDiagonalOperator = LegacyDiagonalOperator[_B0, _B0]
 
 
 def get_eigenvalue(
@@ -235,8 +258,8 @@ def apply_function_to_operator(
 
 
 def matmul_operator(
-    lhs: Operator[_B0, _B1], rhs: Operator[_B1, _B2]
-) -> Operator[_B0, _B2]:
+    lhs: LegacyOperator[_B0, _B1], rhs: LegacyOperator[_B1, _B2]
+) -> LegacyOperator[_B0, _B2]:
     data = np.tensordot(
         lhs["data"].reshape(lhs["basis"].shape),
         rhs["data"].reshape(rhs["basis"].shape),
@@ -248,7 +271,9 @@ def matmul_operator(
     }
 
 
-def add_operator(a: Operator[_B0, _B1], b: Operator[_B0, _B1]) -> Operator[_B0, _B1]:
+def add_legacy_operator(
+    a: LegacyOperator[_B0, _B1], b: LegacyOperator[_B0, _B1]
+) -> LegacyOperator[_B0, _B1]:
     """
     Add together two operators.
 
@@ -265,8 +290,8 @@ def add_operator(a: Operator[_B0, _B1], b: Operator[_B0, _B1]) -> Operator[_B0, 
 
 
 def subtract_operator(
-    a: Operator[_B0, _B1], b: Operator[_B0, _B1]
-) -> Operator[_B0, _B1]:
+    a: LegacyOperator[_B0, _B1], b: LegacyOperator[_B0, _B1]
+) -> LegacyOperator[_B0, _B1]:
     """
     Subtract two operators (a-b).
 
@@ -283,7 +308,7 @@ def subtract_operator(
 
 
 def apply_operator_to_state(
-    lhs: Operator[_B0, _B1], state: StateVector[_B2]
+    lhs: LegacyOperator[_B0, _B1], state: StateVector[_B2]
 ) -> Eigenstate[_B0]:
     """
     Add together two operators.

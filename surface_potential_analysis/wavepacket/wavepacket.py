@@ -10,7 +10,6 @@ from surface_potential_analysis.basis.legacy import (
     BasisLike,
     BasisWithBlockFractionLike,
     BasisWithLengthLike,
-    EvenlySpacedBasis,
     ExplicitBlockFractionBasis,
     FundamentalBasis,
     FundamentalTransformedPositionBasis,
@@ -56,7 +55,7 @@ _ND0Inv = TypeVar("_ND0Inv", bound=int)
 
 
 _B0 = TypeVar("_B0", bound=BasisLike)
-_TRB0 = TypeVar("_TRB0", bound=TruncatedBasis | EvenlySpacedBasis)
+_TRB0 = TypeVar("_TRB0", bound=TruncatedBasis)
 _SB0 = TypeVar("_SB0", bound=StackedBasisLike)
 _SB1 = TypeVar("_SB1", bound=StackedBasisLike)
 _TB0 = TypeVar("_TB0", bound=TupleBasisLike[*tuple[Any, ...]])
@@ -101,7 +100,7 @@ sample in the first brillouin zone
 def get_fundamental_unfurled_sample_basis_momentum(
     basis: BlochWavefunctionListBasis[_TB0, _SBV0],
     offsets: tuple[int, ...] | None = None,
-) -> TupleBasis[*tuple[EvenlySpacedBasis, ...]]:
+) -> TupleBasis[*tuple[TruncatedBasis, ...]]:
     """
     Get the basis of an individual wavefunction from the wavepacket.
 
@@ -109,9 +108,9 @@ def get_fundamental_unfurled_sample_basis_momentum(
     """
     offsets = (0,) * basis[0].n_dim if offsets is None else offsets
     basis_x = tuple_basis_as_fundamental(basis[1])
-    return TupleBasis[*tuple[EvenlySpacedBasis, ...]](
+    return TupleBasis[*tuple[TruncatedBasis, ...]](
         *(
-            EvenlySpacedBasis(
+            TruncatedBasis(
                 delta_x=basis_x[i].delta_x * basis[0][i].fundamental_n,
                 n=basis_x[i].fundamental_n,
                 step=basis[0][i].fundamental_n,
@@ -259,7 +258,7 @@ def generate_uneven_wavepacket(
 
     offset, step = (
         (band_basis.offset, band_basis.step)
-        if isinstance(band_basis, EvenlySpacedBasis)
+        if isinstance(band_basis, TruncatedBasis)
         else (0, 1)
     )
     subset_by_index = (

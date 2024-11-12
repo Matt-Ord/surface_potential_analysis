@@ -74,7 +74,7 @@ if TYPE_CHECKING:
         BasisLike,
     )
     from surface_potential_analysis.operator.operator import (
-        Operator,
+        LegacyOperator,
         SingleBasisDiagonalOperator,
         SingleBasisOperator,
     )
@@ -682,7 +682,7 @@ def _get_eigenstate_occupation(
     states: StateVectorList[BasisLike, _B0Inv],
 ) -> tuple[
     np.ndarray[tuple[int], np.dtype[np.float64]],
-    Operator[BasisLike, FundamentalBasis[BasisMetadata]],
+    LegacyOperator[BasisLike, FundamentalBasis[BasisMetadata]],
 ]:
     eigenstates = calculate_eigenvectors_hermitian(hamiltonian)
     energies = eigenstates["eigenvalue"].astype(np.float64)

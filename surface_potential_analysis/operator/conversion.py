@@ -5,7 +5,10 @@ from typing import TYPE_CHECKING, TypeVar
 from surface_potential_analysis.basis.legacy import (
     convert_matrix,
 )
-from surface_potential_analysis.operator.operator import DiagonalOperator, as_operator
+from surface_potential_analysis.operator.operator import (
+    LegacyDiagonalOperator,
+    as_operator,
+)
 from surface_potential_analysis.operator.operator_list import (
     diagonal_operator_list_as_full,
 )
@@ -13,7 +16,7 @@ from surface_potential_analysis.operator.operator_list import (
 if TYPE_CHECKING:
     from surface_potential_analysis.basis.legacy import BasisLike, TupleBasisLike
     from surface_potential_analysis.operator.operator import (
-        Operator,
+        LegacyOperator,
     )
     from surface_potential_analysis.operator.operator_list import (
         DiagonalOperatorList,
@@ -28,8 +31,8 @@ if TYPE_CHECKING:
 
 
 def convert_operator_to_basis(
-    operator: Operator[_B0Inv, _B1Inv], basis: TupleBasisLike[_B2Inv, _B3Inv]
-) -> Operator[_B2Inv, _B3Inv]:
+    operator: LegacyOperator[_B0Inv, _B1Inv], basis: TupleBasisLike[_B2Inv, _B3Inv]
+) -> LegacyOperator[_B2Inv, _B3Inv]:
     """
     Given an operator, convert it to the given basis.
 
@@ -53,9 +56,9 @@ def convert_operator_to_basis(
 
 
 def convert_diagonal_operator_to_basis(
-    operator: DiagonalOperator[_B0Inv, _B1Inv],
+    operator: LegacyDiagonalOperator[_B0Inv, _B1Inv],
     basis: TupleBasisLike[_B2Inv, _B3Inv],
-) -> Operator[_B2Inv, _B3Inv]:
+) -> LegacyOperator[_B2Inv, _B3Inv]:
     """Given an operator, convert it to the given basis.
 
     Parameters

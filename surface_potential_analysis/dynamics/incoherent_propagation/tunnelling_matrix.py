@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from surface_potential_analysis.basis.legacy import TupleBasisLike
-    from surface_potential_analysis.operator.operator import DiagonalOperator
+    from surface_potential_analysis.operator.operator import LegacyDiagonalOperator
     from surface_potential_analysis.operator.operator_list import DiagonalOperatorList
     from surface_potential_analysis.probability_vector.probability_vector import (
         ProbabilityVector,
@@ -127,7 +127,8 @@ def get_a_matrix_from_jump_matrix(
         FundamentalBasis[_L1Inv],
         TunnellingSimulationBandsBasis[_L2Inv],
     ]
-]: ...
+]:
+    ...
 
 
 @overload
@@ -142,7 +143,8 @@ def get_a_matrix_from_jump_matrix(
         FundamentalBasis[_L1Inv],
         TunnellingSimulationBandsBasis[_L3Inv],
     ]
-]: ...
+]:
+    ...
 
 
 def get_a_matrix_from_jump_matrix(
@@ -306,14 +308,16 @@ def get_tunnelling_m_matrix(
     n_bands: _L1Inv,
 ) -> TunnellingMMatrix[
     TupleBasisLike[_AX0Inv, _AX1Inv, TunnellingSimulationBandsBasis[_L1Inv]]
-]: ...
+]:
+    ...
 
 
 @overload
 def get_tunnelling_m_matrix(
     matrix: TunnellingAMatrix[_B1Inv],
     n_bands: None = None,
-) -> TunnellingMMatrix[_B1Inv]: ...
+) -> TunnellingMMatrix[_B1Inv]:
+    ...
 
 
 def get_tunnelling_m_matrix(
@@ -340,7 +344,7 @@ def get_tunnelling_m_matrix(
 
 def get_initial_pure_density_matrix_for_basis(
     basis: _B1Inv, idx: SingleIndexLike = 0
-) -> DiagonalOperator[_B1Inv, _B1Inv]:
+) -> LegacyDiagonalOperator[_B1Inv, _B1Inv]:
     """
     Given a basis get the initial pure density matrix.
 
@@ -363,7 +367,7 @@ def get_initial_pure_density_matrix_for_basis(
 
 
 def density_matrix_as_probability(
-    matrix: DiagonalOperator[_B1Inv, _B1Inv],
+    matrix: LegacyDiagonalOperator[_B1Inv, _B1Inv],
 ) -> ProbabilityVector[_B1Inv]:
     """
     Get the probability of each state in eh density matrix.

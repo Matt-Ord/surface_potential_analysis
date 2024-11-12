@@ -59,7 +59,7 @@ if TYPE_CHECKING:
     from surface_potential_analysis.basis.legacy import (
         FundamentalPositionBasis,
     )
-    from surface_potential_analysis.operator.operator import Operator
+    from surface_potential_analysis.operator.operator import LegacyOperator
     from surface_potential_analysis.state_vector.state_vector import (
         StateVector,
     )
@@ -88,7 +88,7 @@ _B3 = TypeVar("_B3", bound=BasisLike)
 def get_state_projections_many_band(
     states: StateVectorList[_B0, _B2],
     projections: StateVectorList[_B1, _B3],
-) -> Operator[_B0, _B1]:
+) -> LegacyOperator[_B0, _B1]:
     converted = convert_state_vector_list_to_basis(projections, states["basis"][1])
     return calculate_inner_product_states(states, converted)
 
@@ -96,7 +96,7 @@ def get_state_projections_many_band(
 def _get_orthogonal_projected_states_many_band(
     states: StateVectorList[_B0, _SBV0],
     projections: StateVectorList[_B1, _B2],
-) -> Operator[_B1, _B0]:
+) -> LegacyOperator[_B1, _B0]:
     projected = get_state_projections_many_band(states, projections)
     # Use SVD to generate orthogonal matrix u v_dagger
     u, _s, v_dagger = scipy.linalg.svd(  # type:ignore lib

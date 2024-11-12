@@ -21,7 +21,7 @@ from surface_potential_analysis.util.decorators import timed
 
 if TYPE_CHECKING:
     from surface_potential_analysis.operator.operator import (
-        Operator,
+        LegacyOperator,
         SingleBasisDiagonalOperator,
         SingleBasisOperator,
     )
@@ -126,7 +126,7 @@ def calculate_expectation_diagonal(
 
 
 def calculate_expectation(
-    operator: Operator[_B0, _B1], state: StateVector[_B2]
+    operator: LegacyOperator[_B0, _B1], state: StateVector[_B2]
 ) -> complex:
     """
     Calculate the energy of the given eigenvector.
@@ -154,7 +154,7 @@ def calculate_expectation(
 
 
 def calculate_expectation_list(
-    operator: Operator[_B0, _B3],
+    operator: LegacyOperator[_B0, _B3],
     states: StateVectorList[_B1, _B2],
 ) -> ValueList[_B1]:
     """
@@ -184,7 +184,7 @@ def calculate_expectation_list(
 
 def calculate_operator_inner_product(
     dual_vector: StateDualVector[_B0],
-    operator: Operator[_B0, _B1],
+    operator: LegacyOperator[_B0, _B1],
     vector: StateVector[_B1],
 ) -> complex:
     """

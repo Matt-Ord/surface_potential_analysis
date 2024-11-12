@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable, TypeVar
 
 import numpy as np
 from scipy.constants import Boltzmann  # type: ignore no stub
-from slate.metadata._metadata import BasisMetadata
 
 from surface_potential_analysis.basis.legacy import (
     FundamentalBasis,
@@ -43,6 +42,8 @@ from surface_potential_analysis.stacked_basis.conversion import (
 )
 
 if TYPE_CHECKING:
+    from slate.metadata._metadata import BasisMetadata
+
     from surface_potential_analysis.basis.legacy import (
         BasisLike,
         BasisWithLengthLike,

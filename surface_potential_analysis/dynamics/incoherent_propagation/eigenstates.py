@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from surface_potential_analysis.dynamics.tunnelling_basis import (
         TunnellingSimulationBasis,
     )
-    from surface_potential_analysis.operator.operator import DiagonalOperator
+    from surface_potential_analysis.operator.operator import LegacyDiagonalOperator
     from surface_potential_analysis.operator.operator_list import DiagonalOperatorList
     from surface_potential_analysis.state_vector.eigenstate_list import (
         EigenstateList,
@@ -61,7 +61,7 @@ def calculate_tunnelling_eigenstates(
 
 
 def get_operator_state_vector_decomposition(
-    density_matrix: DiagonalOperator[_B0Inv, _B0Inv],
+    density_matrix: LegacyDiagonalOperator[_B0Inv, _B0Inv],
     eigenstates: StateVectorList[FundamentalBasis[_L0Inv], _B0Inv],
 ) -> np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]]:
     """
@@ -89,7 +89,7 @@ def get_operator_state_vector_decomposition(
 
 def get_equilibrium_state(
     eigenstates: EigenstateList[FundamentalBasis[_L0Inv], _B0Inv],
-) -> DiagonalOperator[_B0Inv, _B0Inv]:
+) -> LegacyDiagonalOperator[_B0Inv, _B0Inv]:
     """
     Select the equilibrium tunnelling state from a list of eigenstates.
 
@@ -123,7 +123,7 @@ def get_equilibrium_state(
 
 def calculate_equilibrium_state(
     matrix: TunnellingMMatrix[_B0Inv],
-) -> DiagonalOperator[_B0Inv, _B0Inv]:
+) -> LegacyDiagonalOperator[_B0Inv, _B0Inv]:
     """
     Calculate the equilibrium tunnelling state for a given matrix.
 
@@ -144,7 +144,7 @@ def calculate_equilibrium_state(
 
 def get_tunnelling_simulation_state(
     eigenstates: EigenstateList[FundamentalBasis[BasisMetadata], _B0Inv],
-    initial: DiagonalOperator[_B0Inv, _B0Inv],
+    initial: LegacyDiagonalOperator[_B0Inv, _B0Inv],
     times: np.ndarray[tuple[_L0Inv], np.dtype[np.float64]],
 ) -> DiagonalOperatorList[ExplicitTimeBasis[_L0Inv], _B0Inv, _B0Inv]:
     """
@@ -181,7 +181,7 @@ def get_tunnelling_simulation_state(
 
 def calculate_tunnelling_simulation_state(
     matrix: TunnellingMMatrix[_B0Inv],
-    initial: DiagonalOperator[_B0Inv, _B0Inv],
+    initial: LegacyDiagonalOperator[_B0Inv, _B0Inv],
     times: np.ndarray[tuple[_L0Inv], np.dtype[np.float64]],
 ) -> DiagonalOperatorList[ExplicitTimeBasis[_L0Inv], _B0Inv, _B0Inv]:
     """

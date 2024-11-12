@@ -41,7 +41,7 @@ if TYPE_CHECKING:
         TunnellingSimulationBasis,
     )
     from surface_potential_analysis.operator.operator import (
-        DiagonalOperator,
+        LegacyDiagonalOperator,
         SingleBasisDiagonalOperator,
     )
 
@@ -53,7 +53,7 @@ _L0Inv = TypeVar("_L0Inv", bound=int)
 
 def calculate_isf_at_times(
     matrix: TunnellingMMatrix[_B0Inv],
-    initial: DiagonalOperator[_B0Inv, _B0Inv],
+    initial: LegacyDiagonalOperator[_B0Inv, _B0Inv],
     times: np.ndarray[tuple[_L0Inv], np.dtype[np.float64]],
     dk: np.ndarray[tuple[Literal[2]], np.dtype[np.float64]],
 ) -> SingleBasisDiagonalOperator[ExplicitTimeBasis[_L0Inv]]:
@@ -203,7 +203,7 @@ class RateDecomposition(Generic[_L0Inv]):
 
 
 def get_rate_decomposition(
-    matrix: TunnellingMMatrix[_B0Inv], initial: DiagonalOperator[_B0Inv, _B0Inv]
+    matrix: TunnellingMMatrix[_B0Inv], initial: LegacyDiagonalOperator[_B0Inv, _B0Inv]
 ) -> RateDecomposition[int]:
     """
     Get the eigenvalues and relevant contribution of the rates in the simulation.

@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
 from slate.basis.stacked._tuple_basis import VariadicTupleBasis
-from slate.metadata._metadata import BasisMetadata
 
 from surface_potential_analysis.basis.legacy import (
     BasisLike,
@@ -24,6 +23,8 @@ from surface_potential_analysis.operator.operator_list import (
 )
 
 if TYPE_CHECKING:
+    from slate.metadata._metadata import BasisMetadata
+
     from surface_potential_analysis.wavepacket.wavepacket import (
         BlochWavefunctionListBasis,
         BlochWavefunctionListList,
