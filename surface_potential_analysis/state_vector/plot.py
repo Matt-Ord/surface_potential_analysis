@@ -79,9 +79,9 @@ if TYPE_CHECKING:
         SingleBasisOperator,
     )
     from surface_potential_analysis.state_vector.eigenstate_list import ValueList
-    from surface_potential_analysis.state_vector.state_vector import StateVector
+    from surface_potential_analysis.state_vector.state_vector import LegacyStateVector
     from surface_potential_analysis.state_vector.state_vector_list import (
-        StateVectorList,
+        LegacyStateVectorList,
     )
     from surface_potential_analysis.types import (
         SingleStackedIndexLike,
@@ -99,7 +99,7 @@ if TYPE_CHECKING:
 
 # ruff: noqa: PLR0913
 def plot_state_1d_k(
-    state: StateVector[_SBV0],
+    state: LegacyStateVector[_SBV0],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -142,7 +142,7 @@ def plot_state_1d_k(
 
 
 def plot_state_1d_x(
-    state: StateVector[_SBV0],
+    state: LegacyStateVector[_SBV0],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -186,7 +186,7 @@ def plot_state_1d_x(
 
 
 def animate_state_over_list_1d_x(
-    states: StateVectorList[_B0, _SBV0],
+    states: LegacyStateVectorList[_B0, _SBV0],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -233,7 +233,7 @@ def animate_state_over_list_1d_x(
 
 
 def animate_state_over_list_2d_k(
-    states: StateVectorList[_B0, _SBV0],
+    states: LegacyStateVectorList[_B0, _SBV0],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -280,7 +280,7 @@ def animate_state_over_list_2d_k(
 
 
 def animate_state_over_list_2d_x(
-    states: StateVectorList[_B0, _SBV0],
+    states: LegacyStateVectorList[_B0, _SBV0],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -325,7 +325,7 @@ def animate_state_over_list_2d_x(
 
 
 def animate_state_over_list_1d_k(
-    states: StateVectorList[_B0, _SBV0],
+    states: LegacyStateVectorList[_B0, _SBV0],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -372,7 +372,7 @@ def animate_state_over_list_1d_k(
 
 
 def plot_state_2d_k(
-    state: StateVector[_SBV0],
+    state: LegacyStateVector[_SBV0],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -413,8 +413,8 @@ def plot_state_2d_k(
 
 
 def plot_state_difference_2d_k(
-    state_0: StateVector[_SBV0],
-    state_1: StateVector[_SBV1],
+    state_0: LegacyStateVector[_SBV0],
+    state_1: LegacyStateVector[_SBV1],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -448,7 +448,7 @@ def plot_state_difference_2d_k(
 
     converted_0 = convert_state_vector_to_basis(state_0, basis)
     converted_1 = convert_state_vector_to_basis(state_1, basis)
-    state: StateVector[Any] = {
+    state: LegacyStateVector[Any] = {
         "basis": basis,
         "data": (converted_0["data"] - converted_1["data"])
         / np.max([np.abs(converted_0["data"]), np.abs(converted_1["data"])], axis=0),
@@ -457,7 +457,7 @@ def plot_state_difference_2d_k(
 
 
 def plot_state_2d_x(
-    state: StateVector[_SBV0],
+    state: LegacyStateVector[_SBV0],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -498,8 +498,8 @@ def plot_state_2d_x(
 
 
 def plot_state_difference_1d_k(
-    state_0: StateVector[_SBV0],
-    state_1: StateVector[_SBV1],
+    state_0: LegacyStateVector[_SBV0],
+    state_1: LegacyStateVector[_SBV1],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -533,7 +533,7 @@ def plot_state_difference_1d_k(
 
     converted_0 = convert_state_vector_to_basis(state_0, basis)
     converted_1 = convert_state_vector_to_basis(state_1, basis)
-    state: StateVector[Any] = {
+    state: LegacyStateVector[Any] = {
         "basis": basis,
         "data": (converted_0["data"] - converted_1["data"])
         / np.max([np.abs(converted_0["data"]), np.abs(converted_1["data"])], axis=0),
@@ -542,8 +542,8 @@ def plot_state_difference_1d_k(
 
 
 def plot_state_difference_2d_x(
-    state_0: StateVector[_SBV0],
-    state_1: StateVector[_SBV1],
+    state_0: LegacyStateVector[_SBV0],
+    state_1: LegacyStateVector[_SBV1],
     axes: tuple[int, int] = (0, 1),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -577,7 +577,7 @@ def plot_state_difference_2d_x(
 
     converted_0 = convert_state_vector_to_basis(state_0, basis)
     converted_1 = convert_state_vector_to_basis(state_1, basis)
-    state: StateVector[Any] = {
+    state: LegacyStateVector[Any] = {
         "basis": basis,
         "data": (converted_0["data"] - converted_1["data"])
         / np.max([np.abs(converted_0["data"]), np.abs(converted_1["data"])], axis=0),
@@ -586,7 +586,7 @@ def plot_state_difference_2d_x(
 
 
 def animate_state_3d_x(
-    state: StateVector[_SBV0],
+    state: LegacyStateVector[_SBV0],
     axes: tuple[int, int, int] = (0, 1, 2),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -631,7 +631,7 @@ def animate_state_3d_x(
 
 
 def plot_state_along_path(
-    state: StateVector[_SBV0],
+    state: LegacyStateVector[_SBV0],
     path: np.ndarray[tuple[int, int], np.dtype[np.int_]],
     *,
     wrap_distances: bool = False,
@@ -679,7 +679,7 @@ def plot_state_along_path(
 
 def _get_eigenstate_occupation(
     hamiltonian: SingleBasisOperator[_B0Inv],
-    states: StateVectorList[BasisLike, _B0Inv],
+    states: LegacyStateVectorList[BasisLike, _B0Inv],
 ) -> tuple[
     np.ndarray[tuple[int], np.dtype[np.float64]],
     LegacyOperator[BasisLike, FundamentalBasis[BasisMetadata]],
@@ -693,7 +693,7 @@ def _get_eigenstate_occupation(
 
 def plot_all_eigenstate_occupations(
     hamiltonian: SingleBasisOperator[_B0Inv],
-    states: StateVectorList[BasisLike, _B0Inv],
+    states: LegacyStateVectorList[BasisLike, _B0Inv],
     *,
     ax: Axes | None = None,
     scale: Scale = "linear",
@@ -734,7 +734,7 @@ def plot_all_eigenstate_occupations(
 
 def animate_all_eigenstate_occupations(
     hamiltonian: SingleBasisOperator[_B0Inv],
-    states: StateVectorList[BasisLike, _B0Inv],
+    states: LegacyStateVectorList[BasisLike, _B0Inv],
     *,
     ax: Axes | None = None,
     scale: Scale = "linear",
@@ -780,7 +780,7 @@ def animate_all_eigenstate_occupations(
 
 def plot_eigenstate_occupation(
     hamiltonian: SingleBasisOperator[_B0Inv],
-    state: StateVector[_B0Inv],
+    state: LegacyStateVector[_B0Inv],
     *,
     ax: Axes | None = None,
     scale: Scale = "linear",
@@ -808,7 +808,7 @@ def plot_eigenstate_occupation(
 
 def plot_average_eigenstate_occupation(
     hamiltonian: SingleBasisOperator[_B0Inv],
-    states: StateVectorList[BasisLike, _B0Inv],
+    states: LegacyStateVectorList[BasisLike, _B0Inv],
     *,
     ax: Axes | None = None,
     scale: Scale = "linear",
@@ -870,7 +870,7 @@ def get_average_band_energy(
 
 def plot_total_band_occupation_against_energy(
     hamiltonian: SingleBasisDiagonalOperator[BlochBasis[_B1]],
-    state: StateVector[_B0],
+    state: LegacyStateVector[_B0],
     *,
     ax: Axes | None = None,
     scale: Scale = "linear",
@@ -954,7 +954,7 @@ def get_periodic_x_operator(
 
 
 def _get_periodic_x(
-    states: StateVectorList[
+    states: LegacyStateVectorList[
         _B0Inv,
         StackedBasisWithVolumeLike,
     ],
@@ -979,7 +979,7 @@ _BT0 = TypeVar("_BT0", bound=BasisWithTimeLike)
 
 
 def _get_average_x_periodic(
-    states: StateVectorList[
+    states: LegacyStateVectorList[
         _B0Inv,
         StackedBasisWithVolumeLike,
     ],
@@ -996,7 +996,7 @@ def _get_average_x_periodic(
 
 
 def _get_restored_x(
-    states: StateVectorList[
+    states: LegacyStateVectorList[
         TupleBasisLike[Any, _BT0],
         StackedBasisWithVolumeLike,
     ],
@@ -1017,7 +1017,7 @@ def _get_restored_x(
 
 
 def plot_periodic_averaged_occupation_1d_x(
-    states: StateVectorList[
+    states: LegacyStateVectorList[
         TupleBasisLike[Any, _BT0],
         StackedBasisWithVolumeLike,
     ],
@@ -1073,7 +1073,7 @@ def _get_x_operator(basis: _SBV0, axis: int) -> SingleBasisOperator[_SBV0]:
 
 
 def _get_average_x(
-    states: StateVectorList[_B0Inv, _SBV0],
+    states: LegacyStateVectorList[_B0Inv, _SBV0],
     axis: int,
 ) -> ValueList[_B0Inv]:
     """
@@ -1092,7 +1092,7 @@ def _get_average_x(
 
 
 def plot_averaged_occupation_1d_x(
-    states: StateVectorList[TupleBasisLike[Any, _BT0], _SBV0],
+    states: LegacyStateVectorList[TupleBasisLike[Any, _BT0], _SBV0],
     axes: tuple[int] = (0,),
     *,
     ax: Axes | None = None,
@@ -1122,7 +1122,7 @@ def plot_averaged_occupation_1d_x(
 
 
 def _get_x_spread(
-    states: StateVectorList[
+    states: LegacyStateVectorList[
         _B0Inv,
         StackedBasisWithVolumeLike,
     ],
@@ -1163,7 +1163,7 @@ def _get_x_spread(
 
 
 def get_coherent_coordinates(
-    states: StateVectorList[
+    states: LegacyStateVectorList[
         _B0Inv,
         StackedBasisWithVolumeLike,
     ],
@@ -1193,7 +1193,7 @@ def get_coherent_coordinates(
 
 
 def plot_spread_1d(
-    states: StateVectorList[
+    states: LegacyStateVectorList[
         TupleBasisLike[Any, _BT0],
         StackedBasisWithVolumeLike,
     ],
@@ -1228,7 +1228,7 @@ def plot_spread_1d(
 
 
 def plot_spread_distribution_1d(
-    states: StateVectorList[
+    states: LegacyStateVectorList[
         TupleBasisLike[Any, _BT0],
         StackedBasisWithVolumeLike,
     ],
@@ -1288,7 +1288,7 @@ def _get_k_operator(basis: _SBV0, axis: int) -> SingleBasisOperator[_SBV0]:
 
 
 def _get_average_k(
-    states: StateVectorList[_B0Inv, _SBV0],
+    states: LegacyStateVectorList[_B0Inv, _SBV0],
     axis: int,
 ) -> ValueList[_B0Inv]:
     """
@@ -1307,7 +1307,7 @@ def _get_average_k(
 
 
 def plot_averaged_occupation_1d_k(
-    states: StateVectorList[TupleBasisLike[Any, _BT0], _SBV0],
+    states: LegacyStateVectorList[TupleBasisLike[Any, _BT0], _SBV0],
     axes: tuple[int] = (0,),
     *,
     ax: Axes | None = None,
@@ -1337,7 +1337,7 @@ def plot_averaged_occupation_1d_k(
 
 
 def plot_spread_against_k(
-    states: StateVectorList[
+    states: LegacyStateVectorList[
         TupleBasisLike[Any, _BT0],
         StackedBasisWithVolumeLike,
     ],
@@ -1376,7 +1376,7 @@ def plot_spread_against_k(
 
 
 def plot_spread_against_x(
-    states: StateVectorList[
+    states: LegacyStateVectorList[
         TupleBasisLike[Any, _BT0],
         StackedBasisWithVolumeLike,
     ],
@@ -1415,7 +1415,7 @@ def plot_spread_against_x(
 
 
 def plot_k_distribution_1d(
-    states: StateVectorList[
+    states: LegacyStateVectorList[
         TupleBasisLike[Any, _BT0],
         StackedBasisWithVolumeLike,
     ],
@@ -1452,7 +1452,7 @@ def plot_k_distribution_1d(
 
 
 def plot_x_distribution_1d(
-    states: StateVectorList[
+    states: LegacyStateVectorList[
         TupleBasisLike[Any, _BT0],
         StackedBasisWithVolumeLike,
     ],
@@ -1487,7 +1487,7 @@ def plot_x_distribution_1d(
 
 
 def plot_periodic_x_distribution_1d(
-    states: StateVectorList[
+    states: LegacyStateVectorList[
         TupleBasisLike[Any, _BT0],
         StackedBasisWithVolumeLike,
     ],
@@ -1653,7 +1653,7 @@ def get_normalized_average_drift(
 
 
 def plot_average_displacement_1d_x(
-    states: StateVectorList[
+    states: LegacyStateVectorList[
         TupleBasisLike[Any, _BT0],
         StackedBasisWithVolumeLike,
     ],
@@ -1689,7 +1689,7 @@ def plot_average_displacement_1d_x(
 
 
 def plot_average_drift_1d_x(
-    states: StateVectorList[
+    states: LegacyStateVectorList[
         TupleBasisLike[Any, _BT0],
         StackedBasisWithVolumeLike,
     ],
@@ -1726,7 +1726,7 @@ def plot_average_drift_1d_x(
 
 
 def plot_average_isf_1d_x(
-    states: StateVectorList[
+    states: LegacyStateVectorList[
         TupleBasisLike[Any, _BT0],
         StackedBasisWithVolumeLike,
     ],

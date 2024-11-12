@@ -5,8 +5,10 @@ from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar
 from surface_potential_analysis.basis.legacy import (
     BasisLike,
 )
-from surface_potential_analysis.state_vector.state_vector import StateVector
-from surface_potential_analysis.state_vector.state_vector_list import StateVectorList
+from surface_potential_analysis.state_vector.state_vector import LegacyStateVector
+from surface_potential_analysis.state_vector.state_vector_list import (
+    LegacyStateVectorList,
+)
 
 if TYPE_CHECKING:
     import numpy as np
@@ -33,14 +35,14 @@ class StatisticalValueList(ValueList[_B0_co]):
     standard_deviation: np.ndarray[tuple[int], np.dtype[np.float64]]
 
 
-class Eigenstate(StateVector[_B0_co], TypedDict):
+class Eigenstate(LegacyStateVector[_B0_co], TypedDict):
     """A State vector which is the eigenvector of some operator."""
 
     eigenvalue: complex | np.complex128
 
 
 class EigenstateList(
-    StateVectorList[_B0_co, _B1_co],
+    LegacyStateVectorList[_B0_co, _B1_co],
     TypedDict,
 ):
     """Represents a collection of eigenstates, each with the same basis."""

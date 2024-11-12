@@ -39,7 +39,7 @@ from surface_potential_analysis.state_vector.conversion import (
     convert_state_vector_to_position_basis,
 )
 from surface_potential_analysis.state_vector.state_vector_list import (
-    StateVectorList,
+    LegacyStateVectorList,
     as_state_vector_list,
     get_state_vector,
 )
@@ -78,7 +78,7 @@ if TYPE_CHECKING:
         SingleBasisDiagonalOperatorList,
     )
     from surface_potential_analysis.state_vector.eigenstate_list import Eigenstate
-    from surface_potential_analysis.state_vector.state_vector import StateVector
+    from surface_potential_analysis.state_vector.state_vector import LegacyStateVector
     from surface_potential_analysis.types import (
         SingleIndexLike,
         SingleStackedIndexLike,
@@ -125,7 +125,7 @@ def _get_sampled_basis(
 
 def get_wavepacket_state_vector(
     wavepacket: BlochWavefunctionList[_SB0, _SBV0], idx: SingleIndexLike
-) -> StateVector[
+) -> LegacyStateVector[
     TupleBasisWithLengthLike[*tuple[EvenlySpacedTransformedPositionBasis, ...]]
 ]:
     """
@@ -158,20 +158,20 @@ def get_wavepacket_state_vector(
 @overload
 def get_bloch_state_vector(
     wavepacket: BlochWavefunctionList[_SB0, _SBV0], idx: SingleFlatIndexLike
-) -> StateVector[_SBV0]:
+) -> LegacyStateVector[_SBV0]:
     ...
 
 
 @overload
 def get_bloch_state_vector(
     wavepacket: BlochWavefunctionList[_TB0, _SBV0], idx: SingleIndexLike
-) -> StateVector[_SBV0]:
+) -> LegacyStateVector[_SBV0]:
     ...
 
 
 def get_bloch_state_vector(
     wavepacket: BlochWavefunctionList[_SB0, _SBV0], idx: SingleIndexLike
-) -> StateVector[_SBV0]:
+) -> LegacyStateVector[_SBV0]:
     """
     Get the eigenstate of a given wavepacket at a specific index.
 
@@ -229,7 +229,7 @@ def get_all_eigenstates(
 
 def get_all_wavepacket_states(
     wavepacket: BlochWavefunctionList[_SB0, _SBV0],
-) -> list[StateVector[TupleBasisWithLengthLike[*tuple[Any, ...]]]]:
+) -> list[LegacyStateVector[TupleBasisWithLengthLike[*tuple[Any, ...]]]]:
     """
     Get the eigenstate of a given wavepacket at a specific index.
 
@@ -265,7 +265,7 @@ def get_tight_binding_state(
     wavepacket: BlochWavefunctionList[_SB0, _SBV0],
     idx: SingleIndexLike = 0,
     origin: SingleIndexLike | None = None,
-) -> StateVector[TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]]:
+) -> LegacyStateVector[TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]]:
     """
     Given a wavepacket, get the state corresponding to the eigenstate under the tight binding approximation.
 
@@ -305,7 +305,7 @@ def get_tight_binding_state(
         origin=origin,
     )
     relevant_idx_flat = util.get_flat_index(relevant_idx, mode="wrap")
-    out: StateVector[
+    out: LegacyStateVector[
         TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]
     ] = {
         "basis": state_0["basis"],
@@ -319,7 +319,7 @@ def get_tight_binding_states(
     wavepacket: BlochWavefunctionListList[_B0, _SB0, _SBV0],
     idx: SingleIndexLike = 0,
     origin: SingleIndexLike | None = None,
-) -> StateVectorList[
+) -> LegacyStateVectorList[
     _B0, TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]
 ]:
     """Get all tight binding states."""
@@ -342,7 +342,7 @@ def get_states_at_bloch_idx(
         _SBV0,
     ],
     idx: SingleIndexLike,
-) -> StateVectorList[
+) -> LegacyStateVectorList[
     _B0Inv,
     TupleBasisWithLengthLike[*tuple[EvenlySpacedTransformedPositionBasis, ...]],
 ]:
@@ -383,7 +383,7 @@ def get_states_at_bloch_idx(
 
 def _get_compressed_bloch_states_at_bloch_idx(
     wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBV0], idx: int
-) -> StateVectorList[_B0, _SBV0]:
+) -> LegacyStateVectorList[_B0, _SBV0]:
     return {
         "basis": VariadicTupleBasis(
             (wavepackets["basis"][0][0], wavepackets["basis"][1]), None
@@ -429,7 +429,7 @@ def get_fundamental_wavepacket(
 
 def get_bloch_states(
     wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBV0],
-) -> StateVectorList[
+) -> LegacyStateVectorList[
     TupleBasisLike[_B0, TupleBasisLike[*tuple[FundamentalTransformedBasis, ...]]],
     TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis, ...]],
 ]:
@@ -522,7 +522,7 @@ class BlochBasis[M: BasisMetadata, DT: np.generic](ExplicitUnitaryBasis[M, DT]):
     @cached_property
     def _vectors(
         self: Self,
-    ) -> StateVectorList[
+    ) -> LegacyStateVectorList[
         TupleBasisLike[_B0, TupleBasisLike[*tuple[FundamentalTransformedBasis, ...]]],
         TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis, ...]],
     ]:
@@ -748,7 +748,7 @@ class BlochBasis[M: BasisMetadata, DT: np.generic](ExplicitUnitaryBasis[M, DT]):
 
     def vectors_at_bloch_k(
         self: Self, idx: SingleIndexLike
-    ) -> StateVectorList[
+    ) -> LegacyStateVectorList[
         _B0,
         StackedBasisWithVolumeLike,
     ]:
@@ -844,7 +844,7 @@ def get_full_bloch_hamiltonian(
 def get_wannier_states(
     wavefunctions: BlochWavefunctionListList[_B2, _SB0, _SBV0],
     operator: LocalizationOperator[_SB0, _B1, _B2],
-) -> StateVectorList[
+) -> LegacyStateVectorList[
     TupleBasisLike[_B1, _SB0],
     TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]],
 ]:

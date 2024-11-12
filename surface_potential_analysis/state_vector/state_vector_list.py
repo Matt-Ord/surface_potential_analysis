@@ -1,8 +1,20 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Self,
+    TypedDict,
+    TypeVar,
+    cast,
+    overload,
+    override,
+)
 
 import numpy as np
+from slate.array.array import SlateArray
+from slate.basis._basis import Basis
 
 from surface_potential_analysis.basis.legacy import (
     BasisLike,
@@ -25,8 +37,8 @@ if TYPE_CHECKING:
         ValueList,
     )
     from surface_potential_analysis.state_vector.state_vector import (
-        StateDualVector,
-        StateVector,
+        LegacyStateDualVector,
+        LegacyStateVector,
     )
     from surface_potential_analysis.types import (
         SingleFlatIndexLike,
@@ -43,7 +55,20 @@ _B0_co = TypeVar("_B0_co", bound=BasisLike, covariant=True)
 _B1_co = TypeVar("_B1_co", bound=BasisLike, covariant=True)
 
 
-class StateVectorList(TypedDict, Generic[_B0_co, _B1_co]):
+class StateVectorList[B: Basis[Any, np.complex128]](SlateArray[np.complex128, B]):
+    """represents a state vector in a basis."""
+
+    @override
+    def with_basis[B1: Basis[Any, Any]](  # B1: B
+        self: Self, basis: B1
+    ) -> StateVectorList[B1]:
+        """Get the Operator with the basis set to basis."""
+        return StateVectorList(
+            basis, self.basis.__convert_vector_into__(self.raw_data, basis)
+        )
+
+
+class LegacyStateVectorList(TypedDict, Generic[_B0_co, _B1_co]):
     """
     Represents a list of states.
 
@@ -57,24 +82,24 @@ class StateVectorList(TypedDict, Generic[_B0_co, _B1_co]):
 
 @overload
 def get_state_vector(
-    state_list: StateVectorList[_TB0, _B1],
+    state_list: LegacyStateVectorList[_TB0, _B1],
     idx: SingleFlatIndexLike | SingleStackedIndexLike,
-) -> StateVector[_B1]:
+) -> LegacyStateVector[_B1]:
     ...
 
 
 @overload
 def get_state_vector(
-    state_list: StateVectorList[_B0, _B1],
+    state_list: LegacyStateVectorList[_B0, _B1],
     idx: SingleFlatIndexLike,
-) -> StateVector[_B1]:
+) -> LegacyStateVector[_B1]:
     ...
 
 
 def get_state_vector(
-    state_list: StateVectorList[_B0, _B1],
+    state_list: LegacyStateVectorList[_B0, _B1],
     idx: SingleFlatIndexLike | SingleStackedIndexLike,
-) -> StateVector[_B1]:
+) -> LegacyStateVector[_B1]:
     """
     Get a single state vector from a list of states.
 
@@ -101,8 +126,8 @@ def get_state_vector(
 
 
 def get_weighted_state_vector(
-    state_list: StateVectorList[_B0, _B1], weights: StateVector[_B0]
-) -> StateVector[_B1]:
+    state_list: LegacyStateVectorList[_B0, _B1], weights: LegacyStateVector[_B0]
+) -> LegacyStateVector[_B1]:
     """
     Get a single state vector from a list of states.
 
@@ -124,8 +149,8 @@ def get_weighted_state_vector(
 
 
 def get_state_dual_vector(
-    state_list: StateVectorList[_B0, _B1], idx: SingleFlatIndexLike
-) -> StateDualVector[_B1]:
+    state_list: LegacyStateVectorList[_B0, _B1], idx: SingleFlatIndexLike
+) -> LegacyStateDualVector[_B1]:
     """
     Get a single state dual vector from a list of states.
 
@@ -145,8 +170,8 @@ def get_state_dual_vector(
 
 
 def state_vector_list_into_iter(
-    states: StateVectorList[_B0, _B1],
-) -> Iterable[StateVector[_B1]]:
+    states: LegacyStateVectorList[_B0, _B1],
+) -> Iterable[LegacyStateVector[_B1]]:
     """
     Select an eigenstate from an eigenstate collection.
 
@@ -170,8 +195,8 @@ def state_vector_list_into_iter(
 
 
 def as_state_vector_list(
-    states: Iterable[StateVector[_B1]],
-) -> StateVectorList[FundamentalBasis[BasisMetadata], _B1]:
+    states: Iterable[LegacyStateVector[_B1]],
+) -> LegacyStateVectorList[FundamentalBasis[BasisMetadata], _B1]:
     """Convert an iterator of states into a state vector list."""
     states = list(states)
     return {
@@ -183,8 +208,8 @@ def as_state_vector_list(
 
 
 def calculate_inner_products(
-    state_0: StateVectorList[_B0, _B2],
-    state_1: StateVectorList[_B1, _B3],
+    state_0: LegacyStateVectorList[_B0, _B2],
+    state_1: LegacyStateVectorList[_B1, _B3],
 ) -> LegacyOperator[_B0, _B1]:
     """
     Calculate the inner product of two states.
@@ -210,8 +235,8 @@ def calculate_inner_products(
 
 
 def calculate_inner_products_elementwise(
-    state_0: StateVectorList[_B0, _B2],
-    state_1: StateVectorList[_B0, _B3],
+    state_0: LegacyStateVectorList[_B0, _B2],
+    state_1: LegacyStateVectorList[_B0, _B3],
 ) -> ValueList[_B0]:
     """
     Calculate the inner product of two states elementwise.
@@ -265,11 +290,11 @@ def calculate_inner_products_eigenvalues(
 
 
 def average_state_vector(
-    probabilities: StateVectorList[_TB0, _B1],
+    probabilities: LegacyStateVectorList[_TB0, _B1],
     axis: tuple[int, ...] | None = None,
     *,
     weights: np.ndarray[tuple[int], np.dtype[np.float64]] | None = None,
-) -> StateVectorList[Any, _B1]:
+) -> LegacyStateVectorList[Any, _B1]:
     """
     Average probabilities over several repeats.
 
@@ -297,7 +322,7 @@ def average_state_vector(
 
 def get_basis_states(
     basis: _B0,
-) -> StateVectorList[FundamentalBasis[BasisMetadata], _B0]:
+) -> LegacyStateVectorList[FundamentalBasis[BasisMetadata], _B0]:
     """
     Get the eigenstates of a particular basis.
 
@@ -318,10 +343,10 @@ def get_basis_states(
 
 
 def get_state_along_axis(
-    states: StateVectorList[_TB0, _B1],
+    states: LegacyStateVectorList[_TB0, _B1],
     axes: tuple[int, ...] = (0,),
     idx: SingleStackedIndexLike | None = None,
-) -> StateVectorList[Any, _B1]:
+) -> LegacyStateVectorList[Any, _B1]:
     """
     Get Probability from the list.
 

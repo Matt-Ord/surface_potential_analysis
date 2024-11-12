@@ -36,11 +36,11 @@ from surface_potential_analysis.state_vector.conversion import (
     convert_state_vector_list_to_basis,
 )
 from surface_potential_analysis.state_vector.state_vector import (
-    as_dual_vector,
-    calculate_inner_product,
+    as_legacy_dual_vector,
+    legacy_calculate_inner_product,
 )
 from surface_potential_analysis.state_vector.state_vector_list import (
-    StateVectorList,
+    LegacyStateVectorList,
 )
 from surface_potential_analysis.types import ArrayFlatIndexLike, FlatIndexLike
 from surface_potential_analysis.wavepacket.get_eigenstate import (
@@ -65,7 +65,7 @@ if TYPE_CHECKING:
     from surface_potential_analysis.basis.legacy import (
         FundamentalTransformedPositionBasis,
     )
-    from surface_potential_analysis.state_vector.state_vector import StateVector
+    from surface_potential_analysis.state_vector.state_vector import LegacyStateVector
     from surface_potential_analysis.wavepacket.localization_operator import (
         LocalizationOperator,
     )
@@ -98,7 +98,7 @@ class ProjectionsBasis(TypedDict, Generic[_B0]):
 
 @dataclass
 class Wannier90Options(Generic[_B0]):
-    projection: ProjectionsBasis[_B0] | StateVectorList[_B0, Any]
+    projection: ProjectionsBasis[_B0] | LegacyStateVectorList[_B0, Any]
     num_iter: int = 10000
     convergence_window: int = 3
     convergence_tolerance: float = 1e-10
@@ -179,8 +179,8 @@ search_shells = 500
 
 
 def _get_offset_bloch_state(
-    state: StateVector[_SB0], offset: tuple[int, ...]
-) -> StateVector[_SB0]:
+    state: LegacyStateVector[_SB0], offset: tuple[int, ...]
+) -> LegacyStateVector[_SB0]:
     """
     Get the bloch state corresponding to the bloch k offset by 'offset'.
 
@@ -245,12 +245,12 @@ def _build_mmn_file_block(
 
     for wavepacket_n in wavepacket_list_into_iter(wavepackets):
         for wavepacket_m in wavepacket_list_into_iter(wavepackets):
-            mat = calculate_inner_product(
+            mat = legacy_calculate_inner_product(
                 _get_offset_bloch_state(
                     get_bloch_state_vector(wavepacket_n, k_1 - 1),
                     tuple(offset),
                 ),
-                as_dual_vector(get_bloch_state_vector(wavepacket_m, k_0 - 1)),
+                as_legacy_dual_vector(get_bloch_state_vector(wavepacket_m, k_0 - 1)),
             )
             block += f"\n{np.real(mat)!r} {np.imag(mat)!r}"
     return block
@@ -314,7 +314,7 @@ def _build_amn_file(
         TupleBasisLike[*tuple[Any, ...]],
         TupleBasisWithLengthLike[*tuple[_PB1Inv, ...]],
     ],
-    projections: StateVectorList[_B1, _B2],
+    projections: LegacyStateVectorList[_B1, _B2],
 ) -> str:
     n_projections = projections["basis"][0].size
     n_wavefunctions = wavepackets["basis"][0][0].n
@@ -494,7 +494,7 @@ def _write_localization_files_wannier90(
     with mmn_filename.open("w") as f:
         f.write(_build_mmn_file(converted, n_nkp_file, options=options))
     if options.projection.get("data", None) is not None:
-        projection = cast(StateVectorList[_B1, Any], options.projection)
+        projection = cast(LegacyStateVectorList[_B1, Any], options.projection)
         amn_filename = tmp_dir_path / "spa.amn"
         with amn_filename.open("w") as f:
             f.write(_build_amn_file(converted, projection))
@@ -561,7 +561,8 @@ def get_localization_operator_wannier90(
     wavefunctions: BlochWavefunctionListList[_B0, _SB0, _SBL0],
     *,
     options: Wannier90Options[_B1],
-) -> LocalizationOperator[_SB0, _B1, _B0]: ...
+) -> LocalizationOperator[_SB0, _B1, _B0]:
+    ...
 
 
 @overload
@@ -569,7 +570,8 @@ def get_localization_operator_wannier90(
     wavefunctions: BlochWavefunctionListList[_B0, _SB0, _SBL0],
     *,
     options: None = None,
-) -> LocalizationOperator[_SB0, FundamentalBasis[BasisMetadata], _B0]: ...
+) -> LocalizationOperator[_SB0, FundamentalBasis[BasisMetadata], _B0]:
+    ...
 
 
 def get_localization_operator_wannier90(

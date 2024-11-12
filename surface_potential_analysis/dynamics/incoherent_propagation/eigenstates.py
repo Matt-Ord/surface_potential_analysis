@@ -24,7 +24,7 @@ if TYPE_CHECKING:
         EigenstateList,
     )
     from surface_potential_analysis.state_vector.state_vector_list import (
-        StateVectorList,
+        LegacyStateVectorList,
     )
 
     from .tunnelling_matrix import TunnellingMMatrix
@@ -62,7 +62,7 @@ def calculate_tunnelling_eigenstates(
 
 def get_operator_state_vector_decomposition(
     density_matrix: LegacyDiagonalOperator[_B0Inv, _B0Inv],
-    eigenstates: StateVectorList[FundamentalBasis[_L0Inv], _B0Inv],
+    eigenstates: LegacyStateVectorList[FundamentalBasis[_L0Inv], _B0Inv],
 ) -> np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]]:
     """
     Given a state and a set of TunnellingEigenstates decompose the state into the eigenstates.

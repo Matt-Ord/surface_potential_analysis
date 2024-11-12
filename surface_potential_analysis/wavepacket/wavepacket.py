@@ -38,7 +38,9 @@ from surface_potential_analysis.state_vector.eigenstate_list import (
     EigenstateList,
     get_eigenvalues_list,
 )
-from surface_potential_analysis.state_vector.state_vector_list import StateVectorList
+from surface_potential_analysis.state_vector.state_vector_list import (
+    LegacyStateVectorList,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -64,7 +66,7 @@ _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike)
 
 BlochWavefunctionListBasis = TupleBasisLike[_SB0, _SB1]
 
-BlochWavefunctionList = StateVectorList[_SB0, _SB1]
+BlochWavefunctionList = LegacyStateVectorList[_SB0, _SB1]
 """represents an approximation of a Wannier function."""
 
 
@@ -73,7 +75,7 @@ BlochWavefunctionListWithEigenvalues = EigenstateList[_SB0, _SB1]
 
 BlochWavefunctionListListBasis = TupleBasisLike[TupleBasisLike[_B0, _SB0], _SB1]
 
-BlochWavefunctionListList = StateVectorList[TupleBasisLike[_B0, _SB0], _SB1]
+BlochWavefunctionListList = LegacyStateVectorList[TupleBasisLike[_B0, _SB0], _SB1]
 """represents a list of wavefunctions."""
 
 

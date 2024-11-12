@@ -61,10 +61,10 @@ if TYPE_CHECKING:
     )
     from surface_potential_analysis.operator.operator import LegacyOperator
     from surface_potential_analysis.state_vector.state_vector import (
-        StateVector,
+        LegacyStateVector,
     )
     from surface_potential_analysis.state_vector.state_vector_list import (
-        StateVectorList,
+        LegacyStateVectorList,
     )
     from surface_potential_analysis.types import (
         SingleIndexLike,
@@ -86,16 +86,16 @@ _B3 = TypeVar("_B3", bound=BasisLike)
 
 
 def get_state_projections_many_band(
-    states: StateVectorList[_B0, _B2],
-    projections: StateVectorList[_B1, _B3],
+    states: LegacyStateVectorList[_B0, _B2],
+    projections: LegacyStateVectorList[_B1, _B3],
 ) -> LegacyOperator[_B0, _B1]:
     converted = convert_state_vector_list_to_basis(projections, states["basis"][1])
     return calculate_inner_product_states(states, converted)
 
 
 def _get_orthogonal_projected_states_many_band(
-    states: StateVectorList[_B0, _SBV0],
-    projections: StateVectorList[_B1, _B2],
+    states: LegacyStateVectorList[_B0, _SBV0],
+    projections: LegacyStateVectorList[_B1, _B2],
 ) -> LegacyOperator[_B1, _B0]:
     projected = get_state_projections_many_band(states, projections)
     # Use SVD to generate orthogonal matrix u v_dagger
@@ -117,7 +117,7 @@ def _get_orthogonal_projected_states_many_band(
 
 def get_localization_operator_for_projections(
     wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBV0],
-    projections: StateVectorList[_B1, _B2],
+    projections: LegacyStateVectorList[_B1, _B2],
 ) -> LocalizationOperator[_SB0, _B1, _B0]:
     converted = convert_state_vector_list_to_basis(
         wavepackets,
@@ -145,7 +145,7 @@ def get_localization_operator_for_projections(
 
 def localize_wavepacket_projection(
     wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBV0],
-    projections: StateVectorList[_B1, _B2],
+    projections: LegacyStateVectorList[_B1, _B2],
 ) -> BlochWavefunctionListList[_B1, _SB0, _SBV0]:
     """
     Given a wavepacket, localize using the given projection.
@@ -165,7 +165,7 @@ def localize_wavepacket_projection(
 
 def localize_single_band_wavepacket_projection(
     wavepacket: BlochWavefunctionList[_SB0, _SBV0],
-    projection: StateVector[_SBV1],
+    projection: LegacyStateVector[_SBV1],
 ) -> BlochWavefunctionList[_SB0, _SBV0]:
     """
     Given a wavepacket, localize using the given projection.
@@ -224,7 +224,7 @@ def get_single_point_state_for_wavepacket(
     wavepacket: BlochWavefunctionList[_SB0, _SBV0],
     idx: SingleIndexLike = 0,
     origin: SingleStackedIndexLike | None = None,
-) -> StateVector[TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]]:
+) -> LegacyStateVector[TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]]:
     state_0 = convert_state_vector_to_position_basis(
         get_wavepacket_state_vector(wavepacket, idx)
     )
@@ -266,7 +266,7 @@ def get_exponential_state(
     wavepacket: BlochWavefunctionList[_SB0, _SBV0],
     idx: SingleIndexLike = 0,
     origin: SingleIndexLike | None = None,
-) -> StateVector[TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]]:
+) -> LegacyStateVector[TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]]:
     """
     Given a wavepacket, get the state decaying exponentially from the maximum.
 
@@ -307,7 +307,7 @@ def get_exponential_state(
     dx1 = coordinates[1] - origin_stacked[1] / unit_cell_util.fundamental_shape[1]
     dx2 = coordinates[2] - origin_stacked[2] / unit_cell_util.fundamental_shape[2]
 
-    out: StateVector[
+    out: LegacyStateVector[
         TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]
     ] = {
         "basis": state_0["basis"],
@@ -320,12 +320,12 @@ def get_exponential_state(
 
 def _get_exponential_decay_state(
     wavepacket: BlochWavefunctionList[_SB0, _SBV0],
-) -> StateVector[TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]]:
+) -> LegacyStateVector[TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]]:
     exponential = get_exponential_state(wavepacket)
     tight_binding = convert_state_vector_to_position_basis(
         get_wavepacket_state_vector(wavepacket, 0)
     )
-    out: StateVector[
+    out: LegacyStateVector[
         TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]
     ] = {
         "basis": exponential["basis"],
@@ -358,7 +358,7 @@ def localize_exponential_decay_projection(
 def get_gaussian_states(
     wavepacket: BlochWavefunctionList[_SB0, _SBV0],
     origin: SingleIndexLike = 0,
-) -> StateVectorList[
+) -> LegacyStateVectorList[
     FundamentalBasis[BasisMetadata],
     TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]],
 ]:
@@ -397,7 +397,7 @@ def get_gaussian_states(
         for (c, o, w) in zip(coordinates, origin_stacked, unit_cell_shape, strict=True)
     )
 
-    out: StateVectorList[
+    out: LegacyStateVectorList[
         FundamentalBasis[BasisMetadata],
         TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]],
     ] = {
@@ -433,7 +433,7 @@ def localize_wavepacket_gaussian_projection(
 
 def get_evenly_spaced_points(
     basis: BlochWavefunctionListBasis[Any, Any], shape: tuple[int, ...]
-) -> StateVectorList[
+) -> LegacyStateVectorList[
     TupleBasis[*tuple[FundamentalBasis[BasisMetadata], ...]],
     TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]],
 ]:

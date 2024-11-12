@@ -30,13 +30,13 @@ if TYPE_CHECKING:
         ValueList,
     )
     from surface_potential_analysis.state_vector.state_vector_list import (
-        StateVectorList,
+        LegacyStateVectorList,
     )
     from surface_potential_analysis.types import IntLike_co
 
     from .state_vector import (
-        StateDualVector,
-        StateVector,
+        LegacyStateDualVector,
+        LegacyStateVector,
     )
 
 _B0 = TypeVar("_B0", bound=BasisLike)
@@ -100,7 +100,7 @@ def operator_from_eigenstates(
 
 
 def calculate_expectation_diagonal(
-    operator: SingleBasisDiagonalOperator[_B0], state: StateVector[_B2]
+    operator: SingleBasisDiagonalOperator[_B0], state: LegacyStateVector[_B2]
 ) -> complex:
     """
     Calculate the energy of the given eigenvector.
@@ -126,7 +126,7 @@ def calculate_expectation_diagonal(
 
 
 def calculate_expectation(
-    operator: LegacyOperator[_B0, _B1], state: StateVector[_B2]
+    operator: LegacyOperator[_B0, _B1], state: LegacyStateVector[_B2]
 ) -> complex:
     """
     Calculate the energy of the given eigenvector.
@@ -155,7 +155,7 @@ def calculate_expectation(
 
 def calculate_expectation_list(
     operator: LegacyOperator[_B0, _B3],
-    states: StateVectorList[_B1, _B2],
+    states: LegacyStateVectorList[_B1, _B2],
 ) -> ValueList[_B1]:
     """
     Calculate the energy of the given eigenvector.
@@ -183,9 +183,9 @@ def calculate_expectation_list(
 
 
 def calculate_operator_inner_product(
-    dual_vector: StateDualVector[_B0],
+    dual_vector: LegacyStateDualVector[_B0],
     operator: LegacyOperator[_B0, _B1],
-    vector: StateVector[_B1],
+    vector: LegacyStateVector[_B1],
 ) -> complex:
     """
     Calculate the energy of the given eigenvector.

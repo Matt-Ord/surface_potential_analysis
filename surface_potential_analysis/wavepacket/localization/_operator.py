@@ -27,8 +27,8 @@ from surface_potential_analysis.state_vector.eigenstate_calculation import (
     calculate_operator_inner_product,
 )
 from surface_potential_analysis.state_vector.state_vector import (
-    StateVector,
-    as_dual_vector,
+    LegacyStateVector,
+    as_legacy_dual_vector,
 )
 from surface_potential_analysis.util.decorators import timed
 from surface_potential_analysis.wavepacket.eigenstate_conversion import (
@@ -74,12 +74,12 @@ def _get_position_operator(basis: _SBV0) -> SingleBasisOperator[_SBV0]:
 
 @timed
 def _get_operator_between_states(
-    states: list[StateVector[_SB0]], operator: SingleBasisOperator[_SB0]
+    states: list[LegacyStateVector[_SB0]], operator: SingleBasisOperator[_SB0]
 ) -> SingleBasisOperator[FundamentalBasis[Any]]:
     n_states = len(states)
     array = np.zeros((n_states, n_states), dtype=np.complex128)
     for i in range(n_states):
-        dual_vector = as_dual_vector(states[i])
+        dual_vector = as_legacy_dual_vector(states[i])
         for j in range(n_states):
             vector = states[j]
             array[i, j] = calculate_operator_inner_product(
@@ -138,7 +138,7 @@ def localize_position_operator_many_band(
             TupleBasisWithLengthLike[*tuple[_BL0, ...]],
         ]
     ],
-) -> list[StateVector[Any]]:
+) -> list[LegacyStateVector[Any]]:
     """
     Given a sequence of wavepackets at each band, get all possible eigenstates of position.
 
@@ -173,7 +173,7 @@ def localize_position_operator_many_band(
 
 def localize_position_operator_many_band_individual(
     wavepackets: list[BlochWavefunctionListWithEigenvalues[_SB0, _SBV0]],
-) -> list[StateVector[Any]]:
+) -> list[LegacyStateVector[Any]]:
     """
     Given a wavepacket generate a set of normalized wavepackets using the operator method.
 

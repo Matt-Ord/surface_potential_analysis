@@ -42,7 +42,7 @@ if TYPE_CHECKING:
         EigenstateList,
     )
     from surface_potential_analysis.state_vector.state_vector_list import (
-        StateVectorList,
+        LegacyStateVectorList,
     )
 
     _B0 = TypeVar("_B0", bound=BasisLike)
@@ -317,7 +317,7 @@ def scale_operator(
 
 @timed
 def apply_operator_to_states(
-    lhs: LegacyOperator[_B0, _B1], states: StateVectorList[_B2, _B3]
+    lhs: LegacyOperator[_B0, _B1], states: LegacyStateVectorList[_B2, _B3]
 ) -> EigenstateList[_B2, _B0]:
     """
     Apply an operator to all states in a state vector list.

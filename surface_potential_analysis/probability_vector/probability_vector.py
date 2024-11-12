@@ -13,9 +13,9 @@ from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.util.util import get_data_in_axes
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.state_vector.state_vector import StateVector
+    from surface_potential_analysis.state_vector.state_vector import LegacyStateVector
     from surface_potential_analysis.state_vector.state_vector_list import (
-        StateVectorList,
+        LegacyStateVectorList,
     )
     from surface_potential_analysis.types import (
         SingleIndexLike,
@@ -41,7 +41,7 @@ class ProbabilityVectorList(TypedDict, Generic[_B0, _B1]):
     data: np.ndarray[tuple[int], np.dtype[np.complex128]]
 
 
-def from_state_vector(state: StateVector[_B0]) -> ProbabilityVector[_B0]:
+def from_state_vector(state: LegacyStateVector[_B0]) -> ProbabilityVector[_B0]:
     """
     Get a probability vector for a given state vector.
 
@@ -57,7 +57,7 @@ def from_state_vector(state: StateVector[_B0]) -> ProbabilityVector[_B0]:
 
 
 def from_state_vector_list(
-    states: StateVectorList[_B0, _B1],
+    states: LegacyStateVectorList[_B0, _B1],
 ) -> ProbabilityVectorList[_B0, _B1]:
     """
     Get a probability vector list for a given state vector list.

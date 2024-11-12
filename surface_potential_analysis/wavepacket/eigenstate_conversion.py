@@ -30,10 +30,10 @@ if TYPE_CHECKING:
         TupleBasisWithLengthLike,
     )
     from surface_potential_analysis.state_vector.state_vector import (
-        StateVector,
+        LegacyStateVector,
     )
     from surface_potential_analysis.state_vector.state_vector_list import (
-        StateVectorList,
+        LegacyStateVectorList,
     )
 
     _SBV0 = TypeVar("_SBV0", bound=StackedBasisWithVolumeLike)
@@ -46,7 +46,7 @@ def _unfurl_momentum_basis_wavepacket(
     wavepacket: BlochWavefunctionList[
         TupleBasisLike[*tuple[Any, ...]], TupleBasisWithLengthLike[*tuple[Any, ...]]
     ],
-) -> StateVector[
+) -> LegacyStateVector[
     TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis, ...]]
 ]:
     list_shape = wavepacket["basis"][0].shape
@@ -86,7 +86,7 @@ def _unfurl_momentum_basis_wavepacket(
 
 def unfurl_wavepacket(
     wavepacket: BlochWavefunctionList[_SB0, _SBV0],
-) -> StateVector[
+) -> LegacyStateVector[
     TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis, ...]]
 ]:
     """
@@ -113,7 +113,7 @@ def unfurl_wavepacket(
 
 def unfurl_wavepacket_list(
     wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBV0],
-) -> StateVectorList[
+) -> LegacyStateVectorList[
     _B0,
     TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis, ...]],
 ]:

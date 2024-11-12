@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from surface_potential_analysis.basis.legacy import FundamentalPositionBasis
     from surface_potential_analysis.overlap.overlap import Overlap, SingleOverlap
     from surface_potential_analysis.state_vector.state_vector_list import (
-        StateVectorList,
+        LegacyStateVectorList,
     )
     from surface_potential_analysis.types import SingleIndexLike
     from surface_potential_analysis.wavepacket.wavepacket import (
@@ -88,7 +88,7 @@ def calculate_wavepacket_overlap(
 
 
 def calculate_state_vector_list_overlap(
-    states: StateVectorList[_B1, _SB0],
+    states: LegacyStateVectorList[_B1, _SB0],
     *,
     shift: SingleIndexLike = 0,
 ) -> Overlap[_SB0, _B1, _B1]:
@@ -132,7 +132,8 @@ def calculate_wavepacket_list_overlap(
     *,
     shift: SingleIndexLike = 0,
     basis: _SB0,
-) -> Overlap[_SB0, _B1, _B1]: ...
+) -> Overlap[_SB0, _B1, _B1]:
+    ...
 
 
 @overload
@@ -143,7 +144,8 @@ def calculate_wavepacket_list_overlap(
     *,
     shift: SingleIndexLike = 0,
     basis: None = None,
-) -> Overlap[TupleBasisLike[*tuple[FundamentalPositionBasis, ...]], _B1, _B1]: ...
+) -> Overlap[TupleBasisLike[*tuple[FundamentalPositionBasis, ...]], _B1, _B1]:
+    ...
 
 
 @timed

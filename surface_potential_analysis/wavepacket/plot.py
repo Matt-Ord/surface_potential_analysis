@@ -81,7 +81,7 @@ if TYPE_CHECKING:
         EigenstateList,
         ValueList,
     )
-    from surface_potential_analysis.state_vector.state_vector import StateVector
+    from surface_potential_analysis.state_vector.state_vector import LegacyStateVector
     from surface_potential_analysis.types import (
         SingleStackedIndexLike,
     )
@@ -1079,7 +1079,7 @@ def plot_wavepacket_along_path(
     -------
     tuple[Figure, Axes, Line2D]
     """
-    eigenstate: StateVector[Any] = unfurl_wavepacket(wavepacket)
+    eigenstate: LegacyStateVector[Any] = unfurl_wavepacket(wavepacket)
     return plot_state_along_path(eigenstate, path, ax=ax, measure=measure, scale=scale)
 
 

@@ -36,9 +36,9 @@ if TYPE_CHECKING:
         BasisLike,
         TupleBasisLike,
     )
-    from surface_potential_analysis.state_vector.state_vector import StateVector
+    from surface_potential_analysis.state_vector.state_vector import LegacyStateVector
     from surface_potential_analysis.state_vector.state_vector_list import (
-        StateVectorList,
+        LegacyStateVectorList,
     )
     from surface_potential_analysis.types import (
         IntLike_co,
@@ -57,7 +57,7 @@ if TYPE_CHECKING:
 
 def get_single_point_state_vector_excact(
     basis: _B0, idx: SingleFlatIndexLike
-) -> StateVector[_B0]:
+) -> LegacyStateVector[_B0]:
     """Get the state which is nonzero at idx."""
     data = np.zeros(basis.n, dtype=np.complex128)
     data[idx] = 1
@@ -67,7 +67,7 @@ def get_single_point_state_vector_excact(
 def get_single_point_state_vectors(
     basis: BlochWavefunctionListBasis[_SB0, _SBV0],
     n_bands: _L0Inv,
-) -> StateVectorList[
+) -> LegacyStateVectorList[
     FundamentalBasis[_L0Inv],
     TupleBasisLike[*tuple[FundamentalPositionBasis, ...]],
 ]:
@@ -85,7 +85,7 @@ def get_single_point_state_vectors(
 def get_most_localized_free_state_vectors(
     basis: BlochWavefunctionListBasis[_SB0, _TBL0],
     shape: tuple[IntLike_co, ...],
-) -> StateVectorList[
+) -> LegacyStateVectorList[
     TupleBasisLike[*tuple[FundamentalBasis[BasisMetadata], ...]],
     TupleBasisWithLengthLike[*tuple[TransformedPositionBasis[Any, Any, Any], ...]],
 ]:
@@ -144,7 +144,7 @@ def get_most_localized_free_state_vectors(
 def get_most_localized_state_vectors_from_probability(
     wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBV0],
     fractions: tuple[np.ndarray[tuple[int], np.dtype[np.float64]], ...],
-) -> StateVectorList[
+) -> LegacyStateVectorList[
     FundamentalBasis[BasisMetadata],
     TupleBasisLike[*tuple[FundamentalTransformedPositionBasis, ...]],
 ]:

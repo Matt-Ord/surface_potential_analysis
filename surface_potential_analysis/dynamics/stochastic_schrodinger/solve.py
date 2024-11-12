@@ -85,10 +85,10 @@ if TYPE_CHECKING:
         SingleBasisOperator,
     )
     from surface_potential_analysis.state_vector import (
-        StateVector,
+        LegacyStateVector,
     )
     from surface_potential_analysis.state_vector.state_vector_list import (
-        StateVectorList,
+        LegacyStateVectorList,
     )
 
     _B0 = TypeVar("_B0", bound=TunnellingSimulationBasis[Any, Any, Any])
@@ -245,38 +245,38 @@ def get_collapse_operators_from_function(
 
 @overload
 def solve_stochastic_schrodinger_equation(
-    initial_state: StateVector[_B1],
+    initial_state: LegacyStateVector[_B1],
     times: _AX0Inv,
     hamiltonian: SingleBasisOperator[_B1],
     collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: _L1Inv,
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1]:
+) -> LegacyStateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1]:
     ...
 
 
 @overload
 def solve_stochastic_schrodinger_equation(
-    initial_state: StateVector[_B1],
+    initial_state: LegacyStateVector[_B1],
     times: _AX0Inv,
     hamiltonian: SingleBasisOperator[_B1],
     collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: Literal[1] = 1,
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1]:
+) -> LegacyStateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1]:
     ...
 
 
 def solve_stochastic_schrodinger_equation(  # type: ignore bad overload
-    initial_state: StateVector[_B1],
+    initial_state: LegacyStateVector[_B1],
     times: _AX0Inv,
     hamiltonian: SingleBasisOperator[_B1],
     collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: _L1Inv | Literal[1] = 1,
 ) -> (
-    StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1]
-    | StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1]
+    LegacyStateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1]
+    | LegacyStateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1]
 ):
     """
     Given an initial state, use the stochastic schrodinger equation to solve the dynamics of the system.
@@ -338,39 +338,39 @@ def solve_stochastic_schrodinger_equation(  # type: ignore bad overload
 
 @overload
 def solve_stochastic_schrodinger_equation_rust(
-    initial_state: StateVector[_B1],
+    initial_state: LegacyStateVector[_B1],
     times: _AX0Inv,
     hamiltonian: SingleBasisOperator[_B1],
     collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: _L1Inv,
     n_realizations: int = 1,
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1]:
+) -> LegacyStateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1]:
     ...
 
 
 @overload
 def solve_stochastic_schrodinger_equation_rust(
-    initial_state: StateVector[_B1],
+    initial_state: LegacyStateVector[_B1],
     times: _AX0Inv,
     hamiltonian: SingleBasisOperator[_B1],
     collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: Literal[1] = 1,
     n_realizations: int = 1,
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1]:
+) -> LegacyStateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1]:
     ...
 
 
 def solve_stochastic_schrodinger_equation_rust(  # type: ignore bad overload
-    initial_state: StateVector[_B1],
+    initial_state: LegacyStateVector[_B1],
     times: _AX0Inv,
     hamiltonian: SingleBasisOperator[_B1],
     collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: _L1Inv | Literal[1] = 1,
     n_realizations: int = 1,
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[Any], _AX0Inv], _B1]:
+) -> LegacyStateVectorList[TupleBasisLike[FundamentalBasis[Any], _AX0Inv], _B1]:
     """
     Given an initial state, use the stochastic schrodinger equation to solve the dynamics of the system.
 
@@ -460,7 +460,7 @@ def _get_banded_operators(
 
 @overload
 def solve_stochastic_schrodinger_equation_rust_banded(
-    initial_state: StateVector[_B2],
+    initial_state: LegacyStateVector[_B2],
     times: _AX0Inv,
     hamiltonian: SingleBasisOperator[_B1],
     collapse_operators: list[SingleBasisOperator[_B3]] | None = None,
@@ -469,13 +469,13 @@ def solve_stochastic_schrodinger_equation_rust_banded(
     n_realizations: int = 1,
     r_threshold: float = 1e-8,
     method: SSEMethod = "Euler",
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1]:
+) -> LegacyStateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1]:
     ...
 
 
 @overload
 def solve_stochastic_schrodinger_equation_rust_banded(
-    initial_state: StateVector[_B2],
+    initial_state: LegacyStateVector[_B2],
     times: _AX0Inv,
     hamiltonian: SingleBasisOperator[_B1],
     collapse_operators: list[SingleBasisOperator[_B3]] | None = None,
@@ -484,13 +484,13 @@ def solve_stochastic_schrodinger_equation_rust_banded(
     n_realizations: int = 1,
     r_threshold: float = 1e-8,
     method: SSEMethod = "Euler",
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1]:
+) -> LegacyStateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1]:
     ...
 
 
 @timed
 def solve_stochastic_schrodinger_equation_rust_banded(  # type: ignore bad overload
-    initial_state: StateVector[_B2],
+    initial_state: LegacyStateVector[_B2],
     times: _AX0Inv,
     hamiltonian: SingleBasisOperator[_B1],
     collapse_operators: list[LegacyOperator[_B3, _B4]] | None = None,
@@ -499,7 +499,7 @@ def solve_stochastic_schrodinger_equation_rust_banded(  # type: ignore bad overl
     n_realizations: int = 1,
     r_threshold: float = 1e-8,
     method: SSEMethod = "Euler",
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[Any], _AX0Inv], _B1]:
+) -> LegacyStateVectorList[TupleBasisLike[FundamentalBasis[Any], _AX0Inv], _B1]:
     """
     Given an initial state, use the stochastic schrodinger equation to solve the dynamics of the system.
 
@@ -581,8 +581,8 @@ rng = np.random.default_rng()
 
 
 def _select_random_localized_state(
-    states: StateVectorList[_B2, _B1],
-) -> StateVector[_B1]:
+    states: LegacyStateVectorList[_B2, _B1],
+) -> LegacyStateVector[_B1]:
     """
     Select a random state built from states.
 
@@ -615,37 +615,37 @@ def _select_random_localized_state(
 
 @overload
 def solve_stochastic_schrodinger_equation_localized(
-    initial_state: StateVector[_B1],
+    initial_state: LegacyStateVector[_B1],
     times: _AX0Inv,
     hamiltonian: SingleBasisOperator[_B1],
     collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: _L1Inv,
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1]:
+) -> LegacyStateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1]:
     ...
 
 
 @overload
 def solve_stochastic_schrodinger_equation_localized(
-    initial_state: StateVector[_B1],
+    initial_state: LegacyStateVector[_B1],
     times: _AX0Inv,
     hamiltonian: SingleBasisOperator[_B1],
     collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: Literal[1] = 1,
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1]:
+) -> LegacyStateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1]:
     ...
 
 
 def solve_stochastic_schrodinger_equation_localized(  # type: ignore bad overload
-    initial_state: StateVector[_B1],
+    initial_state: LegacyStateVector[_B1],
     times: _AX0Inv,
     hamiltonian: SingleBasisOperator[_B1],
     collapse_operators: list[SingleBasisOperator[_B1]] | None = None,
     *,
     n_trajectories: _L1Inv | Literal[1] = 1,
     n_realizations: int = 2,
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[Any], _AX0Inv], _B1]:
+) -> LegacyStateVectorList[TupleBasisLike[FundamentalBasis[Any], _AX0Inv], _B1]:
     """
     Find the quantum trajectores, using the localized stochastic schrodinger approach.
 

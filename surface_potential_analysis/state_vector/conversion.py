@@ -25,11 +25,11 @@ if TYPE_CHECKING:
         TupleBasisWithLengthLike,
     )
     from surface_potential_analysis.state_vector.state_vector import (
-        StateDualVector,
-        StateVector,
+        LegacyStateDualVector,
+        LegacyStateVector,
     )
     from surface_potential_analysis.state_vector.state_vector_list import (
-        StateVectorList,
+        LegacyStateVectorList,
     )
 
     _B0 = TypeVar("_B0", bound=BasisLike)
@@ -38,8 +38,8 @@ if TYPE_CHECKING:
 
 
 def convert_state_vector_to_basis(
-    state_vector: StateVector[_B0], basis: _B1
-) -> StateVector[_B1]:
+    state_vector: LegacyStateVector[_B0], basis: _B1
+) -> LegacyStateVector[_B1]:
     """
     Given a state vector, calculate the vector in the given basis.
 
@@ -57,8 +57,8 @@ def convert_state_vector_to_basis(
 
 
 def convert_state_vector_list_to_basis(
-    state_vector: StateVectorList[_B0, _B1], basis: _B2
-) -> StateVectorList[_B0, _B2]:
+    state_vector: LegacyStateVectorList[_B0, _B1], basis: _B2
+) -> LegacyStateVectorList[_B0, _B2]:
     """
     Given a state vector, calculate the vector in the given basis.
 
@@ -80,8 +80,8 @@ def convert_state_vector_list_to_basis(
 
 
 def convert_state_dual_vector_to_basis(
-    state_vector: StateDualVector[_B0], basis: _B1
-) -> StateDualVector[_B1]:
+    state_vector: LegacyStateDualVector[_B0], basis: _B1
+) -> LegacyStateDualVector[_B1]:
     """
     Given a state vector, calculate the vector in the given basis.
 
@@ -99,8 +99,8 @@ def convert_state_dual_vector_to_basis(
 
 
 def convert_state_vector_to_position_basis(
-    state_vector: StateVector[StackedBasisWithVolumeLike],
-) -> StateVector[TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]]:
+    state_vector: LegacyStateVector[StackedBasisWithVolumeLike],
+) -> LegacyStateVector[TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]]:
     """
     Given an state vector, calculate the vector in position basis.
 
@@ -119,8 +119,8 @@ def convert_state_vector_to_position_basis(
 
 
 def convert_state_vector_to_momentum_basis(
-    state_vector: StateVector[StackedBasisWithVolumeLike],
-) -> StateVector[
+    state_vector: LegacyStateVector[StackedBasisWithVolumeLike],
+) -> LegacyStateVector[
     TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis, ...]]
 ]:
     """
@@ -141,8 +141,10 @@ def convert_state_vector_to_momentum_basis(
 
 
 def convert_state_dual_vector_to_position_basis(
-    state_vector: StateDualVector[StackedBasisWithVolumeLike],
-) -> StateDualVector[TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]]:
+    state_vector: LegacyStateDualVector[StackedBasisWithVolumeLike],
+) -> LegacyStateDualVector[
+    TupleBasisWithLengthLike[*tuple[FundamentalPositionBasis, ...]]
+]:
     """
     Given an state vector, calculate the vector in position basis.
 
@@ -161,8 +163,8 @@ def convert_state_dual_vector_to_position_basis(
 
 
 def convert_state_dual_vector_to_momentum_basis(
-    state_vector: StateDualVector[StackedBasisWithVolumeLike],
-) -> StateDualVector[
+    state_vector: LegacyStateDualVector[StackedBasisWithVolumeLike],
+) -> LegacyStateDualVector[
     TupleBasisWithLengthLike[*tuple[FundamentalTransformedPositionBasis, ...]]
 ]:
     """
@@ -183,10 +185,10 @@ def convert_state_dual_vector_to_momentum_basis(
 
 
 def interpolate_state_vector_momentum(
-    state_vector: StateVector[StackedBasisWithVolumeLike],
+    state_vector: LegacyStateVector[StackedBasisWithVolumeLike],
     shape: tuple[int, ...],
     axes: tuple[int, ...],
-) -> StateVector[TupleBasisWithLengthLike[*tuple[BasisWithLengthLike, ...]]]:
+) -> LegacyStateVector[TupleBasisWithLengthLike[*tuple[BasisWithLengthLike, ...]]]:
     """
     Given a state vector, get the equivalent vector in as a truncated vector in a larger basis.
 

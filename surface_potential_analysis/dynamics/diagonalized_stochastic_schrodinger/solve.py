@@ -26,10 +26,10 @@ if TYPE_CHECKING:
         SingleBasisOperator,
     )
     from surface_potential_analysis.state_vector import (
-        StateVector,
+        LegacyStateVector,
     )
     from surface_potential_analysis.state_vector.state_vector_list import (
-        StateVectorList,
+        LegacyStateVectorList,
     )
 
     _B1Inv = TypeVar("_B1Inv", bound=BasisLike)
@@ -39,37 +39,41 @@ if TYPE_CHECKING:
 
 @overload
 def solve_stochastic_schrodinger_equation(
-    initial_state: StateVector[_B1Inv],
+    initial_state: LegacyStateVector[_B1Inv],
     times: _AX0Inv,
     hamiltonian: SingleBasisOperator[_B1Inv],
     collapse_operators: list[SingleBasisDiagonalNoiseOperator[ExplicitBasis[Any, Any]]]
     | None = None,
     *,
     n_trajectories: _L1Inv,
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]: ...
+) -> LegacyStateVectorList[TupleBasisLike[FundamentalBasis[_L1Inv], _AX0Inv], _B1Inv]:
+    ...
 
 
 @overload
 def solve_stochastic_schrodinger_equation(
-    initial_state: StateVector[_B1Inv],
+    initial_state: LegacyStateVector[_B1Inv],
     times: _AX0Inv,
     hamiltonian: SingleBasisOperator[_B1Inv],
     collapse_operators: list[SingleBasisDiagonalNoiseOperator[ExplicitBasis[Any, Any]]]
     | None = None,
     *,
     n_trajectories: Literal[1] = 1,
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv]: ...
+) -> LegacyStateVectorList[
+    TupleBasisLike[FundamentalBasis[Literal[1]], _AX0Inv], _B1Inv
+]:
+    ...
 
 
 def solve_stochastic_schrodinger_equation(  # type: ignore bad overload
-    initial_state: StateVector[_B1Inv],
+    initial_state: LegacyStateVector[_B1Inv],
     times: _AX0Inv,
     hamiltonian: SingleBasisOperator[_B1Inv],
     collapse_operators: list[SingleBasisDiagonalNoiseOperator[ExplicitBasis[Any, Any]]]
     | None = None,
     *,
     n_trajectories: int = 1,
-) -> StateVectorList[TupleBasisLike[FundamentalBasis[Any], _AX0Inv], _B1Inv]:
+) -> LegacyStateVectorList[TupleBasisLike[FundamentalBasis[Any], _AX0Inv], _B1Inv]:
     assert times.offset == 0
 
     data = np.zeros(

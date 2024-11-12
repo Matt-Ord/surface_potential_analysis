@@ -1,6 +1,16 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Generic, Self, TypedDict, TypeVar, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generic,
+    Self,
+    TypedDict,
+    TypeVar,
+    cast,
+    override,
+)
 
 import numpy as np
 from slate.array.array import SlateArray
@@ -21,7 +31,7 @@ if TYPE_CHECKING:
     from surface_potential_analysis.state_vector.eigenstate_list import (
         Eigenstate,
     )
-    from surface_potential_analysis.state_vector.state_vector import StateVector
+    from surface_potential_analysis.state_vector.state_vector import LegacyStateVector
     from surface_potential_analysis.types import SingleFlatIndexLike
 
 _B0 = TypeVar("_B0", bound=BasisLike)
@@ -39,6 +49,7 @@ _SB1Inv = TypeVar("_SB1Inv", bound=TupleBasisLike[*tuple[Any, ...]])
 class Operator[DT: np.generic, B: Basis[StackedMetadata[BasisMetadata, Any], Any]](
     SlateArray[DT, B]
 ):
+    @override
     def with_basis[B1: Basis[Any, Any]](  # B1: B
         self: Self, basis: B1
     ) -> Operator[DT, B1]:
@@ -308,7 +319,7 @@ def subtract_operator(
 
 
 def apply_operator_to_state(
-    lhs: LegacyOperator[_B0, _B1], state: StateVector[_B2]
+    lhs: LegacyOperator[_B0, _B1], state: LegacyStateVector[_B2]
 ) -> Eigenstate[_B0]:
     """
     Add together two operators.
