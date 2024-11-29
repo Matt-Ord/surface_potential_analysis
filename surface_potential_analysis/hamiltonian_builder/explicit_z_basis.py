@@ -5,15 +5,13 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
 import hamiltonian_generator
 import numpy as np
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
+    ExplicitBasisWithLength,
     FundamentalBasis,
     FundamentalPositionBasis1d,
     FundamentalPositionBasis3d,
     FundamentalTransformedPositionBasis,
     TransformedPositionBasis,
-)
-from surface_potential_analysis.basis.explicit_basis import ExplicitBasisWithLength
-from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
     TupleBasisLike,
 )
@@ -21,7 +19,7 @@ from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.hamiltonian_builder.momentum_basis import (
     hamiltonian_from_mass_in_basis,
 )
-from surface_potential_analysis.operator.operator import add_operator
+from surface_potential_analysis.operator.operator import add_legacy_operator
 from surface_potential_analysis.stacked_basis.potential_basis import (
     get_potential_basis_config_eigenstates,
 )
@@ -29,7 +27,7 @@ from surface_potential_analysis.util.decorators import timed
 
 if TYPE_CHECKING:
     from surface_potential_analysis.operator import SingleBasisOperator
-    from surface_potential_analysis.potential.potential import Potential
+    from surface_potential_analysis.potential.potential import LegacyPotential
     from surface_potential_analysis.stacked_basis.potential_basis import (
         PotentialBasisConfig,
     )
@@ -77,13 +75,13 @@ def _get_xy_hamiltonian(
         ).reshape(-1)
     ).reshape(-1)
 
-    return {"data": xy_energies, "basis": TupleBasis(basis, basis)}
+    return {"data": xy_energies, "basis": VariadicTupleBasis((basis, basis), None)}
 
 
 class _SurfaceHamiltonianUtil(
     Generic[_N0Inv, _N1Inv, _N2Inv, _NF0Inv, _NF1Inv, _NF2Inv]
 ):
-    _potential: Potential[
+    _potential: LegacyPotential[
         TupleBasisLike[
             FundamentalPositionBasis3d[_NF0Inv],
             FundamentalPositionBasis3d[_NF1Inv],
@@ -96,7 +94,7 @@ class _SurfaceHamiltonianUtil(
 
     def __init__(
         self,
-        potential: Potential[
+        potential: LegacyPotential[
             TupleBasisLike[
                 FundamentalPositionBasis3d[_NF0Inv],
                 FundamentalPositionBasis3d[_NF1Inv],
@@ -111,14 +109,14 @@ class _SurfaceHamiltonianUtil(
         self._resolution = resolution
         self._bloch_fraction = bloch_fraction
         self._config = config
-        if 2 * (self._resolution[0] - 1) > self._potential["basis"][0].n:
+        if 2 * (self._resolution[0] - 1) > self._potential["basis"][0].size:
             raise PotentialSizeError(
-                0, 2 * (self._resolution[0] - 1), self._potential["basis"][0].n
+                0, 2 * (self._resolution[0] - 1), self._potential["basis"][0].size
             )
 
-        if 2 * (self._resolution[1] - 1) > self._potential["basis"][1].n:
+        if 2 * (self._resolution[1] - 1) > self._potential["basis"][1].size:
             raise PotentialSizeError(
-                1, 2 * (self._resolution[1] - 1), self._potential["basis"][1].n
+                1, 2 * (self._resolution[1] - 1), self._potential["basis"][1].size
             )
 
     def basis(
@@ -138,12 +136,12 @@ class _SurfaceHamiltonianUtil(
             TransformedPositionBasis(
                 self._potential["basis"][0].delta_x,
                 self._resolution[0],
-                self._potential["basis"][0].n,
+                self._potential["basis"][0].size,
             ),
             TransformedPositionBasis(
                 self._potential["basis"][1].delta_x,
                 self._resolution[1],
-                self._potential["basis"][1].n,
+                self._potential["basis"][1].size,
             ),
             ExplicitBasisWithLength(
                 {
@@ -189,7 +187,10 @@ class _SurfaceHamiltonianUtil(
 
         energies = diagonal_energies + other_energies
 
-        return {"data": energies.reshape(-1), "basis": TupleBasis(basis, basis)}
+        return {
+            "data": energies.reshape(-1),
+            "basis": VariadicTupleBasis((basis, basis), None),
+        }
 
     def hamiltonian(
         self,
@@ -206,7 +207,7 @@ class _SurfaceHamiltonianUtil(
         xy_hamiltonian = _get_xy_hamiltonian(
             z_hamiltonian["basis"][0], self._config["mass"], self._bloch_fraction[:2]
         )
-        return add_operator(xy_hamiltonian, z_hamiltonian)
+        return add_legacy_operator(xy_hamiltonian, z_hamiltonian)
 
     def _calculate_off_diagonal_energies(
         self,
@@ -240,7 +241,7 @@ class _SurfaceHamiltonianUtil(
 
 @timed
 def total_surface_hamiltonian(
-    potential: Potential[
+    potential: LegacyPotential[
         TupleBasisLike[
             FundamentalPositionBasis3d[_NF0Inv],
             FundamentalPositionBasis3d[_NF1Inv],
@@ -278,7 +279,7 @@ def total_surface_hamiltonian(
 
 
 def total_surface_hamiltonian_as_fundamental(
-    potential: Potential[
+    potential: LegacyPotential[
         TupleBasisLike[
             FundamentalPositionBasis3d[_NF0Inv],
             FundamentalPositionBasis3d[_NF1Inv],
@@ -324,4 +325,7 @@ def total_surface_hamiltonian_as_fundamental(
         ),
         hamiltonian["basis"][0][2],
     )
-    return {"basis": TupleBasis(new_basis, new_basis), "data": hamiltonian["data"]}
+    return {
+        "basis": VariadicTupleBasis((new_basis, new_basis), None),
+        "data": hamiltonian["data"],
+    }

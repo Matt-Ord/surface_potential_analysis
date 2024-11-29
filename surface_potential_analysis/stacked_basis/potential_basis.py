@@ -4,16 +4,12 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, TypedDict, TypeVar
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
+    BasisWithLengthLike,
+    ExplicitStackedBasisWithLength,
     FundamentalBasis,
     FundamentalPositionBasis,
     FundamentalPositionBasis1d,
-)
-from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
-from surface_potential_analysis.basis.explicit_basis import (
-    ExplicitStackedBasisWithLength,
-)
-from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisWithLengthLike,
@@ -27,7 +23,7 @@ from surface_potential_analysis.state_vector.eigenstate_calculation import (
 
 if TYPE_CHECKING:
     from surface_potential_analysis.potential.potential import (
-        Potential,
+        LegacyPotential,
     )
     from surface_potential_analysis.state_vector.eigenstate_list import (
         EigenstateList,
@@ -42,7 +38,7 @@ _L1_co = TypeVar("_L1_co", covariant=True, bound=int)
 class PotentialBasisConfig(TypedDict, Generic[_B1d0Inv, _L1_co]):
     """Configures the generation of an explicit basis from a given potential."""
 
-    potential: Potential[TupleBasisWithLengthLike[_B1d0Inv]]
+    potential: LegacyPotential[TupleBasisWithLengthLike[_B1d0Inv]]
     mass: float
     n: _L1_co
 
@@ -54,9 +50,7 @@ def get_potential_basis_config_eigenstates(
     config: PotentialBasisConfig[_B1d0Inv, _N0Inv],
     *,
     bloch_fraction: float | None = None,
-) -> EigenstateList[
-    FundamentalBasis[_N0Inv], StackedBasisWithVolumeLike[Any, Any, Any]
-]:
+) -> EigenstateList[FundamentalBasis[_N0Inv], StackedBasisWithVolumeLike]:
     """
     Get the eigenstates of the potential, as used in the final basis.
 
@@ -72,7 +66,7 @@ def get_potential_basis_config_eigenstates(
     hamiltonian = total_surface_hamiltonian(
         config["potential"], config["mass"], np.array([bloch_fraction])
     )
-    return calculate_eigenvectors_hermitian(  # type: ignore FundamentalBasis[int] not FundamentalBasis[_N0Inv]
+    return calculate_eigenvectors_hermitian(  # type: ignore FundamentalBasis[BasisMetadata] not FundamentalBasis[_N0Inv]
         hamiltonian,
         subset_by_index=(0, config["n"] - 1),  # type: ignore cannot infer type of hamiltonian properly
     )
@@ -82,7 +76,7 @@ def get_potential_basis_config_basis(
     config: PotentialBasisConfig[_B1d0Inv, _N0Inv],
 ) -> ExplicitStackedBasisWithLength[
     FundamentalBasis[_N0Inv],
-    StackedBasisWithVolumeLike[Any, Any, Any],
+    StackedBasisWithVolumeLike,
 ]:
     """
     Get the explicit basis for the potential basis config.
@@ -100,8 +94,8 @@ def get_potential_basis_config_basis(
 
 
 def select_minimum_potential_3d(
-    potential: Potential[TupleBasisWithLengthLike[Any, Any, _B3d0]],
-) -> Potential[TupleBasisWithLengthLike[FundamentalPositionBasis1d[Any]]]:
+    potential: LegacyPotential[TupleBasisWithLengthLike[Any, Any, _B3d0]],
+) -> LegacyPotential[TupleBasisWithLengthLike[FundamentalPositionBasis1d[Any]]]:
     """
     Given a 3D potential in the standard configuration select the minimum potential.
 

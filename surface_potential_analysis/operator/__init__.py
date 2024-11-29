@@ -2,6 +2,6 @@
 
 from __future__ import annotations
 
-from .operator import Operator, SingleBasisOperator
+from .operator import LegacyOperator, SingleBasisOperator
 
-__all__ = ["Operator", "SingleBasisOperator"]
+__all__ = ["LegacyOperator", "SingleBasisOperator"]

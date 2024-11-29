@@ -4,9 +4,10 @@ from typing import TYPE_CHECKING, Any, Literal, Self, TypeVar
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import FundamentalBasis
-from surface_potential_analysis.basis.basis_like import AxisVector2d, BasisLike
-from surface_potential_analysis.basis.stacked_basis import (
+from surface_potential_analysis.basis.legacy import (
+    AxisVector2d,
+    BasisLike,
+    FundamentalBasis,
     TupleBasis,
     TupleBasisLike,
 )
@@ -24,8 +25,8 @@ if TYPE_CHECKING:
 
 _L0_co = TypeVar("_L0_co", bound=int, covariant=True)
 
-_AX0Inv = TypeVar("_AX0Inv", bound=BasisLike[Any, Any])
-_AX1Inv = TypeVar("_AX1Inv", bound=BasisLike[Any, Any])
+_AX0Inv = TypeVar("_AX0Inv", bound=BasisLike)
+_AX1Inv = TypeVar("_AX1Inv", bound=BasisLike)
 
 
 class TunnellingSimulationBandsBasis(FundamentalBasis[_L0_co]):

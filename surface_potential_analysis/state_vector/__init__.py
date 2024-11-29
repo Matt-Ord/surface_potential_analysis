@@ -2,6 +2,6 @@
 
 from __future__ import annotations
 
-from .state_vector import StateVector
+from .state_vector import LegacyStateVector
 
-__all__ = ["StateVector"]
+__all__ = ["LegacyStateVector"]

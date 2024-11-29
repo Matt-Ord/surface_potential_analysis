@@ -5,11 +5,9 @@ from typing import Any
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
     FundamentalBasis,
     FundamentalTransformedPositionBasis,
-)
-from surface_potential_analysis.basis.stacked_basis import (
     StackedBasis,
 )
 from surface_potential_analysis.stacked_basis.build import (

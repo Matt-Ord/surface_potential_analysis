@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
 
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
+from surface_potential_analysis.basis.legacy import TupleBasis
 from surface_potential_analysis.operator.conversion import (
     convert_operator_list_to_basis,
     convert_operator_to_basis,
 )
 from surface_potential_analysis.operator.operator import (
     SingleBasisOperator,
-    add_operator,
+    add_legacy_operator,
     matmul_operator,
     subtract_operator,
 )
@@ -28,9 +28,9 @@ from surface_potential_analysis.state_vector.eigenstate_calculation import (
 from surface_potential_analysis.util.decorators import timed
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis_like import BasisLike
+    from surface_potential_analysis.basis.legacy import BasisLike
     from surface_potential_analysis.operator.operator import (
-        Operator,
+        LegacyOperator,
         SingleBasisOperator,
     )
     from surface_potential_analysis.operator.operator_list import (
@@ -42,18 +42,18 @@ if TYPE_CHECKING:
         EigenstateList,
     )
     from surface_potential_analysis.state_vector.state_vector_list import (
-        StateVectorList,
+        LegacyStateVectorList,
     )
 
-    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-    _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
-    _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
-    _B3 = TypeVar("_B3", bound=BasisLike[Any, Any])
-    _B4 = TypeVar("_B4", bound=BasisLike[Any, Any])
+    _B0 = TypeVar("_B0", bound=BasisLike)
+    _B1 = TypeVar("_B1", bound=BasisLike)
+    _B2 = TypeVar("_B2", bound=BasisLike)
+    _B3 = TypeVar("_B3", bound=BasisLike)
+    _B4 = TypeVar("_B4", bound=BasisLike)
 
 
 def matmul_list_operator(
-    lhs: OperatorList[_B3, _B0, _B1], rhs: Operator[_B4, _B2]
+    lhs: OperatorList[_B3, _B0, _B1], rhs: LegacyOperator[_B4, _B2]
 ) -> OperatorList[_B3, _B0, _B2]:
     """
     Multiply each operator in rhs by lhs.
@@ -70,7 +70,7 @@ def matmul_list_operator(
     OperatorList[_B3, _B0, _B2]
     """
     converted = convert_operator_to_basis(
-        rhs, TupleBasis(lhs["basis"][1][1], rhs["basis"][1])
+        rhs, VariadicTupleBasis((lhs["basis"][1][1], rhs["basis"][1]), None)
     )
 
     data = np.tensordot(
@@ -80,14 +80,15 @@ def matmul_list_operator(
     ).reshape(-1)
     return {
         "basis": TupleBasis(
-            lhs["basis"][0], TupleBasis(lhs["basis"][1][0], rhs["basis"][1])
+            lhs["basis"][0],
+            VariadicTupleBasis((lhs["basis"][1][0], rhs["basis"][1]), None),
         ),
         "data": data,
     }
 
 
 def matmul_operator_list(
-    lhs: Operator[_B0, _B1], rhs: OperatorList[_B3, _B4, _B2]
+    lhs: LegacyOperator[_B0, _B1], rhs: OperatorList[_B3, _B4, _B2]
 ) -> OperatorList[_B3, _B0, _B2]:
     """
     Multiply each operator in rhs by lhs.
@@ -104,7 +105,7 @@ def matmul_operator_list(
     OperatorList[_B3, _B0, _B2]
     """
     converted = convert_operator_list_to_basis(
-        rhs, TupleBasis(lhs["basis"][1], rhs["basis"][1][1])
+        rhs, VariadicTupleBasis((lhs["basis"][1], rhs["basis"][1][1]), None)
     )
     data = np.einsum(  # type: ignore lib
         "ik,mkj->mij",
@@ -113,7 +114,8 @@ def matmul_operator_list(
     ).reshape(-1)
     return {
         "basis": TupleBasis(
-            converted["basis"][0], TupleBasis(lhs["basis"][0], converted["basis"][1][1])
+            converted["basis"][0],
+            VariadicTupleBasis((lhs["basis"][0], converted["basis"][1][1]), None),
         ),
         "data": data,
     }
@@ -121,7 +123,7 @@ def matmul_operator_list(
 
 def matmul_diagonal_list_operator(
     lhs: DiagonalOperatorList[_B3, _B0, _B1],
-    rhs: Operator[_B4, _B2],
+    rhs: LegacyOperator[_B4, _B2],
 ) -> OperatorList[_B3, _B0, _B2]:
     """
     Multiply each operator in rhs by lhs.
@@ -138,7 +140,7 @@ def matmul_diagonal_list_operator(
     OperatorList[_B3, _B0, _B2]
     """
     converted = convert_operator_to_basis(
-        rhs, TupleBasis(lhs["basis"][1][1], rhs["basis"][1])
+        rhs, VariadicTupleBasis((lhs["basis"][1][1], rhs["basis"][1]), None)
     )
     data = np.einsum(  # type: ignore lib
         "ik,kl->ikl",
@@ -147,14 +149,15 @@ def matmul_diagonal_list_operator(
     ).reshape(-1)
     return {
         "basis": TupleBasis(
-            lhs["basis"][0], TupleBasis(lhs["basis"][1][0], converted["basis"][1])
+            lhs["basis"][0],
+            VariadicTupleBasis((lhs["basis"][1][0], converted["basis"][1]), None),
         ),
         "data": data,
     }
 
 
 def matmul_operator_diagonal_list(
-    lhs: Operator[_B0, _B1], rhs: DiagonalOperatorList[_B3, _B4, _B2]
+    lhs: LegacyOperator[_B0, _B1], rhs: DiagonalOperatorList[_B3, _B4, _B2]
 ) -> OperatorList[_B3, _B0, _B2]:
     """
     Multiply each operator in rhs by lhs.
@@ -171,7 +174,7 @@ def matmul_operator_diagonal_list(
     OperatorList[_B3, _B0, _B2]
     """
     converted = convert_operator_to_basis(
-        lhs, TupleBasis(lhs["basis"][0], rhs["basis"][1][0])
+        lhs, VariadicTupleBasis((lhs["basis"][0], rhs["basis"][1][0]), None)
     )
     data = np.einsum(  # type: ignore lib
         "ik,mk->mik",
@@ -180,7 +183,8 @@ def matmul_operator_diagonal_list(
     ).reshape(-1)
     return {
         "basis": TupleBasis(
-            rhs["basis"][0], TupleBasis(lhs["basis"][0], rhs["basis"][1][1])
+            rhs["basis"][0],
+            VariadicTupleBasis((lhs["basis"][0], rhs["basis"][1][1]), None),
         ),
         "data": data,
     }
@@ -293,7 +297,9 @@ def scale_operator_list(
     }
 
 
-def scale_operator(factor: complex, operator: Operator[_B0, _B1]) -> Operator[_B0, _B1]:
+def scale_operator(
+    factor: complex, operator: LegacyOperator[_B0, _B1]
+) -> LegacyOperator[_B0, _B1]:
     """
     Scale the operator.
 
@@ -311,7 +317,7 @@ def scale_operator(factor: complex, operator: Operator[_B0, _B1]) -> Operator[_B
 
 @timed
 def apply_operator_to_states(
-    lhs: Operator[_B0, _B1], states: StateVectorList[_B2, _B3]
+    lhs: LegacyOperator[_B0, _B1], states: LegacyStateVectorList[_B2, _B3]
 ) -> EigenstateList[_B2, _B0]:
     """
     Apply an operator to all states in a state vector list.
@@ -333,7 +339,7 @@ def apply_operator_to_states(
     )
     norm = np.sqrt(np.sum(np.abs(np.square(data)), axis=1))
     return {
-        "basis": TupleBasis(converted["basis"][0], lhs["basis"][0]),
+        "basis": VariadicTupleBasis((converted["basis"][0], lhs["basis"][0]), None),
         "data": data / norm.reshape(norm.size, 1),
         "eigenvalue": norm,
     }
@@ -380,7 +386,7 @@ def get_anti_commutator(
     """
     lhs_rhs = matmul_operator(lhs, rhs)
     rhs_lhs = matmul_operator(rhs, lhs)
-    return add_operator(lhs_rhs, rhs_lhs)
+    return add_legacy_operator(lhs_rhs, rhs_lhs)
 
 
 def exp_operator(operator: SingleBasisOperator[_B0]) -> SingleBasisOperator[_B0]:

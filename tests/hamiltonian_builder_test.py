@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import unittest
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 import hamiltonian_generator
 import numpy as np
@@ -9,14 +9,13 @@ import scipy.linalg
 import scipy.special
 from scipy.constants import hbar
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
     FundamentalPositionBasis,
     FundamentalPositionBasis1d,
     FundamentalTransformedPositionBasis,
-    FundamentalTransformedPositionBasis1d,
+    StackedBasis,
     TransformedPositionBasis,
 )
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
 from surface_potential_analysis.basis.util import (
     BasisUtil,
 )
@@ -35,8 +34,7 @@ from surface_potential_analysis.stacked_basis.build import (
     position_basis_3d_from_shape,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_momentum_basis,
-    stacked_basis_as_fundamental_position_basis,
+    tuple_basis_as_fundamental,
 )
 from surface_potential_analysis.stacked_basis.sho_basis import (
     SHOBasisConfig,
@@ -83,9 +81,7 @@ def _generate_symmetrical_points(
 
 class HamiltonianBuilderTest(unittest.TestCase):
     def test_hamiltonian_from_potential_momentum(self) -> None:
-        potential: Potential[
-            StackedBasis[FundamentalTransformedPositionBasis1d[Literal[100]]]
-        ] = {
+        potential: Potential[StackedBasis] = {
             "basis": StackedBasis(
                 FundamentalTransformedPositionBasis(np.array([1]), 100)
             ),
@@ -94,7 +90,7 @@ class HamiltonianBuilderTest(unittest.TestCase):
         actual = momentum_basis.hamiltonian_from_potential(potential)
 
         converted = convert_potential_to_basis(
-            potential, stacked_basis_as_fundamental_position_basis(potential["basis"])
+            potential, tuple_basis_as_fundamental(potential["basis"])
         )
         expected = convert_operator_to_basis(
             {
@@ -464,7 +460,7 @@ class HamiltonianBuilderTest(unittest.TestCase):
         np.testing.assert_almost_equal(expected[:50], eigenstates["eigenvalue"][:50])
 
         in_basis = convert_potential_to_basis(
-            potential, stacked_basis_as_fundamental_momentum_basis(potential["basis"])
+            potential, stacked_basis_as_transformed_basis(potential["basis"])
         )
         hamiltonian2 = momentum_basis.total_surface_hamiltonian(
             in_basis, mass, np.array([0])
@@ -479,7 +475,7 @@ class HamiltonianBuilderTest(unittest.TestCase):
             "data": in_basis["data"] * np.sqrt(2000 / 1000),
         }
         converted = convert_potential_to_basis(
-            extended, stacked_basis_as_fundamental_momentum_basis(extended["basis"])
+            extended, stacked_basis_as_transformed_basis(extended["basis"])
         )
         hamiltonian3 = momentum_basis.total_surface_hamiltonian(
             converted, mass, np.array([0])

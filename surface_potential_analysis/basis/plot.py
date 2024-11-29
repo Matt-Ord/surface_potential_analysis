@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -14,12 +14,12 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
     from matplotlib.lines import Line2D
 
-    from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
+    from surface_potential_analysis.basis.legacy import BasisWithLengthLike
     from surface_potential_analysis.types import SingleFlatIndexLike
 
 
 def plot_explicit_basis_states_x(
-    basis: BasisWithLengthLike[Any, Any, Any],
+    basis: BasisWithLengthLike,
     *,
     ax: Axes | None = None,
     measure: Measure = "abs",
@@ -43,7 +43,7 @@ def plot_explicit_basis_states_x(
 
 
 def plot_explicit_basis_state_x(
-    basis: BasisWithLengthLike[Any, Any, Any],
+    basis: BasisWithLengthLike,
     idx: SingleFlatIndexLike = 0,
     *,
     ax: Axes | None = None,

@@ -6,7 +6,7 @@
 	"image": "mcr.microsoft.com/devcontainers/base:bullseye",
 	"features": {
 		"ghcr.io/devcontainers/features/python:1": {
-			"version": "3.11"
+			"version": "3.13"
 		},
 		"ghcr.io/devcontainers-contrib/features/poetry:2": {
 			"version": "latest"
@@ -40,7 +40,12 @@
 				"python.analysis.diagnosticMode": "workspace",
 				"python.analysis.typeCheckingMode": "strict",
 				"python.analysis.include": [
-					"surface_potential_analysis"
+					"surface_potential_analysis",
+					"lib/slate/slate"
+				],
+				"python.analysis.extraPaths": [
+					"lib/slate",
+					"lib/sse_solver/sse_solver_py"
 				],
 				"python.analysis.autoImportCompletions": true,
 				"cSpell.allowCompoundWords": true,

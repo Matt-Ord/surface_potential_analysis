@@ -1,19 +1,25 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Generic, TypedDict, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generic,
+    Self,
+    TypedDict,
+    TypeVar,
+    cast,
+    override,
+)
 
 import numpy as np
+from slate.array.array import SlateArray
+from slate.basis._basis import Basis
+from slate.basis.stacked import VariadicTupleBasis
+from slate.metadata._metadata import BasisMetadata
+from slate.metadata.stacked import StackedMetadata
 
-from surface_potential_analysis.basis.basis_like import (
-    BasisLike,
-)
-from surface_potential_analysis.basis.stacked_basis import (
-    TupleBasis,
-    TupleBasisLike,
-)
-from surface_potential_analysis.basis.util import (
-    BasisUtil,
-)
+from surface_potential_analysis.basis.legacy import BasisLike, TupleBasisLike
 from surface_potential_analysis.state_vector.conversion import (
     convert_state_vector_to_basis,
 )
@@ -25,48 +31,66 @@ if TYPE_CHECKING:
     from surface_potential_analysis.state_vector.eigenstate_list import (
         Eigenstate,
     )
-    from surface_potential_analysis.state_vector.state_vector import StateVector
+    from surface_potential_analysis.state_vector.state_vector import LegacyStateVector
     from surface_potential_analysis.types import SingleFlatIndexLike
 
-_B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-_B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
-_B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
+_B0 = TypeVar("_B0", bound=BasisLike)
+_B1 = TypeVar("_B1", bound=BasisLike)
+_B2 = TypeVar("_B2", bound=BasisLike)
 
 
-_B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
-_B1_co = TypeVar("_B1_co", bound=BasisLike[Any, Any], covariant=True)
+_B0_co = TypeVar("_B0_co", bound=BasisLike, covariant=True)
+_B1_co = TypeVar("_B1_co", bound=BasisLike, covariant=True)
 
 _SB0Inv = TypeVar("_SB0Inv", bound=TupleBasisLike[*tuple[Any, ...]])
 _SB1Inv = TypeVar("_SB1Inv", bound=TupleBasisLike[*tuple[Any, ...]])
 
 
-class Operator(TypedDict, Generic[_B0_co, _B1_co]):
+class Operator[DT: np.generic, B: Basis[StackedMetadata[BasisMetadata, Any], Any]](
+    SlateArray[DT, B]
+):
+    @override
+    def with_basis[B1: Basis[Any, Any]](  # B1: B
+        self: Self, basis: B1
+    ) -> Operator[DT, B1]:
+        """Get the Operator with the basis set to basis."""
+        return Operator(basis, self.basis.__convert_vector_into__(self.raw_data, basis))
+
+    def __add__[_DT: np.number[Any], M: StackedMetadata[BasisMetadata, Any]](
+        self: Operator[_DT, Basis[M, Any]], other: Operator[_DT, Basis[M, Any]]
+    ) -> Operator[_DT, Basis[M, Any]]:
+        res = self.raw_data + other.with_basis(self.basis).raw_data
+        data = cast(np.ndarray[Any, np.dtype[_DT]], res)
+        return Operator[_DT, Basis[M, Any]](self.basis, data)
+
+
+class LegacyOperator(TypedDict, Generic[_B0_co, _B1_co]):
     """Represents an operator in the given basis."""
 
-    basis: TupleBasisLike[_B0_co, _B1_co]
+    basis: VariadicTupleBasis[_B0_co, _B1_co, Any, np.complex128]
     # We need higher kinded types, and const generics to do this properly
     data: np.ndarray[tuple[int], np.dtype[np.complex128]]
 
 
-SingleBasisOperator = Operator[_B0_co, _B0_co]
+SingleBasisOperator = LegacyOperator[_B0_co, _B0_co]
 """Represents an operator where both vector and dual vector uses the same basis"""
 
 
-class DiagonalOperator(TypedDict, Generic[_B0_co, _B1_co]):
+class LegacyDiagonalOperator(TypedDict, Generic[_B0_co, _B1_co]):
     """Represents an operator in the given basis."""
 
-    basis: TupleBasisLike[_B0_co, _B1_co]
+    basis: VariadicTupleBasis[_B0_co, _B1_co, Any, np.complex128]
     """Basis of the lhs (first index in array)"""
     data: np.ndarray[tuple[int], np.dtype[np.complex128]]
 
 
-class StatisticalDiagonalOperator(DiagonalOperator[_B0_co, _B1_co]):
+class StatisticalDiagonalOperator(LegacyDiagonalOperator[_B0_co, _B1_co]):
     """Represents a statistical operator in the given basis."""
 
     standard_deviation: np.ndarray[tuple[int], np.dtype[np.float64]]
 
 
-def as_operator(operator: DiagonalOperator[_B0, _B1]) -> Operator[_B0, _B1]:
+def as_operator(operator: LegacyDiagonalOperator[_B0, _B1]) -> LegacyOperator[_B0, _B1]:
     """
     Convert a diagonal operator into an operator.
 
@@ -81,7 +105,9 @@ def as_operator(operator: DiagonalOperator[_B0, _B1]) -> Operator[_B0, _B1]:
     return {"basis": operator["basis"], "data": np.diag(operator["data"])}
 
 
-def as_diagonal_operator(operator: Operator[_B0, _B1]) -> DiagonalOperator[_B0, _B1]:
+def as_diagonal_operator(
+    operator: LegacyOperator[_B0, _B1],
+) -> LegacyDiagonalOperator[_B0, _B1]:
     """
     Convert an operator into a diagonal operator.
 
@@ -98,8 +124,8 @@ def as_diagonal_operator(operator: Operator[_B0, _B1]) -> DiagonalOperator[_B0, 
 
 
 def sum_diagonal_operator_over_axes(
-    operator: DiagonalOperator[_SB0Inv, _SB1Inv], axes: tuple[int, ...]
-) -> DiagonalOperator[Any, Any]:
+    operator: LegacyDiagonalOperator[_SB0Inv, _SB1Inv], axes: tuple[int, ...]
+) -> LegacyDiagonalOperator[Any, Any]:
     """
     given a diagonal operator, sum the states over axes.
 
@@ -112,23 +138,25 @@ def sum_diagonal_operator_over_axes(
     -------
     DiagonalOperator[Any, Any]
     """
-    BasisUtil(operator["basis"])
     traced_basis = tuple(
         b for (i, b) in enumerate(operator["basis"][0]) if i not in axes
     )
     return {
-        "basis": TupleBasis(TupleBasis(*traced_basis), TupleBasis(*traced_basis)),
+        "basis": VariadicTupleBasis(
+            (VariadicTupleBasis((traced_basis), None), None),
+            VariadicTupleBasis((traced_basis), None),
+        ),
         "data": np.sum(
             operator["data"].reshape(operator["basis"][0].shape), axis=axes
         ).reshape(-1),
     }
 
 
-SingleBasisDiagonalOperator = DiagonalOperator[_B0, _B0]
+SingleBasisDiagonalOperator = LegacyDiagonalOperator[_B0, _B0]
 
 
 def get_eigenvalue(
-    eigenvalue_list: SingleBasisDiagonalOperator[BasisLike[Any, Any]],
+    eigenvalue_list: SingleBasisDiagonalOperator[BasisLike],
     idx: SingleFlatIndexLike,
 ) -> np.complex128:
     """
@@ -167,10 +195,12 @@ def average_eigenvalues(
     -------
     EigenvalueList[Any]
     """
-    axis = tuple(range(eigenvalues["basis"].ndim)) if axis is None else axis
+    axis = tuple(range(eigenvalues["basis"].n_dim)) if axis is None else axis
     basis = tuple(b for (i, b) in enumerate(eigenvalues["basis"][0]) if i not in axis)
     return {
-        "basis": TupleBasis(TupleBasis(*basis), TupleBasis(*basis)),
+        "basis": VariadicTupleBasis(
+            (VariadicTupleBasis((basis), None), None), VariadicTupleBasis((basis), None)
+        ),
         "data": np.average(
             eigenvalues["data"].reshape(*eigenvalues["basis"][0].shape),
             axis=tuple(ax for ax in axis),
@@ -200,18 +230,21 @@ def average_eigenvalues_list(
     -------
     EigenvalueList[Any]
     """
-    axis = tuple(range(eigenvalues["basis"].ndim)) if axis is None else axis
+    axis = tuple(range(eigenvalues["basis"].n_dim)) if axis is None else axis
     basis = tuple(
         b for (i, b) in enumerate(eigenvalues["basis"][1][0]) if i not in axis
     )
     return {
         "basis": TupleBasis(
             eigenvalues["basis"][0],
-            TupleBasis(TupleBasis(*basis), TupleBasis(*basis)),
+            VariadicTupleBasis(
+                (VariadicTupleBasis((basis), None), None),
+                VariadicTupleBasis((basis), None),
+            ),
         ),
         "data": np.average(
             eigenvalues["data"].reshape(
-                eigenvalues["basis"][0].n, *eigenvalues["basis"][1][0].shape
+                eigenvalues["basis"][0].size, *eigenvalues["basis"][1][0].shape
             ),
             axis=tuple(1 + ax for ax in axis),
             weights=weights,
@@ -236,17 +269,22 @@ def apply_function_to_operator(
 
 
 def matmul_operator(
-    lhs: Operator[_B0, _B1], rhs: Operator[_B1, _B2]
-) -> Operator[_B0, _B2]:
+    lhs: LegacyOperator[_B0, _B1], rhs: LegacyOperator[_B1, _B2]
+) -> LegacyOperator[_B0, _B2]:
     data = np.tensordot(
         lhs["data"].reshape(lhs["basis"].shape),
         rhs["data"].reshape(rhs["basis"].shape),
         axes=(1, 0),
     )
-    return {"basis": TupleBasis(lhs["basis"][0], rhs["basis"][1]), "data": data}
+    return {
+        "basis": VariadicTupleBasis((lhs["basis"][0], rhs["basis"][1]), None),
+        "data": data,
+    }
 
 
-def add_operator(a: Operator[_B0, _B1], b: Operator[_B0, _B1]) -> Operator[_B0, _B1]:
+def add_legacy_operator(
+    a: LegacyOperator[_B0, _B1], b: LegacyOperator[_B0, _B1]
+) -> LegacyOperator[_B0, _B1]:
     """
     Add together two operators.
 
@@ -263,8 +301,8 @@ def add_operator(a: Operator[_B0, _B1], b: Operator[_B0, _B1]) -> Operator[_B0, 
 
 
 def subtract_operator(
-    a: Operator[_B0, _B1], b: Operator[_B0, _B1]
-) -> Operator[_B0, _B1]:
+    a: LegacyOperator[_B0, _B1], b: LegacyOperator[_B0, _B1]
+) -> LegacyOperator[_B0, _B1]:
     """
     Subtract two operators (a-b).
 
@@ -281,7 +319,7 @@ def subtract_operator(
 
 
 def apply_operator_to_state(
-    lhs: Operator[_B0, _B1], state: StateVector[_B2]
+    lhs: LegacyOperator[_B0, _B1], state: LegacyStateVector[_B2]
 ) -> Eigenstate[_B0]:
     """
     Add together two operators.

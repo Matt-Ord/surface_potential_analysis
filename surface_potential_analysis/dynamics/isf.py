@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 import numpy as np
 import scipy.optimize  # type: ignore lib
 
-from surface_potential_analysis.basis.basis import FundamentalPositionBasis
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
-from surface_potential_analysis.basis.time_basis_like import (
+from surface_potential_analysis.basis.legacy import (
     BasisWithTimeLike,
     ExplicitTimeBasis,
+    FundamentalPositionBasis,
+    TupleBasis,
 )
 from surface_potential_analysis.stacked_basis.util import (
     BasisUtil,
@@ -19,7 +19,7 @@ from surface_potential_analysis.stacked_basis.util import (
 from surface_potential_analysis.util.util import Measure, get_measured_data
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis_like import BasisLike
+    from surface_potential_analysis.basis.legacy import BasisLike
     from surface_potential_analysis.dynamics.tunnelling_basis import (
         TunnellingSimulationBandsBasis,
         TunnellingSimulationBasis,
@@ -35,11 +35,11 @@ if TYPE_CHECKING:
     from surface_potential_analysis.types import FloatLike_co
 
     _AX2Inv = TypeVar("_AX2Inv", bound=TunnellingSimulationBandsBasis[Any])
-    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
+    _B0 = TypeVar("_B0", bound=BasisLike)
     _B1Inv = TypeVar("_B1Inv", bound=TunnellingSimulationBasis[Any, Any, Any])
     _S0Inv = TypeVar("_S0Inv", bound=tuple[int, ...])
 
-    _BT0 = TypeVar("_BT0", bound=BasisWithTimeLike[Any, Any])
+    _BT0 = TypeVar("_BT0", bound=BasisWithTimeLike)
     _L0Inv = TypeVar("_L0Inv", bound=int)
 
 
@@ -109,7 +109,9 @@ def calculate_isf_approximate_locations(
     )
     return {
         "data": eigenvalues.astype(np.complex128),
-        "basis": TupleBasis(final_occupation["basis"][0], final_occupation["basis"][0]),
+        "basis": VariadicTupleBasis(
+            (final_occupation["basis"][0], final_occupation["basis"][0]), None
+        ),
     }
 
 
@@ -140,7 +142,9 @@ def get_isf_from_4_variable_fit(
     EigenvalueList[_L0Inv]
     """
     return {
-        "basis": TupleBasis(ExplicitTimeBasis(times), ExplicitTimeBasis(times)),
+        "basis": VariadicTupleBasis(
+            (ExplicitTimeBasis(times), None), ExplicitTimeBasis(times)
+        ),
         "data": np.asarray(
             fit.fast_amplitude * np.exp(-fit.fast_rate * times)
             + fit.slow_amplitude * np.exp(-fit.slow_rate * times)
@@ -310,7 +314,9 @@ def get_isf_from_fey_4_variable_model_110(
     EigenvalueList[_L0Inv]
     """
     return {
-        "basis": TupleBasis(ExplicitTimeBasis(times), ExplicitTimeBasis(times)),
+        "basis": VariadicTupleBasis(
+            (ExplicitTimeBasis(times), None), ExplicitTimeBasis(times)
+        ),
         "data": calculate_isf_fey_4_variable_model_110(
             times,
             fit.fast_rate,
@@ -540,7 +546,9 @@ def get_isf_from_fey_model_fit_110(
     EigenvalueList[_L0Inv]
     """
     return {
-        "basis": TupleBasis(ExplicitTimeBasis(times), ExplicitTimeBasis(times)),
+        "basis": VariadicTupleBasis(
+            (ExplicitTimeBasis(times), None), ExplicitTimeBasis(times)
+        ),
         "data": calculate_isf_fey_model_110(
             times, fit.fast_rate, fit.slow_rate, a_dk=fit.a_dk
         ).astype(np.complex128),
@@ -563,7 +571,9 @@ def get_isf_from_fey_model_fit_112bar(
     EigenvalueList[_L0Inv]
     """
     return {
-        "basis": TupleBasis(ExplicitTimeBasis(times), ExplicitTimeBasis(times)),
+        "basis": VariadicTupleBasis(
+            (ExplicitTimeBasis(times), None), ExplicitTimeBasis(times)
+        ),
         "data": calculate_isf_fey_model_112bar(
             times, fit.fast_rate, fit.slow_rate, a_dk=fit.a_dk
         ).astype(np.complex128),

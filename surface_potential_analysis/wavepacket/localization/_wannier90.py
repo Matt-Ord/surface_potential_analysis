@@ -20,14 +20,9 @@ from typing import (
 import numpy as np
 import scipy.ndimage  # type:ignore lib
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
+    BasisLike,
     FundamentalBasis,
-)
-from surface_potential_analysis.basis.basis_like import BasisLike
-from surface_potential_analysis.basis.conversion import (
-    basis_as_fundamental_momentum_basis,
-)
-from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisLike,
     StackedBasisWithVolumeLike,
     TupleBasis,
@@ -41,11 +36,11 @@ from surface_potential_analysis.state_vector.conversion import (
     convert_state_vector_list_to_basis,
 )
 from surface_potential_analysis.state_vector.state_vector import (
-    as_dual_vector,
-    calculate_inner_product,
+    as_legacy_dual_vector,
+    legacy_calculate_inner_product,
 )
 from surface_potential_analysis.state_vector.state_vector_list import (
-    StateVectorList,
+    LegacyStateVectorList,
 )
 from surface_potential_analysis.types import ArrayFlatIndexLike, FlatIndexLike
 from surface_potential_analysis.wavepacket.get_eigenstate import (
@@ -67,30 +62,30 @@ from ._projection import (
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis import (
+    from surface_potential_analysis.basis.legacy import (
         FundamentalTransformedPositionBasis,
     )
-    from surface_potential_analysis.state_vector.state_vector import StateVector
+    from surface_potential_analysis.state_vector.state_vector import LegacyStateVector
     from surface_potential_analysis.wavepacket.localization_operator import (
         LocalizationOperator,
     )
 
     _SBL0 = TypeVar(
         "_SBL0",
-        bound=StackedBasisWithVolumeLike[Any, Any, Any],
+        bound=StackedBasisWithVolumeLike,
     )
     _PB1Inv = TypeVar(
         "_PB1Inv",
-        bound=FundamentalTransformedPositionBasis[Any, Any],
+        bound=FundamentalTransformedPositionBasis,
     )
     _FB0 = TypeVar("_FB0", bound=FundamentalBasis[Any])
 
-    _SB0 = TypeVar("_SB0", bound=StackedBasisLike[Any, Any, Any])
+    _SB0 = TypeVar("_SB0", bound=StackedBasisLike)
 
-    _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
+    _B2 = TypeVar("_B2", bound=BasisLike)
 
-_B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-_B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
+_B0 = TypeVar("_B0", bound=BasisLike)
+_B1 = TypeVar("_B1", bound=BasisLike)
 Ts = TypeVarTuple("Ts")
 SymmetryOp = Callable[
     [ArrayFlatIndexLike[*Ts], tuple[int, ...]], ArrayFlatIndexLike[*Ts]
@@ -103,7 +98,7 @@ class ProjectionsBasis(TypedDict, Generic[_B0]):
 
 @dataclass
 class Wannier90Options(Generic[_B0]):
-    projection: ProjectionsBasis[_B0] | StateVectorList[_B0, Any]
+    projection: ProjectionsBasis[_B0] | LegacyStateVectorList[_B0, Any]
     num_iter: int = 10000
     convergence_window: int = 3
     convergence_tolerance: float = 1e-10
@@ -128,9 +123,9 @@ end unit_cell_cart"""
 
 # ! cSpell:disable
 def _build_k_points_block(
-    list_basis: StackedBasisLike[Any, Any, Any],
+    list_basis: StackedBasisLike,
 ) -> str:
-    n_dim = list_basis.ndim
+    n_dim = list_basis.n_dim
     fractions = get_wavepacket_sample_fractions(list_basis)
     fractions_padded = np.zeros((3, fractions.shape[1]))
     fractions_padded[:n_dim] = fractions
@@ -184,8 +179,8 @@ search_shells = 500
 
 
 def _get_offset_bloch_state(
-    state: StateVector[_SB0], offset: tuple[int, ...]
-) -> StateVector[_SB0]:
+    state: LegacyStateVector[_SB0], offset: tuple[int, ...]
+) -> LegacyStateVector[_SB0]:
     """
     Get the bloch state corresponding to the bloch k offset by 'offset'.
 
@@ -205,7 +200,7 @@ def _get_offset_bloch_state(
     """
     # Note: requires state in k basis
     padded_shape = np.ones(3, dtype=np.int_)
-    padded_shape[: state["basis"].ndim] = state["basis"].shape
+    padded_shape[: state["basis"].n_dim] = state["basis"].shape
     vector = np.roll(
         (state["data"]).reshape(padded_shape),
         tuple(-o for o in offset),
@@ -250,12 +245,12 @@ def _build_mmn_file_block(
 
     for wavepacket_n in wavepacket_list_into_iter(wavepackets):
         for wavepacket_m in wavepacket_list_into_iter(wavepackets):
-            mat = calculate_inner_product(
+            mat = legacy_calculate_inner_product(
                 _get_offset_bloch_state(
                     get_bloch_state_vector(wavepacket_n, k_1 - 1),
                     tuple(offset),
                 ),
-                as_dual_vector(get_bloch_state_vector(wavepacket_m, k_0 - 1)),
+                as_legacy_dual_vector(get_bloch_state_vector(wavepacket_m, k_0 - 1)),
             )
             block += f"\n{np.real(mat)!r} {np.imag(mat)!r}"
     return block
@@ -319,9 +314,9 @@ def _build_amn_file(
         TupleBasisLike[*tuple[Any, ...]],
         TupleBasisWithLengthLike[*tuple[_PB1Inv, ...]],
     ],
-    projections: StateVectorList[_B1, _B2],
+    projections: LegacyStateVectorList[_B1, _B2],
 ) -> str:
-    n_projections = projections["basis"][0].n
+    n_projections = projections["basis"][0].size
     n_wavefunctions = wavepackets["basis"][0][0].n
     n_k_points = wavepackets["basis"][0][1].n
     coefficients = np.array(
@@ -453,7 +448,8 @@ def _get_localization_operator_from_u_mat_file(
     )
     return {
         "basis": TupleBasis(
-            wavepackets_basis[1], TupleBasis(projection_basis, wavepackets_basis[0])
+            wavepackets_basis[1],
+            VariadicTupleBasis((projection_basis, wavepackets_basis[0]), None),
         ),
         "data": np.moveaxis(a, -1, 0).reshape(-1),
     }
@@ -486,7 +482,7 @@ def _write_localization_files_wannier90(
         wavepackets,
         TupleBasis(
             *tuple(
-                basis_as_fundamental_momentum_basis(axis)
+                basis_as_transformed_basis(axis)
                 if idx not in options.ignore_axes
                 else axis
                 for (idx, axis) in enumerate(wavepackets["basis"][1])
@@ -498,7 +494,7 @@ def _write_localization_files_wannier90(
     with mmn_filename.open("w") as f:
         f.write(_build_mmn_file(converted, n_nkp_file, options=options))
     if options.projection.get("data", None) is not None:
-        projection = cast(StateVectorList[_B1, Any], options.projection)
+        projection = cast(LegacyStateVectorList[_B1, Any], options.projection)
         amn_filename = tmp_dir_path / "spa.amn"
         with amn_filename.open("w") as f:
             f.write(_build_amn_file(converted, projection))
@@ -574,7 +570,7 @@ def get_localization_operator_wannier90(
     wavefunctions: BlochWavefunctionListList[_B0, _SB0, _SBL0],
     *,
     options: None = None,
-) -> LocalizationOperator[_SB0, FundamentalBasis[int], _B0]:
+) -> LocalizationOperator[_SB0, FundamentalBasis[BasisMetadata], _B0]:
     ...
 
 
@@ -604,7 +600,7 @@ def get_localization_operator_wannier90(
         Localized wavepackets, with each wavepacket corresponding to a different projection
     """
     options = (
-        Wannier90Options[FundamentalBasis[int]](
+        Wannier90Options[FundamentalBasis[BasisMetadata]](
             projection={
                 "basis": TupleBasis(
                     FundamentalBasis(wavefunctions["basis"][0][0].n),
@@ -683,8 +679,8 @@ def localize_wavepacket_wannier90(
 def get_localization_operator_wannier90_individual_bands(
     wavepackets: BlochWavefunctionListList[_B0, _SB0, _SBL0],
 ) -> LocalizationOperator[_SB0, _B0, _B0]:
-    options = Wannier90Options[FundamentalBasis[int]](
-        projection={"basis": TupleBasis(FundamentalBasis(1))},
+    options = Wannier90Options[FundamentalBasis[BasisMetadata]](
+        projection={"basis": VariadicTupleBasis((FundamentalBasis(1), None))},
         convergence_tolerance=1e-20,
         ignore_axes=(2,),
     )
@@ -706,7 +702,9 @@ def get_localization_operator_wannier90_individual_bands(
     return {
         "basis": TupleBasis(
             wavepackets["basis"][0][1],
-            TupleBasis(wavepackets["basis"][0][0], wavepackets["basis"][0][0]),
+            VariadicTupleBasis(
+                (wavepackets["basis"][0][0], wavepackets["basis"][0][0]), None
+            ),
         ),
         "data": out.reshape(-1),
     }

@@ -7,10 +7,9 @@ import qutip  # type: ignore lib
 import qutip.ui  # type: ignore lib
 import scipy.sparse  # type: ignore lib
 from scipy.constants import hbar  # type: ignore lib
+from slate.basis.stacked._tuple_basis import VariadicTupleBasis
+from slate.metadata._metadata import BasisMetadata
 
-from surface_potential_analysis.basis.stacked_basis import (
-    TupleBasis,
-)
 from surface_potential_analysis.state_vector.conversion import (
     convert_state_vector_to_basis,
 )
@@ -19,32 +18,38 @@ from surface_potential_analysis.state_vector.eigenstate_calculation import (
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis_like import BasisLike
-    from surface_potential_analysis.basis.time_basis_like import (
+    from slate.basis._basis import Basis
+    from slate.metadata.stacked import StackedMetadata
+
+    from surface_potential_analysis.basis.legacy import (
+        BasisLike,
         BasisWithTimeLike,
         EvenlySpacedTimeBasis,
     )
+    from surface_potential_analysis.basis.time_basis_like import TimeMetadata
     from surface_potential_analysis.operator.operator import (
+        Operator,
         SingleBasisDiagonalOperator,
         SingleBasisOperator,
     )
     from surface_potential_analysis.state_vector import (
-        StateVector,
+        LegacyStateVector,
     )
+    from surface_potential_analysis.state_vector.state_vector import StateVector
     from surface_potential_analysis.state_vector.state_vector_list import (
-        StateVectorList,
+        LegacyStateVectorList,
     )
 
-    _B0Inv = TypeVar("_B0Inv", bound=BasisLike[Any, Any])
-    _B1Inv = TypeVar("_B1Inv", bound=BasisLike[Any, Any])
-    _BT0 = TypeVar("_BT0", bound=BasisWithTimeLike[Any, Any])
+    _B0Inv = TypeVar("_B0Inv", bound=BasisLike)
+    _B1Inv = TypeVar("_B1Inv", bound=BasisLike)
+    _BT0 = TypeVar("_BT0", bound=BasisWithTimeLike)
 
-    _BT1 = TypeVar("_BT1", bound=EvenlySpacedTimeBasis[Any, Any, Any])
+    _BT1 = TypeVar("_BT1", bound=EvenlySpacedTimeBasis)
 
 
 def get_state_vector_decomposition(
-    initial_state: StateVector[_B0Inv],
-    eigenstates: StateVectorList[_B1Inv, _B0Inv],
+    initial_state: LegacyStateVector[_B0Inv],
+    eigenstates: LegacyStateVectorList[_B1Inv, _B0Inv],
 ) -> SingleBasisDiagonalOperator[_B1Inv]:
     """
     Given a state and a set of TunnellingEigenstates decompose the state into the eigenstates.
@@ -62,7 +67,9 @@ def get_state_vector_decomposition(
         A list of coefficients for each vector such that a[i] eigenstates["data"][i,:] = vector[:]
     """
     return {
-        "basis": TupleBasis(eigenstates["basis"][0], eigenstates["basis"][0]),
+        "basis": VariadicTupleBasis(
+            (eigenstates["basis"][0], eigenstates["basis"][0]), None
+        ),
         "data": np.tensordot(
             np.conj(eigenstates["data"]).reshape(eigenstates["basis"].shape),
             initial_state["data"],
@@ -80,10 +87,10 @@ def get_state_vector_decomposition(
 
 
 def solve_schrodinger_equation_decomposition(
-    initial_state: StateVector[_B0Inv],
+    initial_state: LegacyStateVector[_B0Inv],
     times: _BT0,
     hamiltonian: SingleBasisOperator[_B0Inv],
-) -> StateVectorList[_BT0, _B0Inv]:
+) -> LegacyStateVectorList[_BT0, _B0Inv]:
     """
     Given an initial state, use the stochastic schrodinger equation to solve the dynamics of the system.
 
@@ -121,14 +128,17 @@ def solve_schrodinger_equation_decomposition(
     vectors = np.tensordot(
         constants, eigenstates["data"].reshape(eigenstates["basis"].shape), axes=(1, 0)
     )
-    return {"basis": TupleBasis(times, eigenstates["basis"][1]), "data": vectors}
+    return {
+        "basis": VariadicTupleBasis((times, eigenstates["basis"][1]), None),
+        "data": vectors,
+    }
 
 
 def solve_schrodinger_equation_diagonal(
-    initial_state: StateVector[_B1Inv],
+    initial_state: LegacyStateVector[_B1Inv],
     times: _BT0,
     hamiltonian: SingleBasisDiagonalOperator[_B0Inv],
-) -> StateVectorList[_BT0, _B0Inv]:
+) -> LegacyStateVectorList[_BT0, _B0Inv]:
     """
     Given an initial state, use the schrodinger equation to solve the dynamics of the system.
 
@@ -149,14 +159,20 @@ def solve_schrodinger_equation_diagonal(
     data = converted_state["data"][np.newaxis, :] * np.exp(
         -1j * (hamiltonian["data"][np.newaxis, :]) * times.times[:, np.newaxis] / hbar
     )
-    return {"basis": TupleBasis(times, hamiltonian["basis"][0]), "data": data}
+    return {
+        "basis": VariadicTupleBasis((times, hamiltonian["basis"][0]), None),
+        "data": data,
+    }
 
 
-def solve_schrodinger_equation(
-    initial_state: StateVector[_B0Inv],
-    times: _BT1,
-    hamiltonian: SingleBasisOperator[_B0Inv],
-) -> StateVectorList[_BT1, _B0Inv]:
+def solve_schrodinger_equation[
+    M: BasisMetadata,
+    TB: Basis[TimeMetadata, np.complex128],
+](
+    initial_state: StateVector[Basis[M, np.complex128]],
+    times: TB,
+    hamiltonian: Operator[np.generic, Basis[StackedMetadata[M, Any], np.complex128]],
+) -> LegacyStateVectorList[TB, Basis[M, np.complex128]]:
     """Solve the schrodinger equation using qutip.
 
     Args:
@@ -184,7 +200,7 @@ def solve_schrodinger_equation(
         },
     )
     return {
-        "basis": TupleBasis(times, hamiltonian["basis"][0]),
+        "basis": VariadicTupleBasis((times, hamiltonian["basis"][0]), None),
         "data": np.array(
             np.asarray([state.full().reshape(-1) for state in result.states]),  # type: ignore lib
             dtype=np.complex128,

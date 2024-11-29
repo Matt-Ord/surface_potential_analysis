@@ -5,13 +5,11 @@ from typing import TYPE_CHECKING, Any, TypeVar
 import numpy as np
 import scipy.linalg  # type:ignore lib
 
-from surface_potential_analysis.basis.basis import FundamentalBasis
-from surface_potential_analysis.basis.basis_like import BasisLike
-from surface_potential_analysis.basis.explicit_basis import (
+from surface_potential_analysis.basis.legacy import (
+    BasisLike,
     ExplicitBasis,
     ExplicitStackedBasisWithLength,
-)
-from surface_potential_analysis.basis.stacked_basis import (
+    FundamentalBasis,
     StackedBasisWithVolumeLike,
     TupleBasis,
 )
@@ -23,7 +21,7 @@ from surface_potential_analysis.util.decorators import timed
 
 if TYPE_CHECKING:
     from surface_potential_analysis.operator.operator import (
-        Operator,
+        LegacyOperator,
         SingleBasisDiagonalOperator,
         SingleBasisOperator,
     )
@@ -32,26 +30,26 @@ if TYPE_CHECKING:
         ValueList,
     )
     from surface_potential_analysis.state_vector.state_vector_list import (
-        StateVectorList,
+        LegacyStateVectorList,
     )
     from surface_potential_analysis.types import IntLike_co
 
     from .state_vector import (
-        StateDualVector,
-        StateVector,
+        LegacyStateDualVector,
+        LegacyStateVector,
     )
 
-_B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-_B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
-_B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
-_B3 = TypeVar("_B3", bound=BasisLike[Any, Any])
+_B0 = TypeVar("_B0", bound=BasisLike)
+_B1 = TypeVar("_B1", bound=BasisLike)
+_B2 = TypeVar("_B2", bound=BasisLike)
+_B3 = TypeVar("_B3", bound=BasisLike)
 
 
 @timed
 def calculate_eigenvectors_hermitian(
     operator: SingleBasisOperator[_B0],
     subset_by_index: tuple[IntLike_co, IntLike_co] | None = None,
-) -> EigenstateList[FundamentalBasis[int], _B0]:
+) -> EigenstateList[FundamentalBasis[BasisMetadata], _B0]:
     """Get a list of eigenstates for a given operator, assuming it is hermitian."""
     eigenvalues, vectors = scipy.linalg.eigh(  # type:ignore lib
         operator["data"].reshape(operator["basis"].shape),
@@ -69,13 +67,15 @@ def calculate_eigenvectors_hermitian(
 
 def calculate_eigenvectors(
     operator: SingleBasisOperator[_B0],
-) -> EigenstateList[FundamentalBasis[int], _B0]:
+) -> EigenstateList[FundamentalBasis[BasisMetadata], _B0]:
     """Get a list of eigenstates for a given operator, assuming it is hermitian."""
     eigenvalues, vectors = np.linalg.eig(
         operator["data"].reshape(operator["basis"].shape),
     )
     return {
-        "basis": TupleBasis(FundamentalBasis(eigenvalues.size), operator["basis"][0]),
+        "basis": VariadicTupleBasis(
+            (FundamentalBasis(eigenvalues.size), None), operator["basis"][0]
+        ),
         "data": np.transpose(vectors).reshape(-1),
         "eigenvalue": eigenvalues,
     }
@@ -94,13 +94,13 @@ def operator_from_eigenstates(
     )
 
     return {
-        "basis": TupleBasis(states["basis"][1], states["basis"][1]),
+        "basis": VariadicTupleBasis((states["basis"][1], states["basis"][1]), None),
         "data": data.ravel(),
     }
 
 
 def calculate_expectation_diagonal(
-    operator: SingleBasisDiagonalOperator[_B0], state: StateVector[_B2]
+    operator: SingleBasisDiagonalOperator[_B0], state: LegacyStateVector[_B2]
 ) -> complex:
     """
     Calculate the energy of the given eigenvector.
@@ -126,7 +126,7 @@ def calculate_expectation_diagonal(
 
 
 def calculate_expectation(
-    operator: Operator[_B0, _B1], state: StateVector[_B2]
+    operator: LegacyOperator[_B0, _B1], state: LegacyStateVector[_B2]
 ) -> complex:
     """
     Calculate the energy of the given eigenvector.
@@ -142,7 +142,7 @@ def calculate_expectation(
         The energy of the Eigenvector given Hamiltonian
     """
     converted = convert_operator_to_basis(
-        operator, TupleBasis(state["basis"], state["basis"])
+        operator, VariadicTupleBasis((state["basis"], state["basis"]), None)
     )
 
     return np.einsum(  # type:ignore lib
@@ -154,8 +154,8 @@ def calculate_expectation(
 
 
 def calculate_expectation_list(
-    operator: Operator[_B0, _B3],
-    states: StateVectorList[_B1, _B2],
+    operator: LegacyOperator[_B0, _B3],
+    states: LegacyStateVectorList[_B1, _B2],
 ) -> ValueList[_B1]:
     """
     Calculate the energy of the given eigenvector.
@@ -171,7 +171,7 @@ def calculate_expectation_list(
         The energy of the Eigenvector given Hamiltonian
     """
     converted = convert_operator_to_basis(
-        operator, TupleBasis(states["basis"][1], states["basis"][1])
+        operator, VariadicTupleBasis((states["basis"][1], states["basis"][1]), None)
     )
     data = np.einsum(  # type:ignore lib
         "ij,jk,ik->i",
@@ -183,9 +183,9 @@ def calculate_expectation_list(
 
 
 def calculate_operator_inner_product(
-    dual_vector: StateDualVector[_B0],
-    operator: Operator[_B0, _B1],
-    vector: StateVector[_B1],
+    dual_vector: LegacyStateDualVector[_B0],
+    operator: LegacyOperator[_B0, _B1],
+    vector: LegacyStateVector[_B1],
 ) -> complex:
     """
     Calculate the energy of the given eigenvector.
@@ -230,13 +230,13 @@ def get_eigenstate_basis_from_hamiltonian(
     return ExplicitBasis[Any, Any].from_state_vectors(eigenvectors)
 
 
-_SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+_SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike)
 
 
 def get_eigenstate_basis_stacked_from_hamiltonian(
     hamiltonian: SingleBasisOperator[_SB0],
     subset_by_index: tuple[IntLike_co, IntLike_co] | None = None,
-) -> ExplicitStackedBasisWithLength[FundamentalBasis[int], _SB0]:
+) -> ExplicitStackedBasisWithLength[FundamentalBasis[BasisMetadata], _SB0]:
     """
     Given a hamiltonian, get the basis of the eigenstates given by subset_by_index.
 

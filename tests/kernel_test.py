@@ -4,10 +4,10 @@ import unittest
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
     FundamentalBasis,
+    StackedBasis,
 )
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
 from surface_potential_analysis.kernel.kernel import (
     DiagonalNoiseKernel,
     NoiseKernel,
@@ -35,10 +35,10 @@ class KernelTest(unittest.TestCase):
 
         basis = FundamentalBasis(n)
         kernel: NoiseKernel[
-            FundamentalBasis[int],
-            FundamentalBasis[int],
-            FundamentalBasis[int],
-            FundamentalBasis[int],
+            FundamentalBasis[BasisMetadata],
+            FundamentalBasis[BasisMetadata],
+            FundamentalBasis[BasisMetadata],
+            FundamentalBasis[BasisMetadata],
         ] = {
             "basis": StackedBasis(
                 StackedBasis(basis, basis), StackedBasis(basis, basis)
@@ -65,10 +65,10 @@ class KernelTest(unittest.TestCase):
 
         basis = FundamentalBasis(n)
         kernel: NoiseKernel[
-            FundamentalBasis[int],
-            FundamentalBasis[int],
-            FundamentalBasis[int],
-            FundamentalBasis[int],
+            FundamentalBasis[BasisMetadata],
+            FundamentalBasis[BasisMetadata],
+            FundamentalBasis[BasisMetadata],
+            FundamentalBasis[BasisMetadata],
         ] = {
             "basis": StackedBasis(
                 StackedBasis(basis, basis), StackedBasis(basis, basis)
@@ -96,10 +96,10 @@ class KernelTest(unittest.TestCase):
 
         basis = FundamentalBasis(n)
         kernel: DiagonalNoiseKernel[
-            FundamentalBasis[int],
-            FundamentalBasis[int],
-            FundamentalBasis[int],
-            FundamentalBasis[int],
+            FundamentalBasis[BasisMetadata],
+            FundamentalBasis[BasisMetadata],
+            FundamentalBasis[BasisMetadata],
+            FundamentalBasis[BasisMetadata],
         ] = {
             "basis": StackedBasis(
                 StackedBasis(basis, basis), StackedBasis(basis, basis)
@@ -137,10 +137,10 @@ class KernelTest(unittest.TestCase):
 
         basis = FundamentalBasis(n)
         kernel: DiagonalNoiseKernel[
-            FundamentalBasis[int],
-            FundamentalBasis[int],
-            FundamentalBasis[int],
-            FundamentalBasis[int],
+            FundamentalBasis[BasisMetadata],
+            FundamentalBasis[BasisMetadata],
+            FundamentalBasis[BasisMetadata],
+            FundamentalBasis[BasisMetadata],
         ] = {
             "basis": StackedBasis(
                 StackedBasis(basis, basis), StackedBasis(basis, basis)
@@ -169,10 +169,10 @@ class KernelTest(unittest.TestCase):
                 expected[i, i, j, j] = diagonal[i, j]
 
         diagonal_kernel: DiagonalNoiseKernel[
-            FundamentalBasis[int],
-            FundamentalBasis[int],
-            FundamentalBasis[int],
-            FundamentalBasis[int],
+            FundamentalBasis[BasisMetadata],
+            FundamentalBasis[BasisMetadata],
+            FundamentalBasis[BasisMetadata],
+            FundamentalBasis[BasisMetadata],
         ] = {
             "basis": StackedBasis(
                 StackedBasis(FundamentalBasis(n), FundamentalBasis(n)),

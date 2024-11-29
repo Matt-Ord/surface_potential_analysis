@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import FundamentalBasis
-from surface_potential_analysis.basis.stacked_basis import StackedBasis
+from surface_potential_analysis.basis.legacy import FundamentalBasis, StackedBasis
 from surface_potential_analysis.basis.util import (
     BasisUtil,
 )

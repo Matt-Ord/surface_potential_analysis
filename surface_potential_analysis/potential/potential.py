@@ -6,25 +6,28 @@ from typing import (
     Any,
     Generic,
     Literal,
+    Self,
     TypedDict,
     TypeVar,
 )
 
 import numpy as np
+from slate.basis.recast import RecastBasis
+from slate.metadata import VolumeMetadata
+from slate.metadata.stacked import StackedMetadata
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
     FundamentalBasis,
     FundamentalPositionBasis,
     FundamentalPositionBasis2d,
     FundamentalPositionBasis3d,
-)
-from surface_potential_analysis.basis.stacked_basis import (
     StackedBasisWithVolumeLike,
     TupleBasis,
     TupleBasisLike,
     TupleBasisWithLengthLike,
 )
 from surface_potential_analysis.basis.util import BasisUtil
+from surface_potential_analysis.operator.operator import Operator
 from surface_potential_analysis.util.interpolation import (
     interpolate_points_along_axis_spline,
     interpolate_points_rfftn,
@@ -33,7 +36,9 @@ from surface_potential_analysis.util.interpolation import (
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from surface_potential_analysis.basis.basis_like import (
+    from slate.basis._basis import Basis
+
+    from surface_potential_analysis.basis.legacy import (
         BasisWithLengthLike,
     )
 
@@ -46,20 +51,36 @@ _L0Inv = TypeVar("_L0Inv", bound=int)
 _L1Inv = TypeVar("_L1Inv", bound=int)
 _L2Inv = TypeVar("_L2Inv", bound=int)
 
-_SB0_co = TypeVar(
-    "_SB0_co", bound=StackedBasisWithVolumeLike[Any, Any, Any], covariant=True
-)
-_SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+_SB0_co = TypeVar("_SB0_co", bound=StackedBasisWithVolumeLike, covariant=True)
+_SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike)
 
 
-class Potential(TypedDict, Generic[_SB0_co]):
+class Potential[DT: np.generic](
+    Operator[DT, RecastBasis[StackedMetadata[VolumeMetadata, None], Any, Any]]
+):
+    def with_basis(  # type: ignore bound in upper is too loose dut to python limitation
+        self: Self, basis: RecastBasis[StackedMetadata[VolumeMetadata, None], Any, Any]
+    ) -> Potential[DT]:
+        """Get the Potential with the basis set to basis."""
+        return Potential(
+            basis, self.basis.__convert_vector_into__(self.raw_data, basis)
+        )
+
+    def as_operator(
+        self: Self,
+    ) -> Operator[DT, Basis[StackedMetadata[VolumeMetadata, None], Any]]:
+        """Get the Potential with the basis set to basis."""
+        return Operator(self.basis, self.raw_data)
+
+
+class LegacyPotential(TypedDict, Generic[_SB0_co]):
     """Represents a potential in an evenly spaced grid of points."""
 
     basis: _SB0_co
     data: np.ndarray[tuple[int], np.dtype[np.complex128]]
 
 
-def load_potential(path: Path) -> Potential[Any]:
+def load_potential(path: Path) -> LegacyPotential[Any]:
     """
     Load a potential from the npy format.
 
@@ -77,7 +98,7 @@ def load_potential(path: Path) -> Potential[Any]:
 
 def load_potential_grid_json(
     path: Path,
-) -> Potential[
+) -> LegacyPotential[
     TupleBasisWithLengthLike[
         BasisWithLengthLike[Any, Any, Literal[3]],
         BasisWithLengthLike[Any, Any, Literal[3]],
@@ -186,7 +207,7 @@ def load_uneven_potential_json(
         }
 
 
-def normalize_potential(data: Potential[_SB0]) -> Potential[_SB0]:
+def normalize_potential(data: LegacyPotential[_SB0]) -> LegacyPotential[_SB0]:
     """
     Set the minimum of the potential to 0.
 
@@ -204,12 +225,12 @@ def normalize_potential(data: Potential[_SB0]) -> Potential[_SB0]:
 
 
 def truncate_potential(
-    data: Potential[_SB0],
+    data: LegacyPotential[_SB0],
     *,
     cutoff: float = 2e-17,
     n: int = 1,
     offset: float = 2e-18,
-) -> Potential[_SB0]:
+) -> LegacyPotential[_SB0]:
     """
     Reduce the maximum energy by taking the transformation.
 
@@ -225,8 +246,12 @@ def truncate_potential(
 
 
 def undo_truncate_potential(
-    data: Potential[_SB0], *, cutoff: float = 2e-17, n: int = 1, offset: float = 2e-18
-) -> Potential[_SB0]:
+    data: LegacyPotential[_SB0],
+    *,
+    cutoff: float = 2e-17,
+    n: int = 1,
+    offset: float = 2e-18,
+) -> LegacyPotential[_SB0]:
     """Reverses truncate_potential."""
     points = cutoff * (np.exp((data["data"] + offset) / cutoff) - 1) ** (1 / n) - offset
     return {"data": points, "basis": data["basis"]}  # type: ignore[return-value]
@@ -234,7 +259,7 @@ def undo_truncate_potential(
 
 def interpolate_uneven_potential(
     data: UnevenPotential3d[int, int, int], shape: tuple[_L0Inv, _L1Inv, _L2Inv]
-) -> Potential[
+) -> LegacyPotential[
     TupleBasisWithLengthLike[
         FundamentalPositionBasis3d[_L0Inv],
         FundamentalPositionBasis3d[_L1Inv],
@@ -279,7 +304,7 @@ def interpolate_uneven_potential(
 
 def mock_even_potential(
     uneven: UnevenPotential3d[_L0Inv, _L1Inv, _L2Inv],
-) -> Potential[
+) -> LegacyPotential[
     TupleBasisWithLengthLike[
         FundamentalPositionBasis3d[_L0Inv],
         FundamentalPositionBasis3d[_L1Inv],
@@ -300,10 +325,10 @@ def mock_even_potential(
     return {
         "basis": TupleBasis(
             FundamentalPositionBasis(
-                np.array([*uneven["basis"][0].delta_x, 0]), uneven["basis"][0].n
+                np.array([*uneven["basis"][0].delta_x, 0]), uneven["basis"][0].size
             ),
             FundamentalPositionBasis(
-                np.array([*uneven["basis"][1].delta_x, 0]), uneven["basis"][1].n
+                np.array([*uneven["basis"][1].delta_x, 0]), uneven["basis"][1].size
             ),
             FundamentalPositionBasis(
                 np.array([0, 0, 1], dtype=float),

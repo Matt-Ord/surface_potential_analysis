@@ -4,7 +4,6 @@ from itertools import starmap
 from typing import (
     TYPE_CHECKING,
     Any,
-    Literal,
     TypeVar,
     TypeVarTuple,
     Unpack,
@@ -13,7 +12,7 @@ from typing import (
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
     FundamentalPositionBasis,
 )
 from surface_potential_analysis.basis.util import (
@@ -25,10 +24,8 @@ from surface_potential_analysis.util.util import (
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis_like import (
+    from surface_potential_analysis.basis.legacy import (
         BasisWithLengthLike,
-    )
-    from surface_potential_analysis.basis.stacked_basis import (
         StackedBasisLike,
         StackedBasisWithVolumeLike,
         TupleBasisLike,
@@ -44,7 +41,7 @@ if TYPE_CHECKING:
     )
 
     _S0Inv = TypeVar("_S0Inv", bound=tuple[int, ...])
-    _BL0Inv = TypeVar("_BL0Inv", bound=BasisWithLengthLike[Any, Any, Any])
+    _BL0Inv = TypeVar("_BL0Inv", bound=BasisWithLengthLike)
     _NDInv = TypeVar("_NDInv", bound=int)
 
     _TS = TypeVarTuple("_TS")
@@ -60,7 +57,7 @@ def project_k_points_along_axes(
     """
     Get the list of k points projected onto the plane including both axes.
 
-    Parameters
+    Parameters.
     ----------
     points : np.ndarray[tuple[int, Unpack[_S0Inv]], np.dtype[np.float_]]
     basis : _B0Inv
@@ -90,7 +87,7 @@ def get_fundamental_stacked_k_points_projected_along_axes(
     """
     Get the fundamental_k_points projected onto the plane including both axes.
 
-    Parameters
+    Parameters.
     ----------
     basis : _B0Inv
     axes : tuple[int, int]
@@ -112,7 +109,7 @@ def get_k_coordinates_in_axes(
     """
     Get the fundamental_k_points projected onto the plane including both axes.
 
-    Parameters
+    Parameters.
     ----------
     basis : _B0Inv
     axes : tuple[int, int]
@@ -121,7 +118,7 @@ def get_k_coordinates_in_axes(
     -------
     np.ndarray[tuple[Literal[2], int], np.dtype[np.float_]]
     """
-    idx = tuple(0 for _ in range(basis.ndim - len(axes))) if idx is None else idx
+    idx = tuple(0 for _ in range(basis.n_dim - len(axes))) if idx is None else idx
     points = get_fundamental_stacked_k_points_projected_along_axes(basis, axes)
     slice_ = slice_ignoring_axes(idx, axes)
     return np.transpose(
@@ -132,13 +129,13 @@ def get_k_coordinates_in_axes(
 
 def project_x_points_along_axes(
     points: np.ndarray[tuple[_NDInv, Unpack[_TS]], np.dtype[np.float64]],
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    basis: StackedBasisWithVolumeLike,
     axes: tuple[int, ...],
 ) -> np.ndarray[tuple[int, Unpack[_TS]], np.dtype[np.float64]]:
     """
     Get the list of x points projected onto the plane including all axes.
 
-    Parameters
+    Parameters.
     ----------
     points : np.ndarray[tuple[int, Unpack[_S0Inv]], np.dtype[np.float_]]
     basis : _B0Inv
@@ -150,7 +147,7 @@ def project_x_points_along_axes(
     """
     util = BasisUtil(basis)
 
-    projected_axes = np.zeros((len(axes), basis.ndim))
+    projected_axes = np.zeros((len(axes), basis.n_dim))
     for i, ax in enumerate(axes):
         projected = util.delta_x_stacked[ax]
         for j in range(i):
@@ -162,13 +159,13 @@ def project_x_points_along_axes(
 
 
 def get_fundamental_stacked_x_points_projected_along_axes(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    basis: StackedBasisWithVolumeLike,
     axes: tuple[int, ...],
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     """
     Get the fundamental_x_points projected onto the plane including both axes.
 
-    Parameters
+    Parameters.
     ----------
     basis : _B0Inv
     axes : tuple[int, int]
@@ -183,14 +180,14 @@ def get_fundamental_stacked_x_points_projected_along_axes(
 
 
 def get_x_coordinates_in_axes(
-    basis: StackedBasisWithVolumeLike[Any, Any, Any],
+    basis: StackedBasisWithVolumeLike,
     axes: tuple[int, ...],
     idx: SingleStackedIndexLike | None,
 ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
     """
     Get the fundamental_x_points projected onto the plane including both axes.
 
-    Parameters
+    Parameters.
     ----------
     basis : _B0Inv
     axes : tuple[int, int]
@@ -199,7 +196,7 @@ def get_x_coordinates_in_axes(
     -------
     np.ndarray[tuple[Literal[2], int], np.dtype[np.float_]]
     """
-    idx = tuple(0 for _ in range(basis.ndim - len(axes))) if idx is None else idx
+    idx = tuple(0 for _ in range(basis.n_dim - len(axes))) if idx is None else idx
     points = get_fundamental_stacked_x_points_projected_along_axes(basis, axes)
     slice_ = slice_ignoring_axes(idx, axes)
     return np.transpose(
@@ -252,7 +249,7 @@ def _wrap_index(distance: Any, length: Any, origin: Any = 0) -> Any:
 
 @overload
 def wrap_index_around_origin(
-    basis: StackedBasisLike[Any, Any, Any],
+    basis: StackedBasisLike,
     idx: SingleStackedIndexLike,
     *,
     origin: SingleIndexLike | None = None,
@@ -263,7 +260,7 @@ def wrap_index_around_origin(
 
 @overload
 def wrap_index_around_origin(
-    basis: StackedBasisLike[Any, Any, Any],
+    basis: StackedBasisLike,
     idx: ArrayStackedIndexLike[_S0Inv],
     *,
     origin: SingleIndexLike | None = None,
@@ -273,7 +270,7 @@ def wrap_index_around_origin(
 
 
 def wrap_index_around_origin(
-    basis: StackedBasisLike[Any, Any, Any],
+    basis: StackedBasisLike,
     idx: StackedIndexLike,
     *,
     origin: SingleIndexLike | None = None,
@@ -282,7 +279,7 @@ def wrap_index_around_origin(
     """
     Given an index or list of indexes in stacked form, find the equivalent index closest to the origin.
 
-    Parameters
+    Parameters.
     ----------
     basis : _B3d0Inv
     idx : StackedIndexLike | FlatIndexLike
@@ -294,13 +291,13 @@ def wrap_index_around_origin(
     StackedIndexLike
     """
     util = BasisUtil(basis)
-    origin = tuple(0 for _ in range(basis.ndim)) if origin is None else origin
+    origin = tuple(0 for _ in range(basis.n_dim)) if origin is None else origin
     origin = origin if isinstance(origin, tuple) else util.get_stacked_index(origin)
     return tuple(  # type: ignore[return-value]
         _wrap_index(idx[ax], basis.shape[ax], origin[ax])
         if axes is None or ax in axes
         else idx[ax]
-        for ax in range(basis.ndim)
+        for ax in range(basis.n_dim)
     )
 
 
@@ -312,7 +309,7 @@ def wrap_x_point_around_origin(
     """
     Given an index or list of indexes in stacked form, find the equivalent index closest to the origin.
 
-    Parameters
+    Parameters.
     ----------
     basis : _B3d0Inv
     idx : StackedIndexLike | FlatIndexLike
@@ -360,7 +357,7 @@ def calculate_distances_along_path(
     """
     calculate cumulative distances along the given path.
 
-    Parameters
+    Parameters.
     ----------
     basis : _B0Inv
         basis which the path is through
@@ -393,7 +390,7 @@ def calculate_cumulative_x_distances_along_path(
     """
     calculate the cumulative distances along the given path in the given basis.
 
-    Parameters
+    Parameters.
     ----------
     basis : _B3d0Inv
         basis which the path is through
@@ -428,7 +425,7 @@ def calculate_cumulative_k_distances_along_path(
     """
     calculate the cumulative distances along the given path in the given basis.
 
-    Parameters
+    Parameters.
     ----------
     basis : _B3d0Inv
         basis which the path is through
@@ -470,7 +467,7 @@ def get_x01_mirrored_index(idx: StackedIndexLike) -> StackedIndexLike:
     """
     Mirror the coordinate idx about x0=x1.
 
-    Parameters
+    Parameters.
     ----------
     basis : _B3d0Inv
         the basis to mirror in
@@ -490,11 +487,11 @@ def get_x01_mirrored_index(idx: StackedIndexLike) -> StackedIndexLike:
 
 def get_single_point_basis(
     basis: TupleBasisLike[Unpack[tuple[_BL0Inv, ...]]],
-) -> tuple[FundamentalPositionBasis[Literal[1], Any], ...]:
+) -> tuple[FundamentalPositionBasis, ...]:
     """
     Get the basis with a single point in position space.
 
-    Parameters
+    Parameters.
     ----------
     basis : _B3d0Inv
         initial basis
@@ -517,7 +514,7 @@ def get_max_idx(
     """
     Get the max index of data in the given axes.
 
-    Parameters
+    Parameters.
     ----------
     basis : TupleBasisLike
     data : np.ndarray[tuple[int], np.dtype[np.complex_]]

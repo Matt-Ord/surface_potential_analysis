@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from surface_potential_analysis.state_vector.state_vector_list import (
     state_vector_list_into_iter,
@@ -13,23 +13,23 @@ if TYPE_CHECKING:
     from matplotlib.axes import Axes
     from matplotlib.figure import Figure
 
-    from surface_potential_analysis.basis.basis_like import BasisLike
-    from surface_potential_analysis.basis.stacked_basis import (
+    from surface_potential_analysis.basis.legacy import (
+        BasisLike,
         StackedBasisWithVolumeLike,
     )
     from surface_potential_analysis.state_vector.state_vector_list import (
-        StateVectorList,
+        LegacyStateVectorList,
     )
     from surface_potential_analysis.types import SingleStackedIndexLike
     from surface_potential_analysis.util.plot import Scale
     from surface_potential_analysis.util.util import Measure
 
-    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-    _SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike[Any, Any, Any])
+    _B0 = TypeVar("_B0", bound=BasisLike)
+    _SB0 = TypeVar("_SB0", bound=StackedBasisWithVolumeLike)
 
 
 def plot_states_1d_x(  # noqa: PLR0913
-    states: StateVectorList[_B0, _SB0],
+    states: LegacyStateVectorList[_B0, _SB0],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,
@@ -66,7 +66,7 @@ def plot_states_1d_x(  # noqa: PLR0913
 
 
 def plot_states_1d_k(  # noqa: PLR0913
-    states: StateVectorList[_B0, _SB0],
+    states: LegacyStateVectorList[_B0, _SB0],
     axes: tuple[int] = (0,),
     idx: SingleStackedIndexLike | None = None,
     *,

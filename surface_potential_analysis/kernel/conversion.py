@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
-from surface_potential_analysis.basis.basis_like import convert_vector
+from surface_potential_analysis.basis.legacy import convert_vector
 from surface_potential_analysis.kernel.kernel import get_full_kernel_from_operators
 from surface_potential_analysis.kernel.solve._eigenvalue import (
     get_periodic_noise_operators_diagonal_eigenvalue,
@@ -14,8 +14,7 @@ from surface_potential_analysis.operator.conversion import (
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis_like import BasisLike
-    from surface_potential_analysis.basis.stacked_basis import TupleBasisLike
+    from surface_potential_analysis.basis.legacy import BasisLike, TupleBasisLike
     from surface_potential_analysis.kernel.kernel import (
         DiagonalNoiseKernel,
         DiagonalNoiseOperatorList,
@@ -24,11 +23,11 @@ if TYPE_CHECKING:
         NoiseOperatorList,
     )
 
-    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-    _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
-    _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
-    _B3 = TypeVar("_B3", bound=BasisLike[Any, Any])
-    _B4 = TypeVar("_B4", bound=BasisLike[Any, Any])
+    _B0 = TypeVar("_B0", bound=BasisLike)
+    _B1 = TypeVar("_B1", bound=BasisLike)
+    _B2 = TypeVar("_B2", bound=BasisLike)
+    _B3 = TypeVar("_B3", bound=BasisLike)
+    _B4 = TypeVar("_B4", bound=BasisLike)
 
 
 def convert_noise_operator_list_to_basis(

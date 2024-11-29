@@ -6,7 +6,7 @@ import numpy as np
 
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_position_basis,
+    tuple_basis_as_fundamental,
 )
 from surface_potential_analysis.stacked_basis.util import (
     get_x01_mirrored_index,
@@ -32,9 +32,9 @@ from surface_potential_analysis.wavepacket.wavepacket import (
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis import FundamentalBasis
-    from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
-    from surface_potential_analysis.basis.stacked_basis import (
+    from surface_potential_analysis.basis.legacy import (
+        BasisWithLengthLike,
+        FundamentalBasis,
         TupleBasisLike,
         TupleBasisWithLengthLike,
     )
@@ -60,16 +60,14 @@ if TYPE_CHECKING:
 def _get_global_phases(
     wavepacket: BlochWavefunctionList[_SB0, _SB1],
     idx: SingleIndexLike,
-) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
-    ...
+) -> np.ndarray[tuple[int], np.dtype[np.float64]]: ...
 
 
 @overload
 def _get_global_phases(
     wavepacket: BlochWavefunctionList[_SB0, _SB1],
     idx: ArrayIndexLike[*_TS],
-) -> np.ndarray[tuple[int, *_TS], np.dtype[np.float64]]:
-    ...
+) -> np.ndarray[tuple[int, *_TS], np.dtype[np.float64]]: ...
 
 
 def _get_global_phases(
@@ -96,7 +94,7 @@ def _get_global_phases(
     np.ndarray[tuple[int], np.dtype[np.float_]]
         phases for each sample in the wavepacket
     """
-    basis = stacked_basis_as_fundamental_position_basis(wavepacket["basis"][1])
+    basis = tuple_basis_as_fundamental(wavepacket["basis"][1])
     util = BasisUtil(basis)
 
     nx_points = idx if isinstance(idx, tuple) else util.get_stacked_index(idx)

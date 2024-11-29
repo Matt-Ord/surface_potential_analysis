@@ -5,14 +5,12 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import (
-    FundamentalTransformedPositionBasis,
-)
-from surface_potential_analysis.basis.basis_like import (
-    convert_vector,
-)
 from surface_potential_analysis.basis.conversion import (
     basis_as_fundamental_position_basis,
+)
+from surface_potential_analysis.basis.legacy import (
+    FundamentalTransformedPositionBasis,
+    convert_vector,
 )
 from surface_potential_analysis.basis.util import (
     BasisUtil,
@@ -20,7 +18,7 @@ from surface_potential_analysis.basis.util import (
 from tests.utils import get_random_explicit_basis
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
+    from surface_potential_analysis.basis.legacy import BasisWithLengthLike
 
     _S0Inv = TypeVar("_S0Inv", bound=tuple[int, ...])
     _NDInv = TypeVar("_NDInv", bound=int)
@@ -57,8 +55,8 @@ def get_basis_conversion_matrix(
 
 def convert_vector_simple(
     vector: np.ndarray[_S0Inv, np.dtype[np.complex128]],
-    initial_basis: BasisWithLengthLike[Any, Any, Any],
-    final_basis: BasisWithLengthLike[Any, Any, Any],
+    initial_basis: BasisWithLengthLike,
+    final_basis: BasisWithLengthLike,
     axis: int = -1,
 ) -> np.ndarray[Any, np.dtype[np.complex128]]:
     matrix = get_basis_conversion_matrix(initial_basis, final_basis)
@@ -77,21 +75,21 @@ class BasisConversionTest(unittest.TestCase):
         )
 
         actual = convert_vector(
-            BasisUtil(basis).vectors, basis_as_fundamental_position_basis(basis), basis
+            BasisUtil(basis).vectors, basis_as_fundamental_basisbasis), basis
         )
         expected = np.eye(n)
         np.testing.assert_almost_equal(actual, expected)
         actual = convert_vector(
-            BasisUtil(basis).vectors, basis_as_fundamental_position_basis(basis), basis
+            BasisUtil(basis).vectors, basis_as_fundamental_basisbasis), basis
         )
         expected = convert_vector_simple(
-            BasisUtil(basis).vectors, basis_as_fundamental_position_basis(basis), basis
+            BasisUtil(basis).vectors, basis_as_fundamental_basisbasis), basis
         )
         np.testing.assert_almost_equal(actual, expected)
 
         actual = convert_vector(
             np.eye(fundamental_n),
-            basis_as_fundamental_position_basis(basis),
+            basis_as_fundamental_basisbasis),
             basis,
         )
         expected = BasisUtil(basis).vectors.T
@@ -99,12 +97,12 @@ class BasisConversionTest(unittest.TestCase):
 
         actual = convert_vector(
             np.eye(fundamental_n),
-            basis_as_fundamental_position_basis(basis),
+            basis_as_fundamental_basisbasis),
             basis,
         )
         expected = convert_vector_simple(
             np.eye(fundamental_n).astype(np.complex128),
-            basis_as_fundamental_position_basis(basis),
+            basis_as_fundamental_basisbasis),
             basis,
         )
         np.testing.assert_almost_equal(actual, expected)
@@ -129,7 +127,7 @@ class BasisConversionTest(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(
             convert_vector(
-                np.eye(n), basis, basis_as_fundamental_position_basis(basis)
+                np.eye(n), basis, basis_as_fundamental_basisbasis)
             ),
             np.exp(
                 (1j * 2 * np.pi)
@@ -141,12 +139,12 @@ class BasisConversionTest(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(
             convert_vector(
-                np.eye(n), basis, basis_as_fundamental_position_basis(basis)
+                np.eye(n), basis, basis_as_fundamental_basisbasis)
             ),
             convert_vector_simple(
                 np.eye(n).astype(np.complex128),
                 basis,
-                basis_as_fundamental_position_basis(basis),
+                basis_as_fundamental_basisbasis),
             ),
         )
 

@@ -5,24 +5,22 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
     FundamentalBasis,
     FundamentalPositionBasis,
     FundamentalTransformedBasis,
     FundamentalTransformedPositionBasis,
     FundamentalTransformedPositionBasis3d,
-)
-from surface_potential_analysis.basis.stacked_basis import (
     TupleBasis,
     TupleBasisLike,
 )
 
 if TYPE_CHECKING:
-    from surface_potential_analysis.basis.basis_like import BasisWithLengthLike
+    from surface_potential_analysis.basis.legacy import BasisWithLengthLike
 
-    _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike[Any, Any, Any])
-    _BL1 = TypeVar("_BL1", bound=BasisWithLengthLike[Any, Any, Any])
-    _BL2 = TypeVar("_BL2", bound=BasisWithLengthLike[Any, Any, Any])
+    _BL0 = TypeVar("_BL0", bound=BasisWithLengthLike)
+    _BL1 = TypeVar("_BL1", bound=BasisWithLengthLike)
+    _BL2 = TypeVar("_BL2", bound=BasisWithLengthLike)
     _S1Inv = TypeVar("_S1Inv", bound=tuple[int, int])
 
 
@@ -35,9 +33,9 @@ def position_basis_3d_from_parent(
     parent: TupleBasisLike[_BL0, _BL1, _BL2],
     resolution: tuple[_L0, _L1, _L2],
 ) -> TupleBasisLike[
-    FundamentalPositionBasis[_L0, Literal[3]],
-    FundamentalPositionBasis[_L1, Literal[3]],
-    FundamentalPositionBasis[_L2, Literal[3]],
+    FundamentalPositionBasis,
+    FundamentalPositionBasis,
+    FundamentalPositionBasis,
 ]:
     """
     Given a parent basis construct another basis with the same lattice vectors.
@@ -137,13 +135,13 @@ def fundamental_transformed_stacked_basis_from_shape(
 @overload
 def fundamental_transformed_stacked_basis_from_shape(
     shape: tuple[int, ...],
-) -> TupleBasisLike[*tuple[FundamentalTransformedBasis[Any], ...]]:
+) -> TupleBasisLike[*tuple[FundamentalTransformedBasis, ...]]:
     ...
 
 
 def fundamental_transformed_stacked_basis_from_shape(
     shape: tuple[Any, ...] | tuple[Any, Any, Any] | tuple[Any, Any] | tuple[Any],
-) -> TupleBasisLike[*tuple[FundamentalTransformedBasis[Any], ...]]:
+) -> TupleBasisLike[*tuple[FundamentalTransformedBasis, ...]]:
     """
     Given a resolution and a set of directions construct a FundamentalPositionBasisConfig.
 
@@ -219,9 +217,9 @@ def momentum_basis_3d_from_resolution(
     ]
     | None = None,
 ) -> TupleBasis[
-    FundamentalTransformedPositionBasis3d[_L0],
-    FundamentalTransformedPositionBasis3d[_L1],
-    FundamentalTransformedPositionBasis3d[_L2],
+    FundamentalTransformedPositionBasis3d,
+    FundamentalTransformedPositionBasis3d,
+    FundamentalTransformedPositionBasis3d,
 ]:
     """
     Given a resolution and a set of directions construct a FundamentalMomentumBasisConfig.

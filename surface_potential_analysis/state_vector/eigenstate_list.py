@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar
 
-from surface_potential_analysis.basis.basis_like import BasisLike
-from surface_potential_analysis.basis.stacked_basis import (
-    TupleBasis,
+from surface_potential_analysis.basis.legacy import (
+    BasisLike,
 )
-from surface_potential_analysis.state_vector.state_vector import StateVector
-from surface_potential_analysis.state_vector.state_vector_list import StateVectorList
+from surface_potential_analysis.state_vector.state_vector import LegacyStateVector
+from surface_potential_analysis.state_vector.state_vector_list import (
+    LegacyStateVectorList,
+)
 
 if TYPE_CHECKING:
     import numpy as np
@@ -16,9 +17,9 @@ if TYPE_CHECKING:
         SingleBasisDiagonalOperator,
     )
 
-_B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
-_B1_co = TypeVar("_B1_co", bound=BasisLike[Any, Any], covariant=True)
-_B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
+_B0_co = TypeVar("_B0_co", bound=BasisLike, covariant=True)
+_B1_co = TypeVar("_B1_co", bound=BasisLike, covariant=True)
+_B0 = TypeVar("_B0", bound=BasisLike)
 
 
 class ValueList(TypedDict, Generic[_B0_co]):
@@ -34,14 +35,14 @@ class StatisticalValueList(ValueList[_B0_co]):
     standard_deviation: np.ndarray[tuple[int], np.dtype[np.float64]]
 
 
-class Eigenstate(StateVector[_B0_co], TypedDict):
+class Eigenstate(LegacyStateVector[_B0_co], TypedDict):
     """A State vector which is the eigenvector of some operator."""
 
     eigenvalue: complex | np.complex128
 
 
 class EigenstateList(
-    StateVectorList[_B0_co, _B1_co],
+    LegacyStateVectorList[_B0_co, _B1_co],
     TypedDict,
 ):
     """Represents a collection of eigenstates, each with the same basis."""
@@ -64,6 +65,6 @@ def get_eigenvalues_list(
     EigenvalueList[_B0]
     """
     return {
-        "basis": TupleBasis(states["basis"][0], states["basis"][0]),
+        "basis": VariadicTupleBasis((states["basis"][0], states["basis"][0]), None),
         "data": states["eigenvalue"],
     }

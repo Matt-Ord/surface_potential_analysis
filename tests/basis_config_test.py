@@ -16,8 +16,7 @@ from surface_potential_analysis.stacked_basis.build import (
     position_basis_3d_from_shape,
 )
 from surface_potential_analysis.stacked_basis.conversion import (
-    stacked_basis_as_fundamental_momentum_basis,
-    stacked_basis_as_fundamental_position_basis,
+    tuple_basis_as_fundamental,
 )
 from surface_potential_analysis.stacked_basis.util import (
     _wrap_distance,  # type: ignore this is testing module
@@ -112,7 +111,7 @@ class TestBasisConfig(unittest.TestCase):
         np.testing.assert_array_almost_equal(delta_x[1], util.delta_x_stacked[1])
         np.testing.assert_array_almost_equal(delta_x[2], util.delta_x_stacked[2])
 
-        reciprocal = stacked_basis_as_fundamental_momentum_basis(basis)
+        reciprocal = stacked_basis_as_transformed_basis(basis)
         reciprocal_util = BasisUtil(reciprocal)
 
         np.testing.assert_array_almost_equal(
@@ -140,7 +139,7 @@ class TestBasisConfig(unittest.TestCase):
             reciprocal_util.reciprocal_volume, util.reciprocal_volume
         )
 
-        reciprocal_2 = stacked_basis_as_fundamental_position_basis(reciprocal)
+        reciprocal_2 = tuple_basis_as_fundamental(reciprocal)
         reciprocal_2_util = BasisUtil(reciprocal_2)
 
         np.testing.assert_array_almost_equal(

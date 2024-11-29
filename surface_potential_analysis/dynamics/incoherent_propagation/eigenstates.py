@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING, Any, TypeVar
 import numpy as np
 import scipy.linalg  # type: ignore lib
 
-from surface_potential_analysis.basis.basis import FundamentalBasis
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
-from surface_potential_analysis.basis.time_basis_like import (
+from surface_potential_analysis.basis.legacy import (
     ExplicitTimeBasis,
+    FundamentalBasis,
+    TupleBasis,
 )
 from surface_potential_analysis.util.decorators import timed
 
@@ -18,13 +18,13 @@ if TYPE_CHECKING:
     from surface_potential_analysis.dynamics.tunnelling_basis import (
         TunnellingSimulationBasis,
     )
-    from surface_potential_analysis.operator.operator import DiagonalOperator
+    from surface_potential_analysis.operator.operator import LegacyDiagonalOperator
     from surface_potential_analysis.operator.operator_list import DiagonalOperatorList
     from surface_potential_analysis.state_vector.eigenstate_list import (
         EigenstateList,
     )
     from surface_potential_analysis.state_vector.state_vector_list import (
-        StateVectorList,
+        LegacyStateVectorList,
     )
 
     from .tunnelling_matrix import TunnellingMMatrix
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 @timed
 def calculate_tunnelling_eigenstates(
     matrix: TunnellingMMatrix[_B0Inv],
-) -> EigenstateList[FundamentalBasis[int], _B0Inv]:
+) -> EigenstateList[FundamentalBasis[BasisMetadata], _B0Inv]:
     """
     Given a tunnelling matrix, find the eigenstates.
 
@@ -52,15 +52,17 @@ def calculate_tunnelling_eigenstates(
         matrix["data"].reshape(matrix["basis"].shape)
     )
     return {
-        "basis": TupleBasis(FundamentalBasis(eigenvalues.size), matrix["basis"][0]),  # type: ignore lib
+        "basis": VariadicTupleBasis(
+            (FundamentalBasis(eigenvalues.size), None), matrix["basis"][0]
+        ),  # type: ignore lib
         "eigenvalue": eigenvalues - np.max(eigenvalues),  # type: ignore lib
         "data": vectors.T,  # type: ignore lib
     }
 
 
 def get_operator_state_vector_decomposition(
-    density_matrix: DiagonalOperator[_B0Inv, _B0Inv],
-    eigenstates: StateVectorList[FundamentalBasis[_L0Inv], _B0Inv],
+    density_matrix: LegacyDiagonalOperator[_B0Inv, _B0Inv],
+    eigenstates: LegacyStateVectorList[FundamentalBasis[_L0Inv], _B0Inv],
 ) -> np.ndarray[tuple[_L0Inv], np.dtype[np.complex128]]:
     """
     Given a state and a set of TunnellingEigenstates decompose the state into the eigenstates.
@@ -87,7 +89,7 @@ def get_operator_state_vector_decomposition(
 
 def get_equilibrium_state(
     eigenstates: EigenstateList[FundamentalBasis[_L0Inv], _B0Inv],
-) -> DiagonalOperator[_B0Inv, _B0Inv]:
+) -> LegacyDiagonalOperator[_B0Inv, _B0Inv]:
     """
     Select the equilibrium tunnelling state from a list of eigenstates.
 
@@ -112,14 +114,16 @@ def get_equilibrium_state(
     # and could contain negative or imaginary 'probabilities'
     vector = coefficients[state_idx] * eigenstates["data"][state_idx]
     return {
-        "basis": TupleBasis(eigenstates["basis"][1], eigenstates["basis"][1]),
+        "basis": VariadicTupleBasis(
+            (eigenstates["basis"][1], eigenstates["basis"][1]), None
+        ),
         "data": vector,
     }
 
 
 def calculate_equilibrium_state(
     matrix: TunnellingMMatrix[_B0Inv],
-) -> DiagonalOperator[_B0Inv, _B0Inv]:
+) -> LegacyDiagonalOperator[_B0Inv, _B0Inv]:
     """
     Calculate the equilibrium tunnelling state for a given matrix.
 
@@ -139,8 +143,8 @@ def calculate_equilibrium_state(
 
 
 def get_tunnelling_simulation_state(
-    eigenstates: EigenstateList[FundamentalBasis[int], _B0Inv],
-    initial: DiagonalOperator[_B0Inv, _B0Inv],
+    eigenstates: EigenstateList[FundamentalBasis[BasisMetadata], _B0Inv],
+    initial: LegacyDiagonalOperator[_B0Inv, _B0Inv],
     times: np.ndarray[tuple[_L0Inv], np.dtype[np.float64]],
 ) -> DiagonalOperatorList[ExplicitTimeBasis[_L0Inv], _B0Inv, _B0Inv]:
     """
@@ -167,7 +171,9 @@ def get_tunnelling_simulation_state(
     return {
         "basis": TupleBasis(
             ExplicitTimeBasis(times),
-            TupleBasis(eigenstates["basis"][1], eigenstates["basis"][1]),
+            VariadicTupleBasis(
+                (eigenstates["basis"][1], eigenstates["basis"][1]), None
+            ),
         ),
         "data": vectors,
     }
@@ -175,7 +181,7 @@ def get_tunnelling_simulation_state(
 
 def calculate_tunnelling_simulation_state(
     matrix: TunnellingMMatrix[_B0Inv],
-    initial: DiagonalOperator[_B0Inv, _B0Inv],
+    initial: LegacyDiagonalOperator[_B0Inv, _B0Inv],
     times: np.ndarray[tuple[_L0Inv], np.dtype[np.float64]],
 ) -> DiagonalOperatorList[ExplicitTimeBasis[_L0Inv], _B0Inv, _B0Inv]:
     """

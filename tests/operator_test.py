@@ -5,12 +5,12 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import (
+from surface_potential_analysis.basis.legacy import (
+    ExplicitBasis,
     FundamentalBasis,
     FundamentalTransformedBasis,
+    TupleBasis,
 )
-from surface_potential_analysis.basis.explicit_basis import ExplicitBasis
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
 from surface_potential_analysis.operator.conversion import (
     convert_operator_list_to_basis,
     convert_operator_to_basis,
@@ -47,11 +47,13 @@ class OperatorTest(unittest.TestCase):
                 expected[i, j, j] = diagonal[i, j]
 
         diagonal_list: DiagonalOperatorList[
-            FundamentalBasis[int], FundamentalBasis[int], FundamentalBasis[int]
+            FundamentalBasis[BasisMetadata],
+            FundamentalBasis[BasisMetadata],
+            FundamentalBasis[BasisMetadata],
         ] = {
             "basis": TupleBasis(
                 FundamentalBasis(n),
-                TupleBasis(FundamentalBasis(m), FundamentalBasis(m)),
+                VariadicTupleBasis((FundamentalBasis(m), None), FundamentalBasis(m)),
             ),
             "data": diagonal.reshape(-1),
         }
@@ -65,22 +67,26 @@ class OperatorTest(unittest.TestCase):
         data = rng.random((n, m, m)).astype(np.complex128)
 
         op_list: OperatorList[
-            FundamentalBasis[int], FundamentalBasis[int], FundamentalBasis[int]
+            FundamentalBasis[BasisMetadata],
+            FundamentalBasis[BasisMetadata],
+            FundamentalBasis[BasisMetadata],
         ] = {
             "basis": TupleBasis(
                 FundamentalBasis(n),
-                TupleBasis(FundamentalBasis(m), FundamentalBasis(m)),
+                VariadicTupleBasis((FundamentalBasis(m), None), FundamentalBasis(m)),
             ),
             "data": data.reshape(-1),
         }
 
         new_basis = ExplicitBasis[Any, Any].from_state_vectors(
             {
-                "basis": TupleBasis(FundamentalBasis(m), op_list["basis"][1][0]),
+                "basis": VariadicTupleBasis(
+                    (FundamentalBasis(m), None), op_list["basis"][1][0]
+                ),
                 "data": _random_orthonormal(m).ravel(),
             }
         )
-        basis = TupleBasis(new_basis, new_basis)
+        basis = VariadicTupleBasis((new_basis, new_basis), None)
 
         actual = convert_operator_list_to_basis(op_list, basis)
         expected = operator_list_from_iter(
@@ -99,13 +105,17 @@ class OperatorTest(unittest.TestCase):
         m = rng.integers(3, 10)
         data = rng.random((m, m)).astype(np.complex128)
 
-        operator: Operator[FundamentalBasis[int], FundamentalBasis[int]] = {
-            "basis": TupleBasis(FundamentalBasis(m), FundamentalBasis(m)),
+        operator: Operator[
+            FundamentalBasis[BasisMetadata], FundamentalBasis[BasisMetadata]
+        ] = {
+            "basis": VariadicTupleBasis(
+                (FundamentalBasis(m), None), FundamentalBasis(m)
+            ),
             "data": data.reshape(-1),
         }
 
         new_basis = FundamentalTransformedBasis(m)
-        basis = TupleBasis(new_basis, new_basis)
+        basis = VariadicTupleBasis((new_basis, new_basis), None)
 
         actual = convert_operator_to_basis(operator, basis)
 
@@ -117,15 +127,19 @@ class OperatorTest(unittest.TestCase):
         m = rng.integers(3, 10)
         data = rng.random((m, m)).astype(np.complex128)
 
-        operator: Operator[FundamentalBasis[int], FundamentalBasis[int]] = {
-            "basis": TupleBasis(FundamentalBasis(m), FundamentalBasis(m)),
+        operator: Operator[
+            FundamentalBasis[BasisMetadata], FundamentalBasis[BasisMetadata]
+        ] = {
+            "basis": VariadicTupleBasis(
+                (FundamentalBasis(m), None), FundamentalBasis(m)
+            ),
             "data": data.reshape(-1),
         }
 
-        new_basis = ExplicitBasis[FundamentalBasis[int], Any].from_basis(
+        new_basis = ExplicitBasis[FundamentalBasis[BasisMetadata], Any].from_basis(
             FundamentalTransformedBasis(m)
         )
-        basis = TupleBasis(new_basis, new_basis)
+        basis = VariadicTupleBasis((new_basis, new_basis), None)
 
         actual = convert_operator_to_basis(operator, basis)
         converted_back = convert_operator_to_basis(actual, operator["basis"])
@@ -139,7 +153,7 @@ class OperatorTest(unittest.TestCase):
                 "data": np.eye(m, dtype=np.complex128).ravel(),
             }
         )
-        basis_1 = TupleBasis(new_basis_1, new_basis_1)
+        basis_1 = VariadicTupleBasis((new_basis_1, new_basis_1), None)
 
         actual_1 = convert_operator_to_basis(operator, basis_1)
         np.testing.assert_array_almost_equal(actual["data"], actual_1["data"])
@@ -154,7 +168,7 @@ class OperatorTest(unittest.TestCase):
                 "data": _random_orthonormal(m).ravel(),
             }
         )
-        basis_2 = TupleBasis(new_basis_2, new_basis_2)
+        basis_2 = VariadicTupleBasis((new_basis_2, new_basis_2), None)
 
         actual_2 = convert_operator_to_basis(operator, basis_2)
         converted_back_2 = convert_operator_to_basis(actual_2, operator["basis"])

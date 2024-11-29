@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
 
 import numpy as np
 
-from surface_potential_analysis.basis.basis import FundamentalBasis
-from surface_potential_analysis.basis.stacked_basis import TupleBasis
-from surface_potential_analysis.basis.time_basis_like import (
+from surface_potential_analysis.basis.legacy import (
     ExplicitTimeBasis,
+    FundamentalBasis,
     FundamentalTimeBasis,
+    TupleBasis,
 )
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.dynamics.incoherent_propagation.eigenstates import (
@@ -41,7 +41,7 @@ if TYPE_CHECKING:
         TunnellingSimulationBasis,
     )
     from surface_potential_analysis.operator.operator import (
-        DiagonalOperator,
+        LegacyDiagonalOperator,
         SingleBasisDiagonalOperator,
     )
 
@@ -53,7 +53,7 @@ _L0Inv = TypeVar("_L0Inv", bound=int)
 
 def calculate_isf_at_times(
     matrix: TunnellingMMatrix[_B0Inv],
-    initial: DiagonalOperator[_B0Inv, _B0Inv],
+    initial: LegacyDiagonalOperator[_B0Inv, _B0Inv],
     times: np.ndarray[tuple[_L0Inv], np.dtype[np.float64]],
     dk: np.ndarray[tuple[Literal[2]], np.dtype[np.float64]],
 ) -> SingleBasisDiagonalOperator[ExplicitTimeBasis[_L0Inv]]:
@@ -116,11 +116,15 @@ def calculate_equilibrium_state_averaged_isf(
         )
         eigenvalues[band] = isf
     isf_per_band: SingleBasisDiagonalOperator[
-        TupleBasis[FundamentalBasis[int], ExplicitTimeBasis[_L0Inv]]
+        TupleBasis[FundamentalBasis[BasisMetadata], ExplicitTimeBasis[_L0Inv]]
     ] = {
         "basis": TupleBasis(
-            TupleBasis(FundamentalBasis(util.shape[2]), ExplicitTimeBasis(times)),
-            TupleBasis(FundamentalBasis(util.shape[2]), ExplicitTimeBasis(times)),
+            VariadicTupleBasis(
+                (FundamentalBasis(util.shape[2]), None), ExplicitTimeBasis(times)
+            ),
+            VariadicTupleBasis(
+                (FundamentalBasis(util.shape[2]), None), ExplicitTimeBasis(times)
+            ),
         ),
         "data": eigenvalues.reshape(-1),
     }
@@ -161,7 +165,7 @@ def calculate_equilibrium_initial_state_isf(
         final_probabilities = density_matrix_list_as_probabilities(final_state)
         vectors[band] = final_probabilities["data"]
     probability_per_band: ProbabilityVectorList[
-        TupleBasis[FundamentalBasis[int], ExplicitTimeBasis[_L0Inv]], _B0Inv
+        TupleBasis[FundamentalBasis[BasisMetadata], ExplicitTimeBasis[_L0Inv]], _B0Inv
     ] = {
         "basis": TupleBasis(
             TupleBasis(
@@ -199,7 +203,7 @@ class RateDecomposition(Generic[_L0Inv]):
 
 
 def get_rate_decomposition(
-    matrix: TunnellingMMatrix[_B0Inv], initial: DiagonalOperator[_B0Inv, _B0Inv]
+    matrix: TunnellingMMatrix[_B0Inv], initial: LegacyDiagonalOperator[_B0Inv, _B0Inv]
 ) -> RateDecomposition[int]:
     """
     Get the eigenvalues and relevant contribution of the rates in the simulation.

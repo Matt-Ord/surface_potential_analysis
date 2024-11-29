@@ -1,14 +1,27 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Self,
+    TypedDict,
+    TypeVar,
+    cast,
+    overload,
+    override,
+)
 
 import numpy as np
+from slate.array.array import SlateArray
+from slate.basis._basis import Basis
 
-from surface_potential_analysis.basis.basis import FundamentalBasis
-from surface_potential_analysis.basis.basis_like import (
+from surface_potential_analysis.basis.legacy import (
     BasisLike,
+    FundamentalBasis,
+    TupleBasis,
+    TupleBasisLike,
 )
-from surface_potential_analysis.basis.stacked_basis import TupleBasis, TupleBasisLike
 from surface_potential_analysis.basis.util import BasisUtil
 from surface_potential_analysis.state_vector.conversion import (
     convert_state_vector_list_to_basis,
@@ -18,31 +31,44 @@ from surface_potential_analysis.util.util import get_data_in_axes
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from surface_potential_analysis.operator.operator import Operator
+    from surface_potential_analysis.operator.operator import LegacyOperator
     from surface_potential_analysis.state_vector.eigenstate_list import (
         EigenstateList,
         ValueList,
     )
     from surface_potential_analysis.state_vector.state_vector import (
-        StateDualVector,
-        StateVector,
+        LegacyStateDualVector,
+        LegacyStateVector,
     )
     from surface_potential_analysis.types import (
         SingleFlatIndexLike,
         SingleStackedIndexLike,
     )
 
-    _B0 = TypeVar("_B0", bound=BasisLike[Any, Any])
-    _B1 = TypeVar("_B1", bound=BasisLike[Any, Any])
-    _B2 = TypeVar("_B2", bound=BasisLike[Any, Any])
-    _B3 = TypeVar("_B3", bound=BasisLike[Any, Any])
+    _B0 = TypeVar("_B0", bound=BasisLike)
+    _B1 = TypeVar("_B1", bound=BasisLike)
+    _B2 = TypeVar("_B2", bound=BasisLike)
+    _B3 = TypeVar("_B3", bound=BasisLike)
     _TB0 = TypeVar("_TB0", bound=TupleBasisLike[*tuple[Any, ...]])
 
-_B0_co = TypeVar("_B0_co", bound=BasisLike[Any, Any], covariant=True)
-_B1_co = TypeVar("_B1_co", bound=BasisLike[Any, Any], covariant=True)
+_B0_co = TypeVar("_B0_co", bound=BasisLike, covariant=True)
+_B1_co = TypeVar("_B1_co", bound=BasisLike, covariant=True)
 
 
-class StateVectorList(TypedDict, Generic[_B0_co, _B1_co]):
+class StateVectorList[B: Basis[Any, np.complex128]](SlateArray[np.complex128, B]):
+    """represents a state vector in a basis."""
+
+    @override
+    def with_basis[B1: Basis[Any, Any]](  # B1: B
+        self: Self, basis: B1
+    ) -> StateVectorList[B1]:
+        """Get the Operator with the basis set to basis."""
+        return StateVectorList(
+            basis, self.basis.__convert_vector_into__(self.raw_data, basis)
+        )
+
+
+class LegacyStateVectorList(TypedDict, Generic[_B0_co, _B1_co]):
     """
     Represents a list of states.
 
@@ -56,24 +82,24 @@ class StateVectorList(TypedDict, Generic[_B0_co, _B1_co]):
 
 @overload
 def get_state_vector(
-    state_list: StateVectorList[_TB0, _B1],
+    state_list: LegacyStateVectorList[_TB0, _B1],
     idx: SingleFlatIndexLike | SingleStackedIndexLike,
-) -> StateVector[_B1]:
+) -> LegacyStateVector[_B1]:
     ...
 
 
 @overload
 def get_state_vector(
-    state_list: StateVectorList[_B0, _B1],
+    state_list: LegacyStateVectorList[_B0, _B1],
     idx: SingleFlatIndexLike,
-) -> StateVector[_B1]:
+) -> LegacyStateVector[_B1]:
     ...
 
 
 def get_state_vector(
-    state_list: StateVectorList[_B0, _B1],
+    state_list: LegacyStateVectorList[_B0, _B1],
     idx: SingleFlatIndexLike | SingleStackedIndexLike,
-) -> StateVector[_B1]:
+) -> LegacyStateVector[_B1]:
     """
     Get a single state vector from a list of states.
 
@@ -100,8 +126,8 @@ def get_state_vector(
 
 
 def get_weighted_state_vector(
-    state_list: StateVectorList[_B0, _B1], weights: StateVector[_B0]
-) -> StateVector[_B1]:
+    state_list: LegacyStateVectorList[_B0, _B1], weights: LegacyStateVector[_B0]
+) -> LegacyStateVector[_B1]:
     """
     Get a single state vector from a list of states.
 
@@ -116,15 +142,15 @@ def get_weighted_state_vector(
     """
     data = np.tensordot(
         weights["data"],
-        state_list["data"].reshape(state_list["basis"][0].n, -1),
+        state_list["data"].reshape(state_list["basis"][0].size, -1),
         axes=(0, 0),
     )
     return {"basis": state_list["basis"][1], "data": data}
 
 
 def get_state_dual_vector(
-    state_list: StateVectorList[_B0, _B1], idx: SingleFlatIndexLike
-) -> StateDualVector[_B1]:
+    state_list: LegacyStateVectorList[_B0, _B1], idx: SingleFlatIndexLike
+) -> LegacyStateDualVector[_B1]:
     """
     Get a single state dual vector from a list of states.
 
@@ -144,8 +170,8 @@ def get_state_dual_vector(
 
 
 def state_vector_list_into_iter(
-    states: StateVectorList[_B0, _B1],
-) -> Iterable[StateVector[_B1]]:
+    states: LegacyStateVectorList[_B0, _B1],
+) -> Iterable[LegacyStateVector[_B1]]:
     """
     Select an eigenstate from an eigenstate collection.
 
@@ -169,20 +195,22 @@ def state_vector_list_into_iter(
 
 
 def as_state_vector_list(
-    states: Iterable[StateVector[_B1]],
-) -> StateVectorList[FundamentalBasis[int], _B1]:
+    states: Iterable[LegacyStateVector[_B1]],
+) -> LegacyStateVectorList[FundamentalBasis[BasisMetadata], _B1]:
     """Convert an iterator of states into a state vector list."""
     states = list(states)
     return {
-        "basis": TupleBasis(FundamentalBasis(len(states)), states[0]["basis"]),
+        "basis": VariadicTupleBasis(
+            (FundamentalBasis(len(states), None)), states[0]["basis"]
+        ),
         "data": np.array([w["data"] for w in states]).reshape(-1),
     }
 
 
 def calculate_inner_products(
-    state_0: StateVectorList[_B0, _B2],
-    state_1: StateVectorList[_B1, _B3],
-) -> Operator[_B0, _B1]:
+    state_0: LegacyStateVectorList[_B0, _B2],
+    state_1: LegacyStateVectorList[_B1, _B3],
+) -> LegacyOperator[_B0, _B1]:
     """
     Calculate the inner product of two states.
 
@@ -197,7 +225,7 @@ def calculate_inner_products(
     """
     converted = convert_state_vector_list_to_basis(state_1, state_0["basis"][1])
     return {
-        "basis": TupleBasis(state_0["basis"][0], state_1["basis"][0]),
+        "basis": VariadicTupleBasis((state_0["basis"][0], state_1["basis"][0]), None),
         "data": np.einsum(  # type: ignore lib
             "ik, jk -> ij",
             np.conj(state_0["data"]).reshape(state_0["basis"].shape),
@@ -207,8 +235,8 @@ def calculate_inner_products(
 
 
 def calculate_inner_products_elementwise(
-    state_0: StateVectorList[_B0, _B2],
-    state_1: StateVectorList[_B0, _B3],
+    state_0: LegacyStateVectorList[_B0, _B2],
+    state_1: LegacyStateVectorList[_B0, _B3],
 ) -> ValueList[_B0]:
     """
     Calculate the inner product of two states elementwise.
@@ -236,7 +264,7 @@ def calculate_inner_products_elementwise(
 def calculate_inner_products_eigenvalues(
     state_0: EigenstateList[_B0, _B2],
     state_1: EigenstateList[_B1, _B2],
-) -> Operator[_B0, _B1]:
+) -> LegacyOperator[_B0, _B1]:
     """
     Calculate the inner product of two states.
 
@@ -250,7 +278,7 @@ def calculate_inner_products_eigenvalues(
     np.complex_
     """
     return {
-        "basis": TupleBasis(state_0["basis"][0], state_1["basis"][0]),
+        "basis": VariadicTupleBasis((state_0["basis"][0], state_1["basis"][0]), None),
         "data": np.einsum(  # type: ignore lib
             "ik, jk, i, j -> ij",
             np.conj(state_0["data"]).reshape(state_0["basis"].shape),
@@ -262,11 +290,11 @@ def calculate_inner_products_eigenvalues(
 
 
 def average_state_vector(
-    probabilities: StateVectorList[_TB0, _B1],
+    probabilities: LegacyStateVectorList[_TB0, _B1],
     axis: tuple[int, ...] | None = None,
     *,
     weights: np.ndarray[tuple[int], np.dtype[np.float64]] | None = None,
-) -> StateVectorList[Any, _B1]:
+) -> LegacyStateVectorList[Any, _B1]:
     """
     Average probabilities over several repeats.
 
@@ -278,12 +306,12 @@ def average_state_vector(
     -------
     ProbabilityVectorList[_B0Inv, _L0Inv]
     """
-    axis = tuple(range(probabilities["basis"][0].ndim)) if axis is None else axis
+    axis = tuple(range(probabilities["basis"][0].sizedim)) if axis is None else axis
     basis = TupleBasis(
         *tuple(b for (i, b) in enumerate(probabilities["basis"][0]) if i not in axis)
     )
     return {
-        "basis": TupleBasis(basis, probabilities["basis"][1]),
+        "basis": VariadicTupleBasis((basis, probabilities["basis"][1]), None),
         "data": np.average(
             probabilities["data"].reshape(*probabilities["basis"][0].shape, -1),
             axis=tuple(ax for ax in axis),
@@ -294,7 +322,7 @@ def average_state_vector(
 
 def get_basis_states(
     basis: _B0,
-) -> StateVectorList[FundamentalBasis[int], _B0]:
+) -> LegacyStateVectorList[FundamentalBasis[BasisMetadata], _B0]:
     """
     Get the eigenstates of a particular basis.
 
@@ -304,21 +332,21 @@ def get_basis_states(
 
     Returns
     -------
-    StateVectorList[FundamentalBasis[int], _B0]
+    StateVectorList[FundamentalBasis[BasisMetadata], _B0]
 
     """
     data = np.eye(basis.n, basis.n).astype(np.complex128)
     return {
-        "basis": TupleBasis(FundamentalBasis(basis.n), basis),
+        "basis": VariadicTupleBasis((FundamentalBasis(basis.n), None), basis),
         "data": data.reshape(-1),
     }
 
 
 def get_state_along_axis(
-    states: StateVectorList[_TB0, _B1],
+    states: LegacyStateVectorList[_TB0, _B1],
     axes: tuple[int, ...] = (0,),
     idx: SingleStackedIndexLike | None = None,
-) -> StateVectorList[Any, _B1]:
+) -> LegacyStateVectorList[Any, _B1]:
     """
     Get Probability from the list.
 
@@ -331,7 +359,7 @@ def get_state_along_axis(
     -------
     ProbabilityVector[_B0Inv]
     """
-    ndim = states["basis"][0].ndim
+    ndim = states["basis"][0].sizedim
     idx = tuple(0 for _ in range(ndim - len(axes))) if idx is None else idx
     final_basis = TupleBasis(
         *tuple(b for (i, b) in enumerate(states["basis"][0]) if i in axes)
@@ -343,6 +371,6 @@ def get_state_along_axis(
         idx,
     ).reshape(-1)
     return {
-        "basis": TupleBasis(final_basis, states["basis"][1]),
+        "basis": VariadicTupleBasis((final_basis, states["basis"][1]), None),
         "data": vector,
     }
