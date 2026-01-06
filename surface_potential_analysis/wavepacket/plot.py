@@ -375,7 +375,8 @@ def plot_wavepacket_transformed_energy_1d(
     ax: Axes | None = None,
     measure: Measure = "abs",
     scale: Scale = "linear",
-) -> tuple[Figure, Axes, Line2D]:
+    scale_factor: float = 1.0,
+) -> tuple[Figure, Axes, tuple[Line2D, Line2D|None]]:
     """
     Plot the energy of the eigenstates in a wavepacket.
 
@@ -408,7 +409,7 @@ def plot_wavepacket_transformed_energy_1d(
         data[
             :,
             *tuple(1 if i == axes[0] else 0 for i in range(list_basis.ndim)),
-        ],
+        ]*scale_factor,
         nx_points.astype(np.float64),
         ax=ax,
         scale=scale,
@@ -421,6 +422,7 @@ def plot_wavepacket_transformed_energy_1d(
     ax.set_xlabel("Band Index")  # type: ignore lib
     ax.set_ylabel("Energy / J")  # type: ignore lib
 
+    free_line: Line2D | None = None
     if free_mass is not None:
         delta_x = np.linalg.norm(wavepacket["basis"][1].delta_x_stacked[axes[0]])
         norm = delta_x * np.sqrt(wavepacket["basis"][0][1].n) / (2 * np.pi)
@@ -432,10 +434,10 @@ def plot_wavepacket_transformed_energy_1d(
         offset = norm * ((4 * np.pi * hbar**2) / (2 * free_mass * delta_x**3))
         points = (2 * nx_points + 1) * offset
 
-        (line,) = ax.plot(nx_points, points)  # type: ignore lib
-        line.set_label("free particle")
+        (free_line,) = ax.plot(nx_points, points*scale_factor)  # type: ignore lib
+        free_line.set_label("free particle")
 
-    return fig, ax, line
+    return fig, ax, (line, free_line)
 
 
 def _get_free_energy(
