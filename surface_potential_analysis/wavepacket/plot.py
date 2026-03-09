@@ -409,7 +409,7 @@ def plot_wavepacket_transformed_energy_1d(
         data[
             :,
             *tuple(1 if i == axes[0] else 0 for i in range(list_basis.ndim)),
-        ]*scale_factor,
+        ]*(scale_factor / np.sqrt(wavepacket["basis"][0][1].n)),
         nx_points.astype(np.float64),
         ax=ax,
         scale=scale,
@@ -420,6 +420,87 @@ def plot_wavepacket_transformed_energy_1d(
     line.set_label("lowest fourier componet")
 
     ax.set_xlabel("Band Index")  # type: ignore lib
+    ax.set_ylabel("Energy / J")  # type: ignore lib
+
+    free_line: Line2D | None = None
+    if free_mass is not None:
+        delta_x = np.linalg.norm(wavepacket["basis"][1].delta_x_stacked[axes[0]])
+        norm = delta_x  / (2 * np.pi)
+        # By integrating explicitly we find
+        # |E(\Delta x)| = (\Delta x)^{-3}(8\pi N + 4 \pi)
+        # we add an additional np.sqrt(wavepacket["basis"][0][1].n) * delta_x / (2 * np.pi)
+        # to account for the difference in fourier transform definitions
+
+        offset = norm * ((4 * np.pi * hbar**2) / (2 * free_mass * delta_x**3))
+        points = (2 * nx_points + 1) * offset
+
+        (free_line,) = ax.plot(nx_points, points*scale_factor)  # type: ignore lib
+        free_line.set_label("free particle")
+
+    return fig, ax, (line, free_line)
+
+
+def plot_wavepacket_transformed_energy_1d_against_self_energy(
+    wavepacket: BlochWavefunctionListWithEigenvaluesList[
+        _B0,
+        _SB0,
+        _SBV0,
+    ],
+    free_mass: float | None = None,
+    axes: tuple[int,] = (0,),
+    bands: list[int] | None = None,
+    *,
+    ax: Axes | None = None,
+    measure: Measure = "abs",
+    scale: Scale = "linear",
+    scale_factor: float = 1.0,
+) -> tuple[Figure, Axes, tuple[Line2D, Line2D|None]]:
+    """
+    Plot the energy of the eigenstates in a wavepacket.
+
+    Parameters
+    ----------
+    wavepacket : Wavepacket[_NS0Inv, _NS1Inv, TupleBasisLike[tuple[_A3d0Inv, _A3d1Inv, _A3d2Inv]]
+    ax : Axes | None, optional
+        plot axis, by default None
+    scale : Literal[&quot;symlog&quot;, &quot;linear&quot;], optional
+        scale, by default "linear"
+
+    Returns
+    -------
+    tuple[Figure, Axes, QuadMesh]
+    """
+    converted = convert_wavepacket_with_eigenvalues_to_basis(
+        wavepacket,
+        list_basis=stacked_basis_as_fundamental_basis(wavepacket["basis"][0][1]),
+    )
+
+    bands = list(range(converted["basis"][0][0].n)) if bands is None else bands
+    data = converted["eigenvalue"].reshape(
+        converted["basis"][0][0].n, *converted["basis"][0][1].shape
+    )[bands, :]
+
+    list_basis = converted["basis"][0][1]
+
+    nx_points = BasisUtil(wavepacket["basis"][0]).nx_points[bands]
+    fig, ax, line = plot_data_1d(
+        (data[
+            :,
+            *tuple(1 if i == axes[0] else 0 for i in range(list_basis.ndim)),
+        ]*scale_factor) / np.sqrt(wavepacket["basis"][0][1].n),
+        data[
+            :,
+            *tuple( 0 for i in range(list_basis.ndim)),
+        ] / np.sqrt(wavepacket["basis"][0][1].n),
+        ax=ax,
+        scale=scale,
+        measure=measure,
+    )
+    line.set_linestyle("--")
+    line.set_marker("x")
+    line.set_label("lowest fourier componet")
+
+    ax.set_xlabel("Band Energy / J")  # type: ignore lib
     ax.set_ylabel("Energy / J")  # type: ignore lib
 
     free_line: Line2D | None = None
@@ -438,8 +519,6 @@ def plot_wavepacket_transformed_energy_1d(
         free_line.set_label("free particle")
 
     return fig, ax, (line, free_line)
-
-
 def _get_free_energy(
     basis: StackedBasisWithVolumeLike[Any, Any, Any],
     bands: np.ndarray[Any, np.dtype[np.int_]],
