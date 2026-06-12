@@ -454,6 +454,7 @@ def plot_wavepacket_transformed_energy_1d_against_self_energy(
     measure: Measure = "abs",
     scale: Scale = "linear",
     scale_factor: float = 1.0,
+    energy_scale_factor: float = 1.0,
 ) -> tuple[Figure, Axes, tuple[Line2D, Line2D|None]]:
     """
     Plot the energy of the eigenstates in a wavepacket.
@@ -491,7 +492,7 @@ def plot_wavepacket_transformed_energy_1d_against_self_energy(
         data[
             :,
             *tuple( 0 for i in range(list_basis.ndim)),
-        ] / np.sqrt(wavepacket["basis"][0][1].n),
+        ] * (energy_scale_factor / np.sqrt(wavepacket["basis"][0][1].n)),
         ax=ax,
         scale=scale,
         measure=measure,
