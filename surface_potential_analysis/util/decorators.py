@@ -16,6 +16,18 @@ _R = TypeVar("_R")
 _RD = TypeVar("_RD", bound=Mapping[Any, Any])
 
 
+_timing_disabled = ContextVar("timing_disabled", default=False)
+
+
+@contextmanager
+def disabled_timing() -> Generator[None]:
+    """Context manager to temporarily disable nested @timed logs."""
+    token = _timing_disabled.set(True)
+    try:
+        yield
+    finally:
+        _timing_disabled.reset(token)
+
 def timed(f: Callable[_P, _R]) -> Callable[_P, _R]:
     """
     Log the time taken for f to run.
@@ -33,6 +45,10 @@ def timed(f: Callable[_P, _R]) -> Callable[_P, _R]:
 
     @wraps(f)
     def wrap(*args: _P.args, **kw: _P.kwargs) -> _R:
+        
+        if _timing_disabled.get():
+            return f(*args, **kw)
+        
         ts = datetime.datetime.now(tz=datetime.UTC)
         try:
             result = f(*args, **kw)
