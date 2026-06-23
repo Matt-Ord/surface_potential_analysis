@@ -5,6 +5,8 @@ import pickle  # noqa: S403
 from collections.abc import Callable, Mapping
 from functools import update_wrapper, wraps
 from typing import TYPE_CHECKING, Any, Generic, Literal, ParamSpec, TypeVar, overload
+from contextlib import contextmanager
+from contextvars import ContextVar
 
 import numpy as np
 
