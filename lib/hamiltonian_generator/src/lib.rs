@@ -375,7 +375,7 @@ fn get_eigenstate_wavefunction(
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn hamiltonian_generator(_py: Python, m: &PyModule) -> PyResult<()> {
+fn hamiltonian_generator(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(calculate_off_diagonal_energies, m)?)?;
     m.add_function(wrap_pyfunction!(calculate_off_diagonal_energies2, m)?)?;
     m.add_function(wrap_pyfunction!(get_sho_wavefunction, m)?)?;
