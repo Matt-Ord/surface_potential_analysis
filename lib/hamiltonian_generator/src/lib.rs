@@ -1,5 +1,4 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
-#![feature(int_roundings)]
 use std::{collections::HashMap, f64::consts::PI};
 
 use num_complex::{Complex, Complex64};
@@ -51,13 +50,14 @@ struct EigenstateResolution(i64, i64, usize);
 
 impl EigenstateResolution {
     fn x0_coordinates(&self) -> impl Iterator<Item = i64> {
-        let max_x0 = self.0.div_ceil(2);
-        let min_x0 = self.0.div_floor(2);
+        let max_x0 = (self.0 + 1) / 2;
+        let min_x0 = self.0 / 2;
         (0..max_x0).chain(-min_x0..0)
     }
+
     fn x1_coordinates(&self) -> impl Iterator<Item = i64> {
-        let max_x1 = self.1.div_ceil(2);
-        let min_x1 = self.1.div_floor(2);
+        let max_x1 = (self.1 + 1) / 2;
+        let min_x1 = self.1 / 2;
         (0..max_x1).chain(-min_x1..0)
     }
     fn coordinates(&self) -> Vec<(i64, i64, usize)> {
