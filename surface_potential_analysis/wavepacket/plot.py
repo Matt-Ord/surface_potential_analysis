@@ -587,7 +587,7 @@ def plot_wavepacket_transformed_energy_effective_mass_against_energy(
     true_mass: float | None = None,
     ax: Axes | None = None,
     scale: Scale = "linear",
-    measure: Measure = "real",
+    measure: Measure = "real",sf:float = 1
 ) -> tuple[Figure, Axes, Line2D]:
     """Plot the energy of the eigenstates in a wavepacket.
 
@@ -616,8 +616,8 @@ def plot_wavepacket_transformed_energy_effective_mass_against_energy(
         else (masses["data"] - true_mass) / true_mass
     )
     fig, ax, line = plot_data_1d(
-        data,
-        np.real(energies),
+        data ,
+        np.real(energies)/sf,
         ax=ax,
         scale=scale,
         measure=measure,
