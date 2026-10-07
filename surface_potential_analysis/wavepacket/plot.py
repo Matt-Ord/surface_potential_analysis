@@ -446,7 +446,6 @@ def plot_wavepacket_transformed_energy_1d_against_self_energy(
         _SB0,
         _SBV0,
     ],
-    free_mass: float | None = None,
     axes: tuple[int,] = (0,),
     bands: list[int] | None = None,
     *,
@@ -455,9 +454,9 @@ def plot_wavepacket_transformed_energy_1d_against_self_energy(
     scale: Scale = "linear",
     scale_factor: float = 1.0,
     energy_scale_factor: float = 1.0,
-) -> tuple[Figure, Axes, tuple[Line2D, Line2D|None]]:
+) -> tuple[Figure, Axes, Line2D]:
     """
-    Plot the energy of the eigenstates in a wavepacket.
+    Plot the lowest Fourier component of each band against the band energy.
 
     Parameters
     ----------
@@ -469,7 +468,7 @@ def plot_wavepacket_transformed_energy_1d_against_self_energy(
 
     Returns
     -------
-    tuple[Figure, Axes, QuadMesh]
+    tuple[Figure, Axes, Line2D]
     """
     converted = convert_wavepacket_with_eigenvalues_to_basis(
         wavepacket,
@@ -483,7 +482,6 @@ def plot_wavepacket_transformed_energy_1d_against_self_energy(
 
     list_basis = converted["basis"][0][1]
 
-    nx_points = BasisUtil(wavepacket["basis"][0]).nx_points[bands]
     fig, ax, line = plot_data_1d(
         (data[
             :,
@@ -504,22 +502,9 @@ def plot_wavepacket_transformed_energy_1d_against_self_energy(
     ax.set_xlabel("Band Energy / J")  # type: ignore lib
     ax.set_ylabel("Energy / J")  # type: ignore lib
 
-    free_line: Line2D | None = None
-    if free_mass is not None:
-        delta_x = np.linalg.norm(wavepacket["basis"][1].delta_x_stacked[axes[0]])
-        norm = delta_x * np.sqrt(wavepacket["basis"][0][1].n) / (2 * np.pi)
-        # By integrating explicitly we find
-        # |E(\Delta x)| = (\Delta x)^{-3}(8\pi N + 4 \pi)
-        # we add an additional np.sqrt(wavepacket["basis"][0][1].n) * delta_x / (2 * np.pi)
-        # to account for the difference in fourier transform definitions
+    return fig, ax, line
 
-        offset = norm * ((4 * np.pi * hbar**2) / (2 * free_mass * delta_x**3))
-        points = (2 * nx_points + 1) * offset
 
-        (free_line,) = ax.plot(nx_points, points*scale_factor)  # type: ignore lib
-        free_line.set_label("free particle")
-
-    return fig, ax, (line, free_line)
 def _get_free_energy(
     basis: StackedBasisWithVolumeLike[Any, Any, Any],
     bands: np.ndarray[Any, np.dtype[np.int_]],
